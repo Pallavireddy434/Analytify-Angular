@@ -434,6 +434,12 @@ export const admin: Routes = [
         loadComponent: () =>
           import('./etl-list/etl-list.component').then((m) => m.EtlListComponent),
       },
+      {
+        path: 'er-diagram/:hierarchy_id/:token',
+        canActivate: [authGuard], // Assuming it should be protected
+        loadComponent: () =>
+          import('../er-diagram/er-diagram').then((m) => m.ErDiagram),
+      }
     ]
   }
  ];

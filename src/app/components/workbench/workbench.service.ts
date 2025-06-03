@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { Observable } from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
@@ -1108,4 +1109,11 @@ deleteUser(id:any){
       this.accessToken = JSON.parse( currentUser! )['Token'];
       return this.http.post<any>(`${environment.apiUrl}/mail_alerts/`+ this.accessToken,obj);
     }
+
+  public getErDiagramData(hierarchyId: string, token: string): Observable<any> {
+    // As per the task description, the token is part of the URL.
+    // If an Authorization header with 'accessToken' is needed, it should be added here.
+    // For now, assuming token in path is sufficient.
+    return this.http.get<any>(`${environment.apiUrl}/datasource/${hierarchyId}/er-diagram/${token}`);
+  }
 }
