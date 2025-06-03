@@ -1998,4 +1998,38 @@ clearRelationCondns(){
   this.selectedClmnT1=null
   this.selectedClmnT2=null;
 }
+
+public navigateToErDiagram(): void {
+  if (!this.databaseId) {
+    console.error('Hierarchy ID (databaseId) is not available.');
+    this.toasterService.error('Cannot navigate to ER Diagram: Hierarchy ID is missing.', 'Error');
+    return;
+  }
+
+  const currentUserlocalStorage = localStorage.getItem('currentUser');
+  let token = '';
+  if (currentUserlocalStorage) {
+    try {
+      const userObject = JSON.parse(currentUserlocalStorage);
+      token = userObject.Token; // Assuming the token is stored in a 'Token' property
+      if (!token) {
+        // Attempt to get token from a potential alternative structure if `Token` is not found
+        token = userObject.token || userObject.accessToken;
+      }
+    } catch (e) {
+      console.error('Failed to parse currentUser from localStorage', e);
+      this.toasterService.error('Error retrieving authentication token. Please try logging out and in again.', 'Error');
+      return;
+    }
+  }
+
+  if (!token) {
+    console.error('Authentication token not found in localStorage.');
+    this.toasterService.error('Authentication token not found. Please ensure you are logged in.', 'Error');
+    // Optionally, redirect to login: this.router.navigate(['/authentication/login']);
+    return;
+  }
+
+  this.router.navigate(['/analytify/er-diagram', this.databaseId, token]);
+}
 }

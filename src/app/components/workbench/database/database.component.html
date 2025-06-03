@@ -86,6 +86,7 @@
                             <app-insights-button *ngIf="sheetCustmSqlDisable" [buttonName]="'Custom SQL'" [classesList]="'btn btn-blue-light ms-1'"
                                 [previledgeId]="54" [isBtn]="true" (btnClickEvent)="custmSqlUI()"
                                 [isIcon]="false"></app-insights-button>
+                            <button *ngIf="!customSql && fromDatabasId" type="button" class="btn btn-outline-info ms-1" (click)="navigateToErDiagram()">ER Diagram</button>
                             <app-insights-button [classesList]="'viewQueryImg'" [previledgeId]="72"
                                 [gotoSheetButton]="draggedtables?.length === 0" [isBtn]="true" [isIcon]="false"
                                 (btnClickEvent)="viewQuery(viewQueryModal)" [toolTip]="' View Query'"
