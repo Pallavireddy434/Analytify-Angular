@@ -1,29 +1,38 @@
-<div class="er-diagram-container">
-  <!-- Loading Message -->
-  <div *ngIf="!erData && !error && !mermaidSyntax" class="loading-message">
-    <p>Loading ER Diagram data or waiting for parameters...</p>
-  </div>
+<!-- Loading Message -->
+<div *ngIf="!erData && !error && !mermaidSyntax" class="loading-message">
+  <p>Loading ER Diagram data or waiting for parameters...</p>
+</div>
 
-  <!-- Error Display -->
-  <div *ngIf="error" class="error-message">
-    <h4>Error Loading ER Diagram</h4>
-    <p>{{ error.message || 'An unexpected error occurred. Please try again later.' }}</p>
-    <details *ngIf="error.details">
-      <summary>Details</summary>
-      <pre>{{ error.details | json }}</pre>
-    </details>
-  </div>
+<!-- Error Display -->
+<div *ngIf="error" class="error-message">
+  <h4>Error Loading ER Diagram</h4>
+  <p>{{ error.message || 'An unexpected error occurred. Please try again later.' }}</p>
+  <details *ngIf="error.details">
+    <summary>Details</summary>
+    <pre>{{ error.details | json }}</pre>
+  </details>
+</div>
 
-  <!-- Container for the Mermaid diagram -->
-  <div *ngIf="mermaidSyntax && !error" class="mermaid" #mermaidContainer>
-    <!-- Mermaid will render here -->
-  </div>
+<div class="diagram-wrapper">
+  <!-- Zoom Control with Cursor Ball -->
+  <!-- <div class="zoom-controls">
+    <label for="zoomSlider" class="zoom-label">Zoom:</label>
+    <input
+      type="range"
+      id="zoomSlider"
+      class="zoom-slider"
+      [min]="minZoom"
+      [max]="maxZoom"
+      [step]="zoomStep"
+      [value]="zoomLevel"
+      (input)="onZoomChange($event)"/>
+  </div> -->
 
-  <!-- Optional: Display raw erData for debugging if needed, can be removed later -->
-  <!--
-  <div *ngIf="erData && !mermaidSyntax && !error">
-    <h3>ER Diagram Data (JSON) - Debug:</h3>
-    <pre>{{ erData | json }}</pre>
+  <!-- Mermaid Diagram Container -->
+  <!-- <div *ngIf="mermaidSyntax && !error" class="mermaid" #mermaidContainer>
+  </div> -->
+  <div class="diagram-container" #svgContainer>
+      <!-- <svg [innerHTML]="mermaidSvgCode"></svg> -->
+       <div #mermaidContainer [innerHTML]="mermaidSvgCode"></div>
   </div>
-  -->
 </div>

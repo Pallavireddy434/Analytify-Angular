@@ -1,5 +1,6 @@
-import { Component, ViewChild, ViewContainerRef } from '@angular/core';
+import { Component, ViewChild, ViewContainerRef, TemplateRef } from '@angular/core';
 import { WorkbenchService } from '../workbench.service';
+import { ErDiagram } from '../../er-diagram/er-diagram';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   CdkDragDrop,
@@ -34,7 +35,7 @@ const EXCEL_TYPE =
 @Component({
   selector: 'app-database',
   standalone: true,
-  imports: [SharedModule,NgSelectModule,CdkDropListGroup, CdkDropList, CdkDrag,NgbModule,FormsModule,NgbModule,CommonModule,InsightsButtonComponent,ScrollingModule,TestPipe],
+  imports: [SharedModule, NgSelectModule, CdkDropListGroup, CdkDropList, CdkDrag, NgbModule, FormsModule, NgbModule, CommonModule, InsightsButtonComponent, ScrollingModule, TestPipe, ErDiagram],
   templateUrl: './database.component.html',
   styleUrl: './database.component.scss',
   animations:[
@@ -57,6 +58,14 @@ const EXCEL_TYPE =
 })
 
 export class DatabaseComponent {
+  /**
+   * Reference to the ER Diagram modal template
+   */
+  @ViewChild('erDiagramModal', { read: TemplateRef }) erDiagramModal!: TemplateRef<any>;
+  /**
+   * Auth token for the ER Diagram modal
+   */
+  erModalToken: string = '';
 
   @ViewChild('sheetcontainer', { read: ViewContainerRef }) container!: ViewContainerRef;
   databaseName:any;
@@ -2032,4 +2041,36 @@ public navigateToErDiagram(): void {
 
   this.router.navigate(['/analytify/er-diagram', this.databaseId, token]);
 }
+  /**
+   * Open ER Diagram in a modal popup instead of navigating away
+   */
+  public openErDiagramModal(): void {
+    if (!this.databaseId) {
+      this.toasterService.error('Hierarchy ID not available.', 'Error');
+      return;
+    }
+    // Retrieve token similarly
+    const currentUser = localStorage.getItem('currentUser');
+    let token = '';
+    if (currentUser) {
+      try {
+        const userObj = JSON.parse(currentUser);
+        token = userObj.Token || userObj.token || userObj.accessToken || '';
+      } catch (e) {
+        console.error('Error parsing user token', e);
+      }
+    }
+    if (!token) {
+      this.toasterService.error('Authentication token not found.', 'Error');
+      return;
+    }
+    this.erModalToken = token;
+    // Open the modal and set large size for diagram
+    this.modalService.open(this.erDiagramModal, {
+      size: 'xl',
+      centered: true,
+      scrollable: true,
+      windowClass: 'er-diagram-modal'
+    });
+  }
 }

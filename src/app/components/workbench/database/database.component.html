@@ -11,6 +11,16 @@
                     <h6 class="mb-0">Connections</h6>
                     <a ngbTooltip="Click to connect multi datasources" (click)="goToConnections()"><span  class="add-txt text-info">Add</span></a>
                 </div>
+<!-- ER Diagram Modal -->
+<ng-template #erDiagramModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">ER Diagram</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body p-0">
+    <app-er-diagram [hierarchyIdInput]="databaseId.toString()" [tokenInput]="erModalToken"></app-er-diagram>
+  </div>
+</ng-template>
                 <p class=" mb-0" [ngbTooltip]="hostName?.length > 15 ? hostName : null">{{hostName?.length > 15 ? (hostName| slice:0:15)+'...':hostName}}</p>
             </div>
             <div class="mb-0 p-2 br-0 border-bottom">
@@ -86,7 +96,7 @@
                             <app-insights-button *ngIf="sheetCustmSqlDisable" [buttonName]="'Custom SQL'" [classesList]="'btn btn-blue-light ms-1'"
                                 [previledgeId]="54" [isBtn]="true" (btnClickEvent)="custmSqlUI()"
                                 [isIcon]="false"></app-insights-button>
-                            <button *ngIf="!customSql && fromDatabasId" type="button" class="btn btn-outline-info ms-1" (click)="navigateToErDiagram()">ER Diagram</button>
+                            <button *ngIf="!customSql && fromDatabasId" type="button" class="btn btn-outline-info ms-1" (click)="openErDiagramModal()">ER Diagram</button>
                             <app-insights-button [classesList]="'viewQueryImg'" [previledgeId]="72"
                                 [gotoSheetButton]="draggedtables?.length === 0" [isBtn]="true" [isIcon]="false"
                                 (btnClickEvent)="viewQuery(viewQueryModal)" [toolTip]="' View Query'"

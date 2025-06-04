@@ -1,8 +1,10 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { WorkbenchService } from '../workbench/workbench.service';
-import { CommonModule } from '@angular/common'; // For *ngIf, JsonPipe, etc.
+import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import mermaid from 'mermaid';
+import svgPanZoom from 'svg-pan-zoom';
 
 @Component({
   selector: 'app-er-diagram',
@@ -14,35 +16,53 @@ import mermaid from 'mermaid';
 export class ErDiagram implements OnInit, AfterViewInit {
   @ViewChild('mermaidContainer', { static: false }) mermaidContainer!: ElementRef;
 
+  @Input() hierarchyIdInput?: string;
+  @Input() tokenInput?: string;
+
   hierarchyId: string = '';
   token: string = '';
   erData: any;
   error: any;
+
+  // Declare mermaidSvgCode as SafeHtml for binding
+  mermaidSvgCode: SafeHtml = '';
+
   mermaidSyntax: string = '';
+
+  zoomLevel: number = 2.0;
+  minZoom: number = 0.1;
+  maxZoom: number = 2.0;
+  zoomStep: number = 0.1;
 
   constructor(
     private route: ActivatedRoute,
-    private workbenchService: WorkbenchService
+    private workbenchService: WorkbenchService,
+    private sanitizer: DomSanitizer // Inject sanitizer
   ) {}
 
   ngOnInit(): void {
-    // Initialize Mermaid
-    mermaid.initialize({ startOnLoad: false, theme: 'default' });
-    this.route.params.subscribe(params => {
-      this.hierarchyId = params['hierarchy_id'];
-      this.token = params['token'];
-      if (this.hierarchyId && this.token) {
-        this.fetchErDiagramData();
-      } else {
-        const errorMsg = 'Missing hierarchy_id or token in route parameters.';
-        this.error = { message: errorMsg, details: { currentParams: params } };
-        console.error(errorMsg, 'Current params:', params);
-      }
-    });
+  mermaid.initialize({ startOnLoad: false, theme: 'default' });
+  if (this.hierarchyIdInput && this.tokenInput) {
+    this.hierarchyId = this.hierarchyIdInput;
+    this.token = this.tokenInput;
+    this.fetchErDiagramData();
+    return;
   }
+  this.route.params.subscribe(params => {
+    this.hierarchyId = params['hierarchy_id'];
+    this.token = params['token'];
+    if (this.hierarchyId && this.token) {
+      this.fetchErDiagramData();
+    } else {
+      const errorMsg = 'Missing hierarchy_id or token in route parameters.';
+      this.error = { message: errorMsg, details: { currentParams: params } };
+      console.error(errorMsg, 'Current params:', params);
+    }
+  });
+}
 
   ngAfterViewInit(): void {
-    // No immediate rendering here; wait for data
+    // Optional: initialize svg-pan-zoom if needed
   }
 
   fetchErDiagramData(): void {
@@ -51,7 +71,11 @@ export class ErDiagram implements OnInit, AfterViewInit {
         next: (data) => {
           this.erData = data;
           this.mermaidSyntax = this.generateMermaidSyntax(this.erData);
-          // Delay rendering to ensure view is ready
+          
+          // Convert the syntax to SVG (or HTML) and sanitize
+          this.mermaidSvgCode = this.sanitizer.bypassSecurityTrustHtml(this.mermaidSyntax);
+          
+          // Delay rendering if necessary
           setTimeout(() => {
             this.renderMermaidDiagram();
           }, 0);
@@ -71,7 +95,6 @@ export class ErDiagram implements OnInit, AfterViewInit {
 
     const syntaxParts: string[] = ['erDiagram'];
 
-    // Process Tables
     for (const table of data.tables) {
       const tableName = this.sanitizeName(table.name);
       syntaxParts.push(`    ${tableName} {`);
@@ -85,15 +108,12 @@ export class ErDiagram implements OnInit, AfterViewInit {
       syntaxParts.push(`    }`);
     }
 
-    // Process Relationships
     if (data.relationships) {
       for (const rel of data.relationships) {
         const sourceTbl = this.sanitizeName(rel.source_table);
         const targetTbl = this.sanitizeName(rel.target_table);
         const sourceCol = this.sanitizeName(rel.source_column);
         const targetCol = this.sanitizeName(rel.target_column);
-
-        // Mermaid ER syntax for FK relationship
         syntaxParts.push(`    ${sourceTbl} ||--o{ ${targetTbl} : "${sourceCol} to ${targetCol}"`);
       }
     }
@@ -122,33 +142,48 @@ export class ErDiagram implements OnInit, AfterViewInit {
   }
 
   private renderMermaidDiagram(): void {
-    if (!this.mermaidSyntax) {
-      console.warn('Mermaid syntax is empty.');
-      return;
-    }
+  if (!this.mermaidSyntax) {
+    console.warn('Mermaid syntax is empty.');
+    return;
+  }
 
-    if (!this.mermaidContainer || !this.mermaidContainer.nativeElement) {
-      console.warn('Mermaid container element is not available.');
-      return;
-    }
+  console.log('Generated Mermaid Syntax:', this.mermaidSyntax); // Log the syntax for debugging
 
-    const container = this.mermaidContainer.nativeElement;
-    // Clear previous diagram if any
-    container.innerHTML = '';
+  if (!this.mermaidContainer || !this.mermaidContainer.nativeElement) {
+    console.warn('Mermaid container element is not available.');
+    return;
+  }
 
-    // Insert the new syntax
-    container.innerHTML = this.mermaidSyntax;
+  const container = this.mermaidContainer.nativeElement;
+  container.innerHTML = '';
 
-    // Render the diagram
-    try {
-      mermaid.init(undefined, container);
-      console.log('Mermaid diagram rendered.');
-    } catch (err) {
-      console.error('Error during mermaid.init:', err);
-      this.error = {
-        message: 'Failed to render ER diagram.',
-        details: err
-      };
+  // Insert the SVG or HTML (already sanitized)
+  container.innerHTML = this.mermaidSyntax;
+
+  // Render the diagram
+  try {
+    mermaid.init(undefined, container);
+    console.log('Mermaid diagram rendered.');
+  } catch (err) {
+    console.error('Error during mermaid.init:', err);
+    this.error = {
+      message: 'Failed to render ER diagram.',
+      details: err
+    };
+  }
+}
+
+  onZoomChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.zoomLevel = parseFloat(input.value);
+    this.applyZoom();
+  }
+
+  private applyZoom(): void {
+    if (this.mermaidContainer && this.mermaidContainer.nativeElement) {
+      const container = this.mermaidContainer.nativeElement;
+      container.style.transform = `scale(${this.zoomLevel})`;
+      container.style.transformOrigin = '0 0';
     }
   }
 }
