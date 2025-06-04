@@ -1,33 +1,41 @@
-:host {
+:host ::ng-deep svg {
   display: block;
-  padding: 20px;
+  width: max-content;
+  height: max-content;
 }
 
 .er-diagram-container {
-  text-align: center; // Center the diagram if it's smaller than the container
+  display: flex; // Use flex to manage children
+  flex-direction: column; // Stack children (like title, diagram) vertically
+  flex-grow: 1; // Allow this container to grow and fill the :host
+  width: 100%;
+  // height: 100%; // Or rely on flex-grow to fill height from :host
+  padding: 10px; // Add some padding inside the container
+  box-sizing: border-box;
+  overflow: hidden; // Prevent container itself from scrolling, let .mermaid div handle scroll
+  text-align: left; // Reset text-align if it was center previously
 }
 
 .mermaid {
-  // Mermaid usually handles its own styling, but you can add overrides
-  // or container styles here if needed.
-  // For instance, to ensure it's not too wide on small screens:
-  max-width: 100%;
-  overflow-x: auto; // Add scroll if diagram is wider than container
-
-  // If Mermaid's default theme needs a specific background for visibility:
-  // background-color: #f9f9f9; // Or any color that suits the theme
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  overflow: auto; /* Show scrollbars when content overflows both axes */
+  display: flex; /* optional, helps with sizing */
 }
 
 .error-message {
+  // Styles from before
   color: red;
   text-align: center;
   padding: 20px;
   border: 1px solid red;
   background-color: #ffe0e0;
-  margin: 10px; // Add some margin
+  margin: 10px; 
 }
 
 .loading-message {
+  // Styles from before
   text-align: center;
   padding: 20px;
   font-style: italic;

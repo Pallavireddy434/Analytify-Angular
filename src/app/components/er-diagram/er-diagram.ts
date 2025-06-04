@@ -6,13 +6,13 @@ import mermaid from 'mermaid';
 
 @Component({
   selector: 'app-er-diagram',
-  standalone: true, // Ensure this is still here if it was intended
-  imports: [CommonModule], // Add CommonModule here
+  standalone: true,
+  imports: [CommonModule],
   templateUrl: './er-diagram.html',
-  styleUrl: './er-diagram.scss'
+  styleUrls: ['./er-diagram.scss']
 })
 export class ErDiagram implements OnInit, AfterViewInit {
-  @ViewChild('mermaidContainer') mermaidContainer!: ElementRef;
+  @ViewChild('mermaidContainer', { static: false }) mermaidContainer!: ElementRef;
 
   hierarchyId: string = '';
   token: string = '';
@@ -26,6 +26,8 @@ export class ErDiagram implements OnInit, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
+    // Initialize Mermaid
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
     this.route.params.subscribe(params => {
       this.hierarchyId = params['hierarchy_id'];
       this.token = params['token'];
@@ -40,9 +42,7 @@ export class ErDiagram implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (this.mermaidSyntax && this.mermaidContainer) {
-      this.renderMermaidDiagram();
-    }
+    // No immediate rendering here; wait for data
   }
 
   fetchErDiagramData(): void {
@@ -50,75 +50,26 @@ export class ErDiagram implements OnInit, AfterViewInit {
       .subscribe({
         next: (data) => {
           this.erData = data;
-          console.log('ER Diagram data fetched:', this.erData);
-          mermaid.initialize({ startOnLoad: true, theme: 'default' }); // Initialize Mermaid
           this.mermaidSyntax = this.generateMermaidSyntax(this.erData);
-          if (this.mermaidContainer) { // Check if view is initialized
+          // Delay rendering to ensure view is ready
+          setTimeout(() => {
             this.renderMermaidDiagram();
-          }
+          }, 0);
         },
         error: (err) => {
-          const errorMsg = 'Failed to fetch ER diagram data.';
-          this.error = { message: errorMsg, details: err };
-          console.error(errorMsg, err);
+          this.error = { message: 'Failed to fetch ER diagram data.', details: err };
+          console.error(err);
         }
       });
   }
 
-  private renderMermaidDiagram(): void {
-    if (this.mermaidSyntax && this.mermaidContainer && this.mermaidContainer.nativeElement) {
-      try {
-        this.mermaidContainer.nativeElement.innerHTML = this.mermaidSyntax; // Insert the syntax string
-        // Ensure that the container is visible and in the DOM before calling mermaid.run
-        // Angular's *ngIf might remove/add the element, ngAfterViewInit and checks help
-        if (this.mermaidContainer.nativeElement.offsetParent !== null) {
-             mermaid.run({ nodes: [this.mermaidContainer.nativeElement] });
-             console.log('Mermaid diagram rendered.');
-        } else {
-            console.warn('Mermaid container not visible in DOM, skipping render.');
-            // Optionally, you could try to defer this or set a flag to retry
-        }
-      } catch (renderError) {
-        console.error('Error rendering Mermaid diagram:', renderError);
-        this.error = {
-          message: 'Failed to render ER diagram. Please check the diagram syntax if available.',
-          details: {
-            error: renderError,
-            syntax: this.mermaidSyntax // Provide syntax for debugging
-          }
-        };
-      }
-    } else {
-      console.warn('Mermaid syntax or container not available for rendering.');
-      if (!this.mermaidSyntax) {
-        this.error = { message: 'Cannot render diagram: Mermaid syntax is empty.'};
-      }
-    }
-  }
-
-  private sanitizeDataType(type: string): string {
-    // Basic sanitization, can be expanded
-    return type.replace(/[^a-zA-Z0-9_]/g, '_');
-  }
-
-  private sanitizeName(name: string): string {
-    // Basic sanitization for names (e.g., column, table)
-    // Replace spaces and special characters with underscores
-    // Ensure it doesn't start with a number if that's an issue for Mermaid
-    let sanitized = name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-    if (sanitized.match(/^\d/)) {
-      sanitized = '_' + sanitized;
-    }
-    return sanitized || 'unnamed'; // Ensure not empty
-  }
-
   private generateMermaidSyntax(data: any): string {
     if (!data || !data.tables) {
-      console.warn('No tables data found to generate Mermaid syntax.');
+      console.warn('No tables data found.');
       return '';
     }
 
-    const syntaxParts = ['erDiagram'];
+    const syntaxParts: string[] = ['erDiagram'];
 
     // Process Tables
     for (const table of data.tables) {
@@ -127,7 +78,7 @@ export class ErDiagram implements OnInit, AfterViewInit {
       if (table.columns) {
         for (const column of table.columns) {
           const columnName = this.sanitizeName(column.name);
-          const columnType = this.sanitizeDataType(column.type);
+          const columnType = this.sanitizeDataType(column.data_type);
           syntaxParts.push(`        ${columnType} ${columnName}`);
         }
       }
@@ -136,16 +87,68 @@ export class ErDiagram implements OnInit, AfterViewInit {
 
     // Process Relationships
     if (data.relationships) {
-      for (const relationship of data.relationships) {
-        const sourceTable = this.sanitizeName(relationship.source_table);
-        const targetTable = this.sanitizeName(relationship.target_table);
-        const sourceColumn = this.sanitizeName(relationship.source_column);
-        const targetColumn = this.sanitizeName(relationship.target_column);
-        // Defaulting to a simple relationship label, can be customized
-        const label = `${sourceColumn} to ${targetColumn}`;
-        syntaxParts.push(`    ${sourceTable} ||--o{ ${targetTable} : "${label}"`);
+      for (const rel of data.relationships) {
+        const sourceTbl = this.sanitizeName(rel.source_table);
+        const targetTbl = this.sanitizeName(rel.target_table);
+        const sourceCol = this.sanitizeName(rel.source_column);
+        const targetCol = this.sanitizeName(rel.target_column);
+
+        // Mermaid ER syntax for FK relationship
+        syntaxParts.push(`    ${sourceTbl} ||--o{ ${targetTbl} : "${sourceCol} to ${targetCol}"`);
       }
     }
+
     return syntaxParts.join('\n');
+  }
+
+  private sanitizeDataType(dataType: any): string {
+    if (dataType === null || dataType === undefined) {
+      console.warn('Column data_type is undefined or null. Defaulting to "unknown_type".');
+      return 'unknown_type';
+    }
+    const match = String(dataType).match(/(?:Nullable\()?([a-zA-Z0-9_]+)\)?/);
+    if (match && match[1]) {
+      return match[1];
+    }
+    return String(dataType).replace(/[^a-zA-Z0-9_]/g, '_');
+  }
+
+  private sanitizeName(name: string): string {
+    let sanitized = name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+    if (/^\d/.test(sanitized)) {
+      sanitized = '_' + sanitized;
+    }
+    return sanitized || 'unnamed';
+  }
+
+  private renderMermaidDiagram(): void {
+    if (!this.mermaidSyntax) {
+      console.warn('Mermaid syntax is empty.');
+      return;
+    }
+
+    if (!this.mermaidContainer || !this.mermaidContainer.nativeElement) {
+      console.warn('Mermaid container element is not available.');
+      return;
+    }
+
+    const container = this.mermaidContainer.nativeElement;
+    // Clear previous diagram if any
+    container.innerHTML = '';
+
+    // Insert the new syntax
+    container.innerHTML = this.mermaidSyntax;
+
+    // Render the diagram
+    try {
+      mermaid.init(undefined, container);
+      console.log('Mermaid diagram rendered.');
+    } catch (err) {
+      console.error('Error during mermaid.init:', err);
+      this.error = {
+        message: 'Failed to render ER diagram.',
+        details: err
+      };
+    }
   }
 }
