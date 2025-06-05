@@ -136,24 +136,24 @@ td.ng-tns-c1221481046-0.ng-star-inserted { font-size: 11px;}
 .table td { font-size: 12px;}
  }
 /* Full-screen ER Diagram modal styling */
-.er-diagram-modal .modal-dialog {
-  max-width: 100vw;
-  margin: 0;
-  height: 100vh;
-}
-.er-diagram-modal .modal-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  border: none;
-  border-radius: 0;
-}
-.er-diagram-modal .modal-header {
-  flex: 0 0 auto;
-  border-bottom: 1px solid #dee2e6;
-}
-.er-diagram-modal .modal-body {
-  flex: 1 1 auto;
-  padding: 0;
-  overflow: auto;
-}
+// .er-diagram-modal .modal-dialog {
+//   max-width: 100vw;
+//   margin: 0;
+//   height: 100vh;
+// }
+// .er-diagram-modal .modal-content {
+//   display: flex;
+//   flex-direction: column;
+//   height: 100%;
+//   border: none;
+//   border-radius: 0;
+// }
+// .er-diagram-modal .modal-header {
+//   flex: 0 0 auto;
+//   border-bottom: 1px solid #dee2e6;
+// }
+// .er-diagram-modal .modal-body {
+//   flex: 1 1 auto;
+//   padding: 0;
+//   overflow: hidden;
+// }

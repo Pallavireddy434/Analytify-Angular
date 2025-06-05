@@ -13,26 +13,7 @@
   </details>
 </div>
 
-<div class="diagram-wrapper">
-  <!-- Zoom Control with Cursor Ball -->
-  <!-- <div class="zoom-controls">
-    <label for="zoomSlider" class="zoom-label">Zoom:</label>
-    <input
-      type="range"
-      id="zoomSlider"
-      class="zoom-slider"
-      [min]="minZoom"
-      [max]="maxZoom"
-      [step]="zoomStep"
-      [value]="zoomLevel"
-      (input)="onZoomChange($event)"/>
-  </div> -->
-
-  <!-- Mermaid Diagram Container -->
-  <!-- <div *ngIf="mermaidSyntax && !error" class="mermaid" #mermaidContainer>
-  </div> -->
-  <div class="diagram-container" #svgContainer>
-      <!-- <svg [innerHTML]="mermaidSvgCode"></svg> -->
-       <div #mermaidContainer [innerHTML]="mermaidSvgCode"></div>
-  </div>
-</div>
+<!-- <div class="diagram-wrapper"> -->
+  <!-- ER Diagram SVG container -->
+  <div class="diagram-container" #mermaidContainer></div>
+<!-- </div> -->

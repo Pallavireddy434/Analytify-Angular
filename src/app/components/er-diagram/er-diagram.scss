@@ -23,8 +23,9 @@
   flex-grow: 1;
   width: 100%;
   height: 100vh;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: hidden;
+  /* Prevent scroll chaining to parent, contain scrolling to this element */
+  overscroll-behavior: contain;
 }
 
 .mermaid {
@@ -112,11 +113,17 @@
   font-style: italic;
 }
 .diagram-container {
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
-          border: 1px solid #ccc;
-      }
-      svg {
-          cursor: grab;
-      }
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      /* Prevent scroll chaining from inner pan-zoom */
+      overscroll-behavior: contain;
+      border: 1px solid #ccc;
+}
+svg {
+  cursor: grab;
+}
+svg:active {
+  cursor: grabbing;
+}
+

@@ -2,9 +2,9 @@ import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, Input } from '
 import { ActivatedRoute } from '@angular/router';
 import { WorkbenchService } from '../workbench/workbench.service';
 import { CommonModule } from '@angular/common';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer } from '@angular/platform-browser';
+import * as d3 from 'd3';
 import mermaid from 'mermaid';
-import svgPanZoom from 'svg-pan-zoom';
 
 @Component({
   selector: 'app-er-diagram',
@@ -25,14 +25,11 @@ export class ErDiagram implements OnInit, AfterViewInit {
   error: any;
 
   // Declare mermaidSvgCode as SafeHtml for binding
-  mermaidSvgCode: SafeHtml = '';
-
   mermaidSyntax: string = '';
-
-  zoomLevel: number = 2.0;
-  minZoom: number = 0.1;
-  maxZoom: number = 2.0;
-  zoomStep: number = 0.1;
+  // Zoom/pan parameters
+  minZoom: number = 1.0;
+  maxZoom: number = 15.0;
+  zoomStep: number = 1.0;
 
   constructor(
     private route: ActivatedRoute,
@@ -71,14 +68,8 @@ export class ErDiagram implements OnInit, AfterViewInit {
         next: (data) => {
           this.erData = data;
           this.mermaidSyntax = this.generateMermaidSyntax(this.erData);
-          
-          // Convert the syntax to SVG (or HTML) and sanitize
-          this.mermaidSvgCode = this.sanitizer.bypassSecurityTrustHtml(this.mermaidSyntax);
-          
-          // Delay rendering if necessary
-          setTimeout(() => {
-            this.renderMermaidDiagram();
-          }, 0);
+          // Render after view update
+          setTimeout(() => this.renderMermaidDiagram(), 0);
         },
         error: (err) => {
           this.error = { message: 'Failed to fetch ER diagram data.', details: err };
@@ -142,48 +133,56 @@ export class ErDiagram implements OnInit, AfterViewInit {
   }
 
   private renderMermaidDiagram(): void {
-  if (!this.mermaidSyntax) {
-    console.warn('Mermaid syntax is empty.');
-    return;
-  }
-
-  console.log('Generated Mermaid Syntax:', this.mermaidSyntax); // Log the syntax for debugging
-
-  if (!this.mermaidContainer || !this.mermaidContainer.nativeElement) {
-    console.warn('Mermaid container element is not available.');
-    return;
-  }
-
-  const container = this.mermaidContainer.nativeElement;
-  container.innerHTML = '';
-
-  // Insert the SVG or HTML (already sanitized)
-  container.innerHTML = this.mermaidSyntax;
-
-  // Render the diagram
-  try {
-    mermaid.init(undefined, container);
-    console.log('Mermaid diagram rendered.');
-  } catch (err) {
-    console.error('Error during mermaid.init:', err);
-    this.error = {
-      message: 'Failed to render ER diagram.',
-      details: err
-    };
-  }
-}
-
-  onZoomChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.zoomLevel = parseFloat(input.value);
-    this.applyZoom();
-  }
-
-  private applyZoom(): void {
-    if (this.mermaidContainer && this.mermaidContainer.nativeElement) {
-      const container = this.mermaidContainer.nativeElement;
-      container.style.transform = `scale(${this.zoomLevel})`;
-      container.style.transformOrigin = '0 0';
+    if (!this.mermaidSyntax || !this.mermaidContainer) {
+      return;
     }
+    const container: HTMLElement = this.mermaidContainer.nativeElement;
+    // Clear existing content
+    container.innerHTML = '';
+    // Generate a unique ID for this diagram
+    const graphId = 'erDiagram_' + Date.now();
+    // Render Mermaid to SVG
+    mermaid.render(graphId, this.mermaidSyntax)
+      .then((result: { svg: string }) => {
+        container.innerHTML = result.svg;
+        // After inserting SVG, enable D3 zoom/pan
+        const svgEl = container.querySelector('svg') as SVGSVGElement | null;
+        if (svgEl) {
+          const svgSelection = d3.select<SVGSVGElement, unknown>(svgEl);
+          // Ensure viewBox is set
+          if (!svgEl.hasAttribute('viewBox')) {
+            const bbox = svgEl.getBBox();
+            svgSelection.attr('viewBox', `0 0 ${bbox.width} ${bbox.height}`);
+          }
+          // Remove fixed width/height to allow scaling
+          svgSelection.attr('width', null).attr('height', null);
+          // Apply zoom behavior
+          const inner = svgSelection.select('g');
+          svgSelection.call(
+            d3.zoom<SVGSVGElement, unknown>()
+              .scaleExtent([this.minZoom, this.maxZoom])
+              // Capture wheel events to prevent container scroll
+              .filter((event: any) => {
+                if (event.type === 'wheel') {
+                  event.preventDefault();
+                }
+                return true;
+              })
+              .on('zoom', (event) => {
+                inner.attr('transform', event.transform);
+              })
+          );
+          // Set initial cursor
+          svgSelection.style('cursor', 'grab');
+        }
+      })
+      .catch(err => {
+        console.error('Error rendering Mermaid diagram:', err);
+        this.error = { message: 'Failed to render ER diagram.', details: err };
+      });
   }
+
+  /**
+   * Optional handler for manual zoom input (e.g., slider)
+   */
 }
