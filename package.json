@@ -84,6 +84,7 @@
     "rxjs": "~7.8.0",
     "sass": "^1.70.0",
     "simplebar-angular": "^3.2.4",
+    "svg-pan-zoom": "^3.6.2",
     "sweetalert2": "^11.10.5",
     "swiper": "^8.4.7",
     "tslib": "^2.3.0",
