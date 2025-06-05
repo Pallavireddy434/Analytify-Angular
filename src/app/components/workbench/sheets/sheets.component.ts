@@ -62,6 +62,7 @@ import { TestPipe } from '../../../test.pipe';
 import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
 import { CustomSheetsComponent } from '../custom-sheets/custom-sheets.component';
+import { SunburstChartModule } from '../../../workbench/charts/sunburst-chart/sunburst-chart.module';
 
 declare type HorizontalAlign = 'left' | 'center' | 'right';
 declare type VerticalAlign = 'top' | 'center' | 'bottom';
@@ -103,7 +104,7 @@ declare var $:any;
   ],
   imports: [SharedModule, NgxEchartsModule, NgSelectModule,NgbModule,FormsModule,ReactiveFormsModule,MatIconModule,NgxColorsModule,
     CdkDropListGroup, CdkDropList,CommonModule, CdkDrag,NgApexchartsModule,MatTabsModule,MatFormFieldModule,MatInputModule,CKEditorModule,
-    InsightsButtonComponent,NgxSliderModule,NgxPaginationModule,MatTooltipModule,InsightApexComponent,InsightEchartComponent,FormatMeasurePipe,ScrollingModule,TestPipe,CustomSheetsComponent,NgbTooltipModule],
+    InsightsButtonComponent,NgxSliderModule,NgxPaginationModule,MatTooltipModule,InsightApexComponent,InsightEchartComponent,FormatMeasurePipe,ScrollingModule,TestPipe,CustomSheetsComponent,NgbTooltipModule, SunburstChartModule],
   templateUrl: './sheets.component.html',
   styleUrl: './sheets.component.scss'
 })
@@ -765,6 +766,9 @@ try {
             this.tablePaginationColumn=responce.columns;
             this.tablePaginationCustomQuery=responce.custom_query;
             this.chartsDataSet(responce);
+            if (this.sunburstChart) {
+              this.sunburstChartData = this.transformDataForSunburst();
+            }
             this.mulColData = responce.columns;
             this.mulRowData = responce.rows;
             this.pivotMeasureValues = responce.pivot_measure;
@@ -1174,6 +1178,100 @@ try {
         }
 
       }
+
+  private transformDataForSunburst(): any {
+    // Ensure draggedColumns and draggedRows are populated, along with their data counterparts
+    if (!this.draggedColumns || this.draggedColumns.length === 0 ||
+        !this.draggedRows || this.draggedRows.length === 0 ||
+        !this.tablePreviewColumn || this.tablePreviewColumn.length === 0 ||
+        !this.tablePreviewRow || this.tablePreviewRow.length === 0) {
+      console.warn("Sunburst: Essential data (dragged columns/rows or table preview data) is missing.");
+      return { name: "Root", children: [] };
+    }
+
+    const root: any = { name: "Root", children: [] };
+
+    // Get metadata for dimensions (column names)
+    const dimensionColNames = this.draggedColumns.map((dc: any) => dc.column);
+
+    // Get metadata for measures (column names)
+    const measureColNames = this.draggedRows.map((dr: any) => dr.column);
+
+    // Extract actual data arrays for dimensions from tablePreviewColumn
+    const actualDimensionData: string[][] = [];
+    for (const dimColName of dimensionColNames) {
+      const foundDim = this.tablePreviewColumn.find((tpc: any) => tpc.column === dimColName);
+      if (foundDim && foundDim.result_data) {
+        actualDimensionData.push(foundDim.result_data);
+      } else {
+        console.warn(`Sunburst: Dimension column "${dimColName}" not found in tablePreviewColumn or has no data.`);
+        return { name: "Root", children: [] }; // Critical data missing
+      }
+    }
+
+    // Extract actual data arrays for measures from tablePreviewRow
+    const actualMeasureDataArrs: number[][] = [];
+    for (const measureColName of measureColNames) {
+      const foundMeasure = this.tablePreviewRow.find((tpr: any) => tpr.col === measureColName); // Note: 'col' for name in tablePreviewRow
+      if (foundMeasure && foundMeasure.result_data) {
+        actualMeasureDataArrs.push(foundMeasure.result_data.map((val: any) => Number(val) || 0)); // Ensure numeric, default to 0
+      } else {
+        console.warn(`Sunburst: Measure column "${measureColName}" not found in tablePreviewRow or has no data.`);
+        return { name: "Root", children: [] }; // Critical data missing
+      }
+    }
+
+    // Validate that we have data to process
+    if (actualDimensionData.length === 0 || actualMeasureDataArrs.length === 0) {
+      console.warn('Sunburst: No valid dimension or measure data arrays to process.');
+      return { name: "Root", children: [] };
+    }
+
+    // Check for consistent number of rows across all data arrays
+    const numRows = actualDimensionData[0].length;
+    if (!actualDimensionData.every(arr => arr.length === numRows) ||
+        !actualMeasureDataArrs.every(arr => arr.length === numRows)) {
+      console.error('Sunburst: Mismatch in data lengths between dimensions or measures. All columns must have the same number of rows.');
+      return { name: "Root", children: [] };
+    }
+
+    // Build the hierarchical structure
+    for (let i = 0; i < numRows; i++) { // Iterate through each conceptual "row" of data
+      let currentLevelChildren = root.children;
+
+      // Traverse dimensions to build the path
+      for (let j = 0; j < actualDimensionData.length; j++) {
+        const dimensionValue = actualDimensionData[j][i] !== null && actualDimensionData[j][i] !== undefined ? String(actualDimensionData[j][i]) : "Unknown";
+
+        let existingNode = currentLevelChildren.find((node: any) => node.name === dimensionValue);
+
+        if (!existingNode) {
+          existingNode = { name: dimensionValue }; // Initialize node
+          if (j < actualDimensionData.length - 1) { // If not the last dimension, it has children
+            existingNode.children = [];
+          }
+          currentLevelChildren.push(existingNode);
+        }
+
+        if (j < actualDimensionData.length - 1) { // Not the last dimension, move deeper
+          if (!existingNode.children) { // Ensure children array exists if we are to traverse deeper
+             existingNode.children = [];
+          }
+          currentLevelChildren = existingNode.children;
+        } else { // This is the last dimension level for this path, assign/aggregate measure value
+          let totalValueForRow = 0;
+          for (const measureArr of actualMeasureDataArrs) {
+            totalValueForRow += (measureArr[i] || 0); // Sum measures for the current data row
+          }
+
+          // If the node already exists from a previous row that had the same dimensional path, add to its value
+          existingNode.value = (existingNode.value || 0) + totalValueForRow;
+          delete existingNode.children; // Ensure it's a leaf node
+        }
+      }
+    }
+    return root;
+  }
 
       KPIChart(){
         this.KPINumber = _.cloneDeep(this.tablePreviewRow[0]?.result_data[0]);
@@ -1589,8 +1687,20 @@ try {
   funnel = false;
   guage = false;
   calendar = false;
+  sunburstChart: boolean = false;
+  sunburstChartData: any = { name: "Root", children: [] };
+  sunburstColorScheme: string = 'interpolateRainbow';
+  sunburstShowTooltips: boolean = true;
+  sunburstShowLabels: boolean = true;
+  // Removed duplicate sunburstChart and sunburstChartData declarations that were here
   chartDisplay(table:boolean,bar:boolean,area:boolean,line:boolean,pie:boolean,sidebysideBar:boolean,stocked:boolean,barLine:boolean,
-    horizentalStocked:boolean,grouped:boolean,multiLine:boolean,donut:boolean,radar:boolean,kpi:any,heatMap:any,funnel:any,guage:boolean,map:boolean,calendar:boolean,pivotTable:boolean,chartId:any){
+    horizentalStocked:boolean,grouped:boolean,multiLine:boolean,donut:boolean,radar:boolean,kpi:any,heatMap:any,funnel:any,guage:boolean,map:boolean,calendar:boolean,pivotTable:boolean,sunburst:boolean,chartId:any){
+    // Optional: Reset sunburst specific customizations if another chart is selected
+    // if (!sunburst) {
+      // this.sunburstColorScheme = 'interpolateRainbow';
+      // this.sunburstShowTooltips = true;
+      // this.sunburstShowLabels = true;
+    // }
     this.table = table;
     this.pivotTable = pivotTable;
     this.bar=bar;
@@ -1612,9 +1722,59 @@ try {
     this.guage = guage;
     this.map = map;
     this.calendar = calendar;
-    if(!(this.bar|| this.pie || this.donut)){
+    this.sunburstChart = sunburst;
+
+    if (sunburst) {
+      this.table = false;
+      this.pivotTable = false;
+      this.bar = false;
+      this.area = false;
+      this.line = false;
+      this.pie = false;
+      this.sidebyside = false;
+      this.stocked = false;
+      this.barLine = false;
+      this.horizentalStocked = false;
+      this.grouped = false;
+      this.multiLine = false;
+      this.donut = false;
+      this.radar = false;
+      this.kpi = false;
+      this.heatMap = false;
+      this.funnel = false;
+      this.guage = false;
+      this.map = false;
+      this.calendar = false;
+    }
+
+    if(!(this.bar|| this.pie || this.donut || this.sunburstChart)){
       this.draggedDrillDownColumns = [];
       this.drillDownObject = [];
+    this.sunburstChart = sunburst;
+
+    if (sunburst) {
+      this.table = false;
+      this.pivotTable = false;
+      this.bar = false;
+      this.area = false;
+      this.line = false;
+      this.pie = false;
+      this.sidebyside = false;
+      this.stocked = false;
+      this.barLine = false;
+      this.horizentalStocked = false;
+      this.grouped = false;
+      this.multiLine = false;
+      this.donut = false;
+      this.radar = false;
+      this.kpi = false;
+      this.heatMap = false;
+      this.funnel = false;
+      this.guage = false;
+      this.map = false;
+      this.calendar = false;
+    }
+
       this.drillDownIndex = 0;
       this.dateDrillDownSwitch = false;
     }
@@ -1626,6 +1786,50 @@ try {
     this.chartsOptionsSet(); 
     this.hasUnSavedChanges=true;
   }
+
+  // Temporary method for sunburst chart integration
+  chartDisplaySunburst(sunburst: boolean, chartId: any) {
+    this.sunburstChart = sunburst;
+    this.chartId = chartId;
+
+    if (sunburst) {
+      this.table = false;
+      this.pivotTable = false;
+      this.bar = false;
+      this.area = false;
+      this.line = false;
+      this.pie = false;
+      this.sidebyside = false;
+      this.stocked = false;
+      this.barLine = false;
+      this.horizentalStocked = false;
+      this.grouped = false;
+      this.multiLine = false;
+      this.donut = false;
+      this.radar = false;
+      this.kpi = false;
+      this.heatMap = false;
+      this.funnel = false;
+      this.guage = false;
+      this.map = false;
+      this.calendar = false;
+    }
+
+    if (!(this.bar || this.pie || this.donut || this.sunburstChart)) {
+      this.draggedDrillDownColumns = [];
+      this.drillDownObject = [];
+      this.drillDownIndex = 0;
+      this.dateDrillDownSwitch = false;
+    }
+    if (!this.pivotTable) {
+      this.draggedMeasureValues = []
+      this.draggedMeasureValuesData = []
+    }
+    this.resetCustomizations();
+    this.chartsOptionsSet();
+    this.hasUnSavedChanges = true;
+  }
+
   // enableDisableCharts(){
   //   console.log(this.draggedColumnsData);
   //   console.log(this.draggedRowsData);
@@ -2094,6 +2298,7 @@ try {
       this.funnel = false;
       this.calendar = false;
       this.guage = false;
+      // this.sunburstChart = false; // Already handled by chartDisplay
       this.banding = false;
       this.barOptions = undefined;
       this.lineOptions = undefined;
@@ -2396,9 +2601,17 @@ sheetSave(){
     bandingEvenColor:this.bandingEvenColor,
     isHorizontalBar:this.isHorizontalBar,
     toggleTableSearch:this.toggleTableSearch,
-    toggleTablePagination:this.toggleTablePagination
+    toggleTablePagination:this.toggleTablePagination,
+    // Sunburst specific options, ensuring they are saved if sunburst is active
+    sunburstColorScheme: this.sunburstChart ? this.sunburstColorScheme : undefined,
+    sunburstShowTooltips: this.sunburstChart ? this.sunburstShowTooltips : undefined,
+    sunburstShowLabels: this.sunburstChart ? this.sunburstShowLabels : undefined
   }
   // this.sheetTagName = this.sheetTitle;
+  // Ensure chartId is set for sunburst before saving
+  if (this.sunburstChart) {
+    this.chartId = 30; // Assuming 30 is the ID for Sunburst Chart
+  }
   let draggedColumnsObj;
   if (this.dateDrillDownSwitch && this.draggedColumnsData && this.draggedColumnsData.length > 0) {
     draggedColumnsObj = _.cloneDeep(this.draggedColumnsData);
@@ -2780,35 +2993,17 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.funnel = false;
           this.guage = false;
           this.calendar = false;
+          this.sunburstChart = false;
           this.itemsPerPage = this.sheetResponce?.results?.items_per_page;
           this.tableDisplayPagination(false);
         }
-        if(responce.chart_id == 9){
+        else if(responce.chart_id == 9){ // Pivot Table
           // this.tableData = this.sheetResponce.results.tableData;
           this.displayedColumns = this.sheetResponce?.results.tableColumns;
-          this.table = false;
-          this.pivotTable = true;
-          this.bar = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.map = false
-          this.funnel = false;
-          this.guage = false;
-          this.calendar = false;
+          this.table = false; this.pivotTable = true; this.bar = false; this.pie = false; this.line = false; this.area = false; this.sidebyside = false; this.stocked = false; this.barLine = false; this.horizentalStocked = false; this.grouped = false; this.multiLine = false; this.donut = false; this.radar = false; this.kpi = false; this.heatMap = false; this.map = false; this.funnel = false; this.guage = false; this.calendar = false; this.sunburstChart = false;
           this.pivotTableDatatransform(false);
         }
-        if(responce.chart_id == 25){
+        else if(responce.chart_id == 25){ // KPI
           this.tablePreviewRow = this.sheetResponce?.results?.kpiData;
           this.KPINumber = this.sheetResponce?.results?.kpiNumber;
           this.kpiFontSize = this.sheetResponce?.results?.kpiFontSize;
@@ -2841,8 +3036,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = false;
           this.calendar = false;
+          this.sunburstChart = false;
         }
-        if(responce.chart_id == 29){
+        else if(responce.chart_id == 29){
           this.http.get('./assets/maps/world.json').subscribe((geoJson: any) => {
             echarts.registerMap('world', geoJson);  // Register the map data
           });
@@ -2866,9 +3062,10 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = true;
           this.calendar = false;
+          this.sunburstChart = false;
           this.chartType = 'map';
         }
-       if(responce.chart_id == 6){
+       else if(responce.chart_id == 6){
         // this.chartsRowData = this.sheetResponce.results.barYaxis;
         // this.chartsColumnData = this.sheetResponce.results.barXaxis;
         this.chartType = 'bar';
@@ -2893,8 +3090,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 24){
+       else if(responce.chart_id == 24){
         this.chartType = 'pie';
         // this.pieChart();
         this.bar = false;
@@ -2917,8 +3115,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.map = false;
           this.guage = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 13){
+       else if(responce.chart_id == 13){
         this.chartType = 'line';
         // this.lineChart();
         this.bar = false;
@@ -2941,8 +3140,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 17){
+       else if(responce.chart_id == 17){
         this.chartType = 'area';
         // this.areaChart();
         this.bar = false;
@@ -2965,8 +3165,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 7){
+       else if(responce.chart_id == 7){
         this.chartType = 'sidebyside';
         // this.sidebysideBar();
         this.bar = false;
@@ -2989,8 +3190,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 5){
+       else if(responce.chart_id == 5){
         this.chartType = 'stocked';
         // this.stockedBar();
         this.bar = false;
@@ -3013,8 +3215,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.map = false;
           this.guage = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 4){
+       else if(responce.chart_id == 4){
         this.chartType = 'barline';
         // this.barLineChart();
         this.bar = false;
@@ -3037,8 +3240,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.map = false;
           this.guage = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 12){
+       else if(responce.chart_id == 12){
         this.chartType = 'radar';
         // this.dualAxisColumnData = this.sheetResponce.results.barLineXaxis;
         this.bar = false;
@@ -3061,8 +3265,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 2){
+       else if(responce.chart_id == 2){
         this.chartType = 'hstocked';
         // this.horizentalStockedBar();
         this.bar = false;
@@ -3085,8 +3290,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.map = false;
           this.guage = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 3){
+       else if(responce.chart_id == 3){
         this.chartType = 'hgrouped';
         // this.hGrouped();
         this.bar = false;
@@ -3109,8 +3315,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 8){
+       else if(responce.chart_id == 8){
         this.chartType = 'multiline';
         // this.multiLineChart();
         this.bar = false;
@@ -3133,8 +3340,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 10){
+       else if(responce.chart_id == 10){
         this.chartType = 'donut';
         // this.donutChart();
         this.bar = false;
@@ -3157,8 +3365,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 26){
+       else if(responce.chart_id == 26){
         this.chartType = 'heatmap';
         this.bar = false;
         this.table = false;
@@ -3180,8 +3389,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 27){
+       else if(responce.chart_id == 27){
         this.chartType = 'funnel';
         this.bar = false;
         this.table = false;
@@ -3203,8 +3413,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 28){
+       else if(responce.chart_id == 28){
         this.chartType = 'guage';
         this.bar = false;
         this.table = false;
@@ -3226,8 +3437,9 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = true;
           this.map = false;
           this.calendar = false;
+          this.sunburstChart = false;
        }
-       if(responce.chart_id == 11){
+       else if(responce.chart_id == 11){
         this.chartType = 'calendar';
         this.bar = false;
         this.table = false;
@@ -3249,9 +3461,30 @@ this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (re
           this.guage = false;
           this.map = false;
           this.calendar = true;
+          this.sunburstChart = false;
+        } else if(responce.chart_id == 30){ // Sunburst Chart
+        this.chartType = 'sunburst';
+        this.table = false; this.pivotTable = false; this.bar = false; this.pie = false; this.line = false; this.area = false; this.sidebyside = false; this.stocked = false; this.barLine = false; this.horizentalStocked = false; this.grouped = false; this.multiLine = false; this.donut = false; this.radar = false; this.kpi = false; this.heatMap = false; this.map = false; this.funnel = false; this.guage = false; this.calendar = false;
+        this.sunburstChart = true;
        }
        if(this.sheetResponce.customizeOptions){
-       this.setCustomizeOptions(this.sheetResponce.customizeOptions);
+        this.setCustomizeOptions(this.sheetResponce.customizeOptions);
+        // Load sunburst specific customizations if chart_id is 30
+        if (responce.chart_id == 30 && this.sheetResponce.customizeOptions) {
+          this.sunburstColorScheme = this.sheetResponce.customizeOptions.sunburstColorScheme || 'interpolateRainbow';
+          this.sunburstShowTooltips = this.sheetResponce.customizeOptions.sunburstShowTooltips !== undefined ? this.sheetResponce.customizeOptions.sunburstShowTooltips : true;
+          this.sunburstShowLabels = this.sheetResponce.customizeOptions.sunburstShowLabels !== undefined ? this.sheetResponce.customizeOptions.sunburstShowLabels : true;
+        } else if (responce.chart_id == 30 && !this.sheetResponce.customizeOptions) {
+            // Defaults if customizeOptions is missing for a sunburst chart
+            this.sunburstColorScheme = 'interpolateRainbow';
+            this.sunburstShowTooltips = true;
+            this.sunburstShowLabels = true;
+        }
+       } else if (responce.chart_id == 30) {
+            // Defaults if customizeOptions itself is missing and it's a sunburst chart
+            this.sunburstColorScheme = 'interpolateRainbow';
+            this.sunburstShowTooltips = true;
+            this.sunburstShowLabels = true;
        }
        this.getDimensionAndMeasures();
        this.changeSelectedColumn();
@@ -4287,11 +4520,15 @@ customizechangeChartPlugin() {
     this.KPISuffix = data.KPISuffix ?? '',
     this.pivotRowTotals = data.pivotRowTotals ?? true,
     this.pivotColumnTotals = data.pivotColumnTotals ?? true,
-    this.bandingEvenColor= data.bandingEvenColor ?? '#ffffff' 
+    this.bandingEvenColor= data.bandingEvenColor ?? '#ffffff' ,
     this.bandingOddColor= data.bandingOddColor ?? '#f5f7fa',
     this.isHorizontalBar = data.isHorizontalBar ?? false,
     this.toggleTableSearch = data.toggleTableSearch ?? true,
-    this.toggleTablePagination = data.toggleTablePagination ?? true
+    this.toggleTablePagination = data.toggleTablePagination ?? true,
+    // Sunburst specific options from customizeOptions
+    this.sunburstColorScheme = data.sunburstColorScheme || 'interpolateRainbow',
+    this.sunburstShowTooltips = data.sunburstShowTooltips !== undefined ? data.sunburstShowTooltips : true,
+    this.sunburstShowLabels = data.sunburstShowLabels !== undefined ? data.sunburstShowLabels : true
   }
 
   resetCustomizations(){
@@ -4386,11 +4623,17 @@ customizechangeChartPlugin() {
 
     this.pivotColumnTotals = true;
     this.pivotRowTotals = true;
-    this.bandingEvenColor= '#ffffff' 
-    this.bandingOddColor= '#f5f7fa'
+    this.bandingEvenColor= '#ffffff' ,
+    this.bandingOddColor= '#f5f7fa',
     this.isHorizontalBar = false,
     this.toggleTableSearch = true;
     this.toggleTablePagination = true;
+
+    // Reset Sunburst options
+    this.sunburstColorScheme = 'interpolateRainbow';
+    this.sunburstShowTooltips = true;
+    this.sunburstShowLabels = true;
+
     // this.KPIDecimalPlaces = 0,
     // this.KPIDisplayUnits = 'none',
     // this.KPIPrefix = '',
