@@ -1972,9 +1972,191 @@ chartInitialize(){
       this.chartInstance.resize();
     });
     this.mapChart();
+  } else if (this.chartType === 'sunburst') {
+    this.sunburstChart();
   }
 }
   // }
+
+  sunburstChart() {
+    // Validate data
+    if (!this.chartsColumnData || this.chartsColumnData.length === 0) {
+      this.chartOptions = {
+        title: {
+          text: "Sunburst: Dimension columns are not provided.",
+          left: 'center',
+          top: 'center'
+        }
+      };
+      return;
+    }
+
+    if (!this.chartsRowData || this.chartsRowData.length === 0) {
+      this.chartOptions = {
+        title: {
+          text: "Sunburst: Data rows are not provided.",
+          left: 'center',
+          top: 'center'
+        }
+      };
+      return;
+    }
+
+    const measureColumn = 'Discount'; // Or make this configurable
+
+    if (!this.chartsRowData[0].hasOwnProperty(measureColumn)) {
+      this.chartOptions = {
+        title: {
+          text: `Sunburst: Required measure column '${measureColumn}' not found.`,
+          left: 'center',
+          top: 'center'
+        }
+      };
+      return;
+    }
+
+    // Transform data
+    const dimensions = this.chartsColumnData;
+    const transformedData: any[] = [];
+    const root: any = { name: 'Root', children: [] }; // Temporary root for easier processing
+
+    this.chartsRowData.forEach((row: any) => {
+      let currentNode = root;
+      dimensions.forEach((dim: string, index: number) => {
+        const value = row[dim];
+        let childNode = currentNode.children.find((child: any) => child.name === value);
+        if (!childNode) {
+          childNode = { name: value, children: [] };
+          currentNode.children.push(childNode);
+        }
+        currentNode = childNode;
+
+        // If it's the last dimension, add the measure value
+        if (index === dimensions.length - 1) {
+          delete currentNode.children; // Leaf nodes shouldn't have children array
+          currentNode.value = (currentNode.value || 0) + row[measureColumn];
+        }
+      });
+    });
+
+    // The ECharts sunburst series expects an array of data, not a single root node with children.
+    // We need to adjust the structure if root.children is the actual data to be passed.
+    // For ECharts, the data is typically an array of objects, where each object can have children.
+    // If the transformation logic implies a single root (which is common for sunburst),
+    // then `root.children` would be the `data` for the series.
+
+    // Function to recursively sum values if a parent's value should be sum of children
+    function sumChildrenValues(node: any) {
+      if (node.children && node.children.length > 0) {
+        node.value = 0; // Initialize or reset parent value
+        node.children.forEach((child: any) => {
+          sumChildrenValues(child);
+          node.value += child.value || 0; // Sum values from children
+        });
+      }
+    }
+
+    // Apply sumChildrenValues to each top-level item if needed, or ensure values are correctly aggregated.
+    // Depending on ECharts interpretation, parent nodes might automatically sum children values,
+    // or they might need explicit values. For sunburst, typically parent values are derived.
+    // The current logic sets values only at leaf nodes. If parents need values, they should be aggregated.
+    // Let's assume for now that ECharts handles parent value aggregation or it's not strictly needed for visualization if not summed.
+
+    // The root.children will be the actual data for the sunburst chart
+    const finalData = root.children;
+
+    // Clean up nodes that only have a name and empty children (if any were created and not populated)
+    // This step might be necessary if some branches don't lead to a leaf with a value.
+    // However, the current logic ensures children are only added if data exists for them.
+
+    if (finalData.length === 0) {
+      this.chartOptions = {
+        title: {
+          text: "Sunburst: No data to display after transformation.",
+          left: 'center',
+          top: 'center'
+        }
+      };
+      return;
+    }
+
+    this.chartOptions = {
+      backgroundColor: this.backgroundColor,
+      color: this.selectedColorScheme,
+      tooltip: {
+        trigger: 'item',
+        formatter: (params: any) => {
+          // params.data will have name and value, and potentially children
+          let path = params.treePathInfo.map((item:any) => item.name).slice(1).join(' > '); // slice(1) to remove "Root"
+          return `${path}: ${this.formatNumber(params.value)}`;
+        }
+      },
+      legend: {
+        bottom: this.bottomLegend,
+        left: this.leftLegend,
+        orient: this.legendOrient,
+        right: this.rightLegend,
+        top: this.topLegend,
+        type: 'scroll',
+        show: this.legendSwitch
+      },
+      series: [
+        {
+          type: 'sunburst',
+          data: finalData,
+          radius: ['20%', '90%'], // Inner and outer radius
+          emphasis: {
+            focus: 'ancestor'
+          },
+          levels: [
+            {}, // Style for the outermost level
+            {
+              r0: '15%',
+              r: '35%',
+              itemStyle: {
+                borderWidth: 2
+              },
+              label: {
+                rotate: 'tangential'
+              }
+            },
+            {
+              r0: '35%',
+              r: '70%',
+              label: {
+                align: 'right'
+              }
+            },
+            {
+              r0: '70%',
+              r: '72%',
+              label: {
+                position: 'outside',
+                padding: 3,
+                silent: false
+              },
+              itemStyle: {
+                borderWidth: 3
+              }
+            }
+          ],
+          label: {
+            show: this.dataLabels,
+            formatter: (params: any) => {
+               // Check if params.data exists and has a name property
+              if (params.data && params.data.name) {
+                return `${params.data.name}: ${this.formatNumber(params.value)}`;
+              }
+              return ''; // Return empty string if data or name is missing
+            },
+            // position: 'outside', // Default label position
+            // rotate: 'radial' // or 'tangential' or 0
+          },
+        }
+      ]
+    };
+  }
+
   resetchartoptions(){
     if (!this.chartInstance) {
       console.warn('Chart instance is not initialized.');
