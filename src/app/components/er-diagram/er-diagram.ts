@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, Input } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, Input, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { WorkbenchService } from '../workbench/workbench.service';
 import { CommonModule } from '@angular/common';
@@ -34,29 +34,30 @@ export class ErDiagram implements OnInit, AfterViewInit {
   constructor(
     private route: ActivatedRoute,
     private workbenchService: WorkbenchService,
-    private sanitizer: DomSanitizer // Inject sanitizer
+    private sanitizer: DomSanitizer, // Inject sanitizer
+    private cdr: ChangeDetectorRef // Inject ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-  mermaid.initialize({ startOnLoad: false, theme: 'default' });
-  if (this.hierarchyIdInput && this.tokenInput) {
-    this.hierarchyId = this.hierarchyIdInput;
-    this.token = this.tokenInput;
-    this.fetchErDiagramData();
-    return;
-  }
-  this.route.params.subscribe(params => {
-    this.hierarchyId = params['hierarchy_id'];
-    this.token = params['token'];
-    if (this.hierarchyId && this.token) {
+    mermaid.initialize({ startOnLoad: false, theme: 'default', maxTextSize: 500000, logLevel: 3 });
+    if (this.hierarchyIdInput && this.tokenInput) {
+      this.hierarchyId = this.hierarchyIdInput;
+      this.token = this.tokenInput;
       this.fetchErDiagramData();
-    } else {
-      const errorMsg = 'Missing hierarchy_id or token in route parameters.';
-      this.error = { message: errorMsg, details: { currentParams: params } };
-      console.error(errorMsg, 'Current params:', params);
+      return;
     }
-  });
-}
+    this.route.params.subscribe(params => {
+      this.hierarchyId = params['hierarchy_id'];
+      this.token = params['token'];
+      if (this.hierarchyId && this.token) {
+        this.fetchErDiagramData();
+      } else {
+        const errorMsg = 'Missing hierarchy_id or token in route parameters.';
+        this.error = { message: errorMsg, details: { currentParams: params } };
+        console.error(errorMsg, 'Current params:', params);
+      }
+    });
+  }
 
   ngAfterViewInit(): void {
     // Optional: initialize svg-pan-zoom if needed
@@ -68,8 +69,12 @@ export class ErDiagram implements OnInit, AfterViewInit {
         next: (data) => {
           this.erData = data;
           this.mermaidSyntax = this.generateMermaidSyntax(this.erData);
+          console.log('Generated Mermaid Syntax:', this.mermaidSyntax); // Log Mermaid syntax
           // Render after view update
-          setTimeout(() => this.renderMermaidDiagram(), 0);
+          setTimeout(() => {
+            this.renderMermaidDiagram();
+            this.cdr.detectChanges(); // Trigger change detection
+          }, 0);
         },
         error: (err) => {
           this.error = { message: 'Failed to fetch ER diagram data.', details: err };
@@ -93,6 +98,10 @@ export class ErDiagram implements OnInit, AfterViewInit {
         for (const column of table.columns) {
           const columnName = this.sanitizeName(column.name);
           const columnType = this.sanitizeDataType(column.data_type);
+          if (!columnName || !columnType) {
+            console.error('Invalid column data:', column);
+            continue;
+          }
           syntaxParts.push(`        ${columnType} ${columnName}`);
         }
       }
@@ -105,10 +114,15 @@ export class ErDiagram implements OnInit, AfterViewInit {
         const targetTbl = this.sanitizeName(rel.target_table);
         const sourceCol = this.sanitizeName(rel.source_column);
         const targetCol = this.sanitizeName(rel.target_column);
+        if (!sourceTbl || !targetTbl || !sourceCol || !targetCol) {
+          console.error('Invalid relationship data:', rel);
+          continue;
+        }
         syntaxParts.push(`    ${sourceTbl} ||--o{ ${targetTbl} : "${sourceCol} to ${targetCol}"`);
       }
     }
 
+    console.log('Generated Mermaid Syntax:', syntaxParts.join('\n'));
     return syntaxParts.join('\n');
   }
 
