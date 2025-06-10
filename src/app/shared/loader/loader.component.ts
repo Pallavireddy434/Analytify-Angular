@@ -17,7 +17,9 @@ export class LoaderComponent {
   ngOnInit(): void {
     this.loaderService.loading$.subscribe((isLoading: boolean) => {
       // console.log('LoaderComponent: loading status changed to', isLoading); // Debug log
-      this.loading = isLoading;
+      setTimeout(() => {
+        this.loading = isLoading;
+      }, 0);
     });
   }
 }

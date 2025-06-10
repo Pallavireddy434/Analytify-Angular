@@ -89,20 +89,62 @@ export class ErDiagram implements OnInit, AfterViewInit {
       return '';
     }
 
+    const MAX_LABEL_LENGTH = 60;
+    const ELLIPSIS = '...';
+    const TRUNCATION_THRESHOLD = MAX_LABEL_LENGTH - ELLIPSIS.length;
+
     const syntaxParts: string[] = ['erDiagram'];
 
     for (const table of data.tables) {
-      const tableName = this.sanitizeName(table.name);
+      let tableName = this.sanitizeName(table.name);
+      if (tableName.length > MAX_LABEL_LENGTH) {
+        tableName = tableName.substring(0, TRUNCATION_THRESHOLD) + ELLIPSIS;
+      }
       syntaxParts.push(`    ${tableName} {`);
       if (table.columns) {
         for (const column of table.columns) {
-          const columnName = this.sanitizeName(column.name);
-          const columnType = this.sanitizeDataType(column.data_type);
+          let rawName = column.name;
+          let rawDataType = String(column.data_type); // Ensure it's a string
+          let constraint = '';
+
+          // Check for constraint as a property
+          if (column.constraint && ['PK', 'FK', 'UK'].includes(column.constraint.toUpperCase())) {
+            constraint = column.constraint.toUpperCase();
+          }
+
+          // Check for constraint keywords in rawDataType (e.g., "INT PK", "VARCHAR(255) FK")
+          const typeParts = rawDataType.split(/\s+/);
+          const potentialConstraintInType = typeParts.length > 1 ? typeParts[typeParts.length - 1].toUpperCase() : '';
+          if (!constraint && ['PK', 'FK', 'UK'].includes(potentialConstraintInType)) {
+            constraint = potentialConstraintInType;
+            rawDataType = typeParts.slice(0, -1).join(' ');
+          }
+
+          // Check for constraint keywords as suffixes in rawName (e.g., "id_pk", "ref_fk")
+          const nameSuffixMatch = rawName.match(/_(pk|fk|uk)$/i);
+          if (!constraint && nameSuffixMatch) {
+            constraint = nameSuffixMatch[1].toUpperCase();
+            rawName = rawName.substring(0, rawName.length - nameSuffixMatch[0].length);
+          }
+
+          // Final sanitization of name and type
+          let columnName = this.sanitizeName(rawName);
+          const columnType = this.sanitizeDataType(rawDataType); // sanitizeDataType should now receive a cleaner type string
+
           if (!columnName || !columnType) {
-            console.error('Invalid column data:', column);
+            console.error('Invalid column data:', column, `Raw Name: ${rawName}, Raw Type: ${rawDataType}`);
             continue;
           }
-          syntaxParts.push(`        ${columnType} ${columnName}`);
+
+          if (columnName.length > MAX_LABEL_LENGTH) {
+            columnName = columnName.substring(0, TRUNCATION_THRESHOLD) + ELLIPSIS;
+          }
+
+          if (constraint) {
+            syntaxParts.push(`        ${columnType} ${columnName} ${constraint}`);
+          } else {
+            syntaxParts.push(`        ${columnType} ${columnName}`);
+          }
         }
       }
       syntaxParts.push(`    }`);
@@ -110,15 +152,37 @@ export class ErDiagram implements OnInit, AfterViewInit {
 
     if (data.relationships) {
       for (const rel of data.relationships) {
-        const sourceTbl = this.sanitizeName(rel.source_table);
-        const targetTbl = this.sanitizeName(rel.target_table);
-        const sourceCol = this.sanitizeName(rel.source_column);
-        const targetCol = this.sanitizeName(rel.target_column);
+        let sourceTbl = this.sanitizeName(rel.source_table);
+        if (sourceTbl.length > MAX_LABEL_LENGTH) {
+          sourceTbl = sourceTbl.substring(0, TRUNCATION_THRESHOLD) + ELLIPSIS;
+        }
+        let targetTbl = this.sanitizeName(rel.target_table);
+        if (targetTbl.length > MAX_LABEL_LENGTH) {
+          targetTbl = targetTbl.substring(0, TRUNCATION_THRESHOLD) + ELLIPSIS;
+        }
+
+        let sourceCol = this.sanitizeName(rel.source_column);
+        // No individual truncation for source/target column names in label here,
+        // as per simpler interpretation of prompt. Truncate the final combined label.
+        // If individual column name truncation for labels is desired, it would be:
+        // if (sourceCol.length > MAX_LABEL_LENGTH / 2 - 5) { // 5 for " to " and "..."
+        //   sourceCol = sourceCol.substring(0, MAX_LABEL_LENGTH / 2 - 5 - ELLIPSIS.length) + ELLIPSIS;
+        // }
+        let targetCol = this.sanitizeName(rel.target_column);
+        // if (targetCol.length > MAX_LABEL_LENGTH / 2 - 5) {
+        //   targetCol = targetCol.substring(0, MAX_LABEL_LENGTH / 2 - 5 - ELLIPSIS.length) + ELLIPSIS;
+        // }
+
         if (!sourceTbl || !targetTbl || !sourceCol || !targetCol) {
           console.error('Invalid relationship data:', rel);
           continue;
         }
-        syntaxParts.push(`    ${sourceTbl} ||--o{ ${targetTbl} : "${sourceCol} to ${targetCol}"`);
+
+        let relationshipLabel = `${sourceCol} to ${targetCol}`;
+        if (relationshipLabel.length > MAX_LABEL_LENGTH) {
+          relationshipLabel = relationshipLabel.substring(0, TRUNCATION_THRESHOLD) + ELLIPSIS;
+        }
+        syntaxParts.push(`    ${sourceTbl} ||--o{ ${targetTbl} : "${relationshipLabel}"`);
       }
     }
 
