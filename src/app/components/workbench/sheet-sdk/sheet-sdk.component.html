@@ -38,8 +38,10 @@
         </app-custom-sheets> -->
 
     } @else {
-
-    @if(isApexChart){
+    
+    @if(chartType=='sunburst'){
+      <app-sunburst-chart [data]="sunburstData"></app-sunburst-chart>
+    } @else if(isApexChart){
 
     <app-insight-apex [SDKChartOptions]="chartOptions" [chartType]="chartType">
     </app-insight-apex>

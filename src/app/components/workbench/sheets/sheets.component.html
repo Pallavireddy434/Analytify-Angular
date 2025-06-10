@@ -64,9 +64,13 @@
                     }
                                 @if(sunburstChart && chartId){
                                     <app-sunburst-chart
+                                        *ngIf="sunburstChart"
                                         [data]="sunburstChartData"
                                         [width]="width"
-                                        [height]="height">
+                                        [height]="height"
+                                        [colorScheme]="sunburstColorScheme"
+                                        [showTooltips]="sunburstShowTooltips"
+                                        [showLabels]="sunburstShowLabels">
                                     </app-sunburst-chart>
                                 }
  </div>

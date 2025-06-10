@@ -57,6 +57,24 @@ export class SheetDataTransformerService {
       columnNames
     };
   }
+  /**
+   * Transform API response into hierarchical data for Sunburst chart.
+   */
+  transformSunburstData(data: any): any {
+    const root: any = { name: 'root', children: [] };
+    const cols = data?.col || [];
+    const rows = data?.row || [];
+    const count = cols[0]?.result_data?.length || 0;
+    for (let i = 0; i < count; i++) {
+      const parentName = cols[0].result_data[i] ?? 'null';
+      const parent: any = { name: parentName, children: [] };
+      for (const r of rows) {
+        parent.children.push({ name: r.col, value: r.result_data?.[i] });
+      }
+      root.children.push(parent);
+    }
+    return root;
+  }
 
   updateChartOptions(chartOptions: any, chartType: string, isApexChart: boolean,
     xAxisCategories: string[], multiSeriesChartData: { name: string; data: number[] }[]): any {
@@ -253,7 +271,29 @@ export class SheetDataTransformerService {
       };
     }
   }
-
-    return { ...chartOptions }; // ensure immutability
-  }
 }
+}
+  /**
+   * Transform API response data into hierarchical format for Sunburst chart.
+   */
+  // transformSunburstData(data: any): any {
+  //   const root: any = { name: 'root', children: [] };
+  //   const colArray = data?.col || [];
+  //   const rowArray = data?.row || [];
+  //   // Determine number of entries based on first column's result_data length
+  //   const entryCount = colArray[0]?.result_data?.length || 0;
+  //   for (let i = 0; i < entryCount; i++) {
+  //     const parentName = colArray[0].result_data[i] ?? 'null';
+  //     const parentNode: any = { name: parentName, children: [] };
+  //     rowArray.forEach((row: { col: string; result_data: any[] }) => {
+  //       const value = row.result_data?.[i];
+  //       parentNode.children.push({ name: row.col, value: value });
+  //     });
+  //     root.children.push(parentNode);
+  //   }
+  //   return root;
+  // }
+
+  //   return { ...chartOptions }; // ensure immutability
+  // }
+// }

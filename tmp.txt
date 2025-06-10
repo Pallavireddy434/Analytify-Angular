@@ -114,7 +114,6 @@ export class SheetSdkComponent {
         switch (chartId) {
         case 14:
           this.chartType = 'sunburst';
-          this.isApexChart = false;    // D3, not Apex
           break;
           case 9:
             this.chartType = 'pivot';
