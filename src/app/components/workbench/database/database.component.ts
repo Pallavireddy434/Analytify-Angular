@@ -520,18 +520,73 @@ drop(event: CdkDragDrop<string[]>) {4
         element[attr] = copy[attr];
       }
     }
-   // this.draggedtables.splice(event.currentIndex, 0, element);
-   //this.draggedtables.push(element);
-   console.log('element',element)
-    this.pushToDraggedTables(element)
-    console.log('darggedtable',this.draggedtables)
+   const finalizeDrop = () => {
+     this.pushToDraggedTables(element);
+     console.log('darggedtable', this.draggedtables);
+     if (parseInt(this.qurtySetId) !== 0) {
+       this.joiningTables();
+     } else if (parseInt(this.qurtySetId) === 0) {
+       this.joiningTablesWithoutQuerySetId();
+     }
+   };
+
+   if (!element.columns || element.columns.length === 0) {
+     const dumpObj = { hierarchy_id: this.databaseId, tables: [element.table] };
+     this.workbechService.dataDumping(dumpObj).subscribe({
+       next: () => {
+         this.refreshSchemaForTable(element, finalizeDrop);
+       },
+       error: () => finalizeDrop()
+     });
+   } else {
+     finalizeDrop();
    }
-   if(parseInt(this.qurtySetId) !== 0){
-    this.joiningTables();
-   }
-   else if(parseInt(this.qurtySetId) === 0){
-     this.joiningTablesWithoutQuerySetId()
-   }
+  }
+}
+
+refreshSchemaForTable(table: any, callback: () => void) {
+  const obj: any = {
+    search: this.searchTables,
+    querySetId: this.qurtySetId || this.custumQuerySetid,
+    hierarchy_ids: [this.databaseId]
+  };
+  if (obj.search == '' || obj.search == null) {
+    delete obj.search;
+  }
+  if (obj.querySetId === '0' || obj.querySetId === 0) {
+    delete obj.querySetId;
+  }
+  const idToPass = this.databaseId;
+  this.workbechService.getSchemaTablesFromConnectedDb(idToPass, obj).subscribe({
+    next: (data) => {
+      this.schematableList = [];
+      this.crossDbConnections = data;
+      this.isCrossDb = data[0]?.is_cross_db;
+      if (data[0].cross_db_id) {
+        this.crossDbId = data[0].cross_db_id;
+        this.crossDbFilteredTablesT1 = data[0].data?.schemas[0].tables;
+        this.filteredTablesT2 = data[1].data?.schemas[0].tables;
+        this.originalCrossDbTablesT1 = data[0].data?.schemas[0].tables;
+      }
+      data.forEach((dataTest: any) => {
+        if (dataTest?.data?.schemas && dataTest?.data?.schemas.length > 0) {
+          this.schematableList.push(dataTest?.data?.schemas[0]);
+        }
+      });
+      this.databaseName = data[0]?.display_name;
+      for (const schemaObj of this.schematableList) {
+        if (schemaObj.schema === table.schema) {
+          const tbl = schemaObj.tables.find((t: any) => t.table === table.table);
+          if (tbl) {
+            table.columns = tbl.columns;
+            break;
+          }
+        }
+      }
+      callback();
+    },
+    error: () => callback()
+  });
 }
 
 pushToDraggedTables(newTable:any): void {
