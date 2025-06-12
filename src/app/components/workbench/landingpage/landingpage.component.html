@@ -531,6 +531,11 @@
                                         <img alt="product" src="./assets/images/icons/ninjaRMMIcon.jpg"
                                             class="w-5 h-5 border me-2">{{database.server_type | lowercase}}
                                     </td>
+                                    <td *ngIf="database.server_type === 'HUBSPOT'">
+                                        <img alt="product" src="./assets/images/icons/hubspotlogo.png"
+                                            class="w-5 h-5 border me-2">{{database.server_type | lowercase}}
+                                    </td>
+                                    
                                     <td *ngIf="database.server_type === 'MYSQL'">
                                         <img alt="product" src="./assets/images/icons/MySql-icon1.jpg"
                                             class="w-5 h-5 border me-2">{{database.server_type | lowercase}}

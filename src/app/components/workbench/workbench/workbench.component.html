@@ -388,6 +388,9 @@
                       <td *ngIf="database.server_type === 'NINJA'">
                         <img alt="product" src="./assets/images/icons/ninjaRMMIcon.jpg" class="w-5 h-5 border me-2">{{database.server_type}}
                       </td>
+                      <td *ngIf="database.server_type === 'HUBSPOT'">
+                        <img alt="product" src="./assets/images/icons/hubspotlogo.png" class="w-5 h-5 border me-2">{{database.server_type}}
+                      </td>
                       
                       <td *ngIf="database.server_type === 'GOOGLE_ANALYTICS'">
                         <img alt="product" src="./assets/images/icons/google-anaytics.jpg" class="w-5 h-5 border me-2">{{database.server_type}}
@@ -398,7 +401,7 @@
                             <td  *ngIf="!iscrossDbSelect">
                               <div class="hstack gap-2 fs-1">
                                 <button *ngIf="!(database.server_type === 'CSV' || database.server_type ==='EXCEL') && (!database?.transformation || database.is_cross_db)"
-                                  [disabled]="(database.server_type ==='SQLITE' || database.server_type ==='QUICKBOOKS' || database.server_type ==='SALESFORCE' || database.server_type ==='GOOGLE_SHEETS')"
+                                  [disabled]="(database.server_type ==='SQLITE' || database.server_type ==='QUICKBOOKS' || database.server_type ==='SALESFORCE' || database.server_type ==='GOOGLE_SHEETS' || database.server_type ==='HUBSPOT')"
                                   aria-label="anchor" (click)="editDbDetails(database.hierarchy_id);editDbConnectionModal(EditDbCon);"
                                   class="btn btn-icon btn-sm btn-info-light btn-wave waves-effect waves-light">
                                   <i class="ri-edit-line" ngbTooltip="Edit database"></i></button>
@@ -492,6 +495,8 @@
                                                       <img src="./assets/images/icons/google-anaytics.jpg" alt="" class="rounded-circle"></span>
                                                       <span *ngIf="database.server_type === 'NINJA'" class="avatar avatar rounded-circle">
                                                         <img src="./assets/images/icons/ninjaRMMIcon.jpg" alt="" class="rounded-circle"></span>
+                                                        <span *ngIf="database.server_type === 'HUBSPOT'" class="avatar avatar rounded-circle">
+                                                          <img src="./assets/images/icons/hubspotlogo.png" alt="" class="rounded-circle"></span>
                           <div class="ms-2 mt-sm-0 mt-2">
                             <!-- <span class="text-muted  pe-2 fs-12 float-start">Server</span> -->
                               <h6 class="mb-1">
@@ -514,7 +519,7 @@
                                   class="fe fe-more-vertical fs-18 text-body-secondary"></i>
                           </a>
                         <div class="dropdown-menu" ngbDropdownMenu>
-                            <app-insights-button *ngIf="!(database.server_type === 'CSV' || database.server_type ==='EXCEL' || database.server_type ==='SQLITE' || database.server_type ==='QUICKBOOKS' || database.server_type ==='SALESFORCE' || database.server_type ==='GOOGLE_SHEETS')" [buttonName]="' Edit'" [classesList]="'dropdown-item'" [previledgeId]="2" [isBtn]="false"
+                            <app-insights-button *ngIf="!(database.server_type === 'CSV' || database.server_type ==='EXCEL' || database.server_type ==='SQLITE' || database.server_type ==='QUICKBOOKS' || database.server_type ==='SALESFORCE' || database.server_type ==='GOOGLE_SHEETS' ||database.server_type ==='HUBSPOT')" [buttonName]="' Edit'" [classesList]="'dropdown-item'" [previledgeId]="2" [isBtn]="false"
                               [tabIndex]="0" (btnClickEvent)="editDbDetails(database.hierarchy_id);editDbConnectionModal(EditDbCon);"
                               [faIconList]="'fe fe-edit me-2 d-inline-flex'" [isIcon]="true"></app-insights-button>
                             <a *ngIf="database?.transformation && !database.is_cross_db" class="dropdown-item" (click)="goToTransformationLayer(database?.hierarchy_id)" ngbTooltip="Edit Transformation"><img src="./assets/images/icons/transformation_blue.png" class="avatar-databse-sm d-inline-flex me-2"> Edit Transforma...</a>
@@ -1336,12 +1341,74 @@
 
                       </ul>
                     </div>
+            </div>
+          </div>
+        </div>
+      </div>
+          }
+          @if(openHubspotForm){
+            <div class="main-container container-fluid px-4 TopHeader">
+              <div class="row">
+                <div class="col-md-12 col-xl-6 p-1 mb-0">
+                  <div class="card Relational-database-height">
+                    <div class="card-header">
+                      <h4 class="card-title">Connect To HubSpot</h4>
+                    </div>
+                    <div class="card-body">
+                      <form>
+                        <div class="form-group">
+                          <label [ngClass]="{'error-label': hubspotClientIdError}" class="col-form-label">Client Id <span class="text-danger ms-1">*</span></label>
+                          <input [ngClass]="{'error-input': hubspotClientIdError}" type="text" class="form-control" [(ngModel)]="hubspotClientId" [ngModelOptions]="{standalone: true}" (input)="hubspotClientIdInput()">
+                        </div>
+                        <div class="form-group">
+                          <label [ngClass]="{'error-label': displayNameError}" class="col-form-label">Display Name <span class="text-danger ms-1">*</span></label>
+                          <input [ngClass]="{'error-input': displayNameError}" type="text" class="form-control" [(ngModel)]="displayName" [ngModelOptions]="{standalone: true}" autocomplete="new-myname" (input)="displayNameIntegrationConditionError()">
+                        </div>
+                        <div class="form-group">
+                          <label [ngClass]="{'error-label': hubspotClientSecretError}" class="col-form-label">Client Secret <span class="text-danger ms-1">*</span></label>
+                          <input [ngClass]="{'error-input': hubspotClientSecretError}" type="text" class="form-control" [(ngModel)]="hubspotClientSecret" [ngModelOptions]="{standalone: true}" (input)="hubspotClientSecretInput()">
+                        </div>
+                        <div class="form-group">
+                          <label [ngClass]="{'error-label': hubspotRedirectURLError}" class="col-form-label">Redirect URL <span class="text-danger ms-1">*</span></label>
+                          <input [ngClass]="{'error-input': hubspotRedirectURLError}" type="text" class="form-control" [(ngModel)]="hubspotRedirectURL" [ngModelOptions]="{standalone: true}" (input)="hubspotRedirectURLInput()">
+                        </div>
+                        <div class="form-group">
+                          <label [ngClass]="{'error-label': hubspotScopeError}" class="col-form-label">Scopes <span class="text-danger ms-1">*</span></label>
+                          <ng-select [items]="hubspotScopes" bindLabel="" placeholder="Select Scopes" [(ngModel)]="selectedHubspotScopes" [multiple]="true" (change)="onHubspotScopeChange($event)"></ng-select>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" (click)="gotoNewConnections()">Close</button>
+                          <button type="button" class="btn btn-primary" (click)="hubspotSignIn()" [disabled]="(hubspotScopeError || hubspotClientSecretError || displayNameError || hubspotClientIdError || hubspotRedirectURLError) || !(selectedHubspotScopes.length>0 && hubspotClientSecret && hubspotClientId && displayName && hubspotRedirectURL)">{{ iscrossDbSelect ? 'Connect & Move' : 'Connect' }}</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-12 col-xl-6 p-1 mb-0">
+                  <div class="card user-card border Relational-database-height">
+                    <div class="user-image">
+                      <span class="avatar w-20 h-20 rounded-circle mb-2 user-image-outline">
+                        <img src="./assets/images/Db_server_images/hubspot.png" alt="" class="rounded-circle bg-white user-image-border-color">
+                      </span>
+                    </div>
+                    <div class="card-body server-content-card">
+                      <ul class="">
+                        <li><span class="mt-1">HubSpot is a CRM platform providing marketing, sales and service tools.</span></li>
+                        <li><h6 class=" mt-3"><strong>Inputs to connect</strong></h6></li>
+                        <li><span class="mb-0"><strong>Client ID:</strong> OAuth application identifier.</span></li>
+                        <li><span class="mb-0"><strong>Client Secret:</strong> Application secret.</span></li>
+                        <li><span class="mb-0"><strong>Redirect URI:</strong> The URI where HubSpot will redirect users after they authorize the application. Must match one configured in the HubSpot app settings.</span></li>
+                        <li><span class="mb-0"><strong>	Display Name:</strong> A user-friendly name for identifying this connection instance in your system.</span></li>
+                        <li><span class="mb-0"><strong>Scopes:</strong> Permissions for HubSpot APIs.</span></li>
+                        
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           }
-          
+
       @if(openOracleForm){
         <div class="main-container container-fluid px-4 TopHeader">
           <div class="row">
@@ -2133,6 +2200,14 @@
                         </div>
                         <div class="logo-txt mt-2 text-center fw-600">
                           <span>Google Analytics</span>
+                        </div>
+                      </div>
+                      <div class="database-logo">
+                        <div class="imgcard p-4" (click)="connectHubspot()">
+                          <img src="/assets/images/Db_server_images/hubspot.png"alt="Image" class="card-img">
+                        </div>
+                        <div class="logo-txt mt-2 text-center fw-600">
+                          <span>HubSpot</span>
                         </div>
                       </div>
                       <div class="database-logo">

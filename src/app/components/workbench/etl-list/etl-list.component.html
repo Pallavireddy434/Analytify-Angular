@@ -7,7 +7,7 @@
         <div class="col-sm-12 col-lg-12 col-xl-12 p-0">
             <div class="d-flex justify-content-between px-5">
                 <div class="connect-txt">
-                    <h4 class="card-title mt-2">Saved ETL</h4>
+                    <h4 class="card-title mt-2">{{listType}}</h4>
                 </div>
                 <div class="new-data-btn d-flex text-align-center">
                     <button *ngIf="gridView" type="button" ngbTooltip="Grid View"
@@ -22,9 +22,10 @@
 
 
                     <div class="input-group">
-                        <select class="form-select form-select select2 fs-14 form-control border-end me-3" [(ngModel)]="listType" (change)="getEtlList()">
-                            <option value="dataFlow">Data Flow</option>
-                            <option value="jobFlow">Job Flow</option>
+                        <select class="form-select me-2" [(ngModel)]="listType" (change)="getEtlList();">
+                            <option value="Saved Data Flow">DataFlow</option>
+                            <option value="Saved Job Flow">JobFlow</option>
+                            <option value="Monitor List">Monitor List</option>
                         </select>
                         <input type="text" class="form-control border-end-0 " placeholder="Search"
                             aria-describedby="button-addon2" [(ngModel)]="search" (keyup.enter)="getDataFlowList()">
@@ -40,15 +41,16 @@
                     </div>
                 </div>
             </div>
-            <!-- <div>
-                No Sheets to display!
+            <div *ngIf="dataFlowList.length === 0" class="ms-2">
+                No DataFlows to display!
             </div>
-            <div>
+            <!-- <div>
                 You don't have permission to view!
             </div> -->
-            <div class="card-body">
+            <div *ngIf="dataFlowList.length > 0" class="card-body">
                 @if(!gridView){
                 <div class="table-responsive border table-responsive-height">
+                    @if(listType === 'Saved Data Flow'){
                     <table class="table border text-nowrap text-md-nowrap mb-0">
                         <thead class="table-primary bg-primary table-primary-position">
                             <tr>
@@ -59,7 +61,6 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- @for(dataFlow of dataFlowList; track dataFlow; let index = $index){ -->
                             <tr *ngFor="let dataFlow of dataFlowList | paginate : { itemsPerPage: pageSize, currentPage: page, totalItems: totalItems }; let index = index">
                                 <td>
                                     <div class="d-flex">
@@ -68,32 +69,104 @@
                                                 class="w-7 h-7 border rounded-3  me-4">
                                         </div>
                                         <div class="content">
-                                            <span>DataFlow Name: </span>
-                                            <a class="cursor-pointer" [ngbTooltip]="dataFlow.data_flow_name" (click)="editDataFlow(dataFlow.id)"> {{dataFlow.data_flow_name | slice: 0: 15}} </a>
+                                            <a class="cursor-pointer" [ngbTooltip]="dataFlow.data_flow_name"
+                                                (click)="editDataFlow(dataFlow.id)"> {{dataFlow.data_flow_name | slice: 0: 15}} </a>
                                         </div>
                                     </div>
                                 </td>
-                                <td> {{dataFlow.created_at | slice: 0: 10}} </td>
-                                <td> {{dataFlow.updated_at | slice: 0: 10}} </td>
+                                <td> {{dataFlow.created_at | slice: 0: 10}}, {{dataFlow.created_at | slice: 12: 19}} </td>
+                                <td> {{dataFlow.updated_at | slice: 0: 10}}, {{dataFlow.updated_at | slice: 12: 19}}  </td>
                                 <td>
                                     <div class="hstack gap-2 fs-1">
-                                        <button class="btn btn-icon btn-sm btn-info-light btn-wave waves-effect waves-light" (click)="editDataFlow(dataFlow.id)">
+                                        <button class="btn btn-icon btn-sm btn-info-light btn-wave waves-effect waves-light"
+                                            (click)="editDataFlow(dataFlow.id)">
                                             <i class="ri-edit-line"></i>
                                         </button>
-                                        <button class="btn btn-icon btn-sm btn-danger-light btn-wave waves-effect waves-light" (click)="deleteDataFlow(dataFlow)">
+                                        <button class="btn btn-icon btn-sm btn-danger-light btn-wave waves-effect waves-light"
+                                            (click)="deleteFlow(dataFlow)">
                                             <i class="ri-delete-bin-7-line"></i>
                                         </button>
                                     </div>
                                 </td>
                             </tr>
-                            <!-- } -->
                         </tbody>
                     </table>
+                    } @else if(listType === 'Saved Job Flow'){
+                    <table class="table border text-nowrap text-md-nowrap mb-0">
+                        <thead class="table-primary bg-primary table-primary-position">
+                            <tr>
+                                <th>Title</th>
+                                <th>Created At</th>
+                                <th>Last Modified</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let jobFlow of jobFlowList | paginate : { itemsPerPage: pageSize, currentPage: page, totalItems: totalItems }; let index = index">
+                                <td>
+                                    <div class="d-flex">
+                                        <div class="imgdf">
+                                            <img src="./assets/images/charts/post-tiled-icon.jpg" alt="postgresql job flow"
+                                                class="w-7 h-7 border rounded-3  me-4">
+                                        </div>
+                                        <div class="content">
+                                            <a class="cursor-pointer" [ngbTooltip]="jobFlow.data_flow_name"
+                                                (click)="editJobFlow(jobFlow.id)"> {{jobFlow.data_flow_name | slice: 0: 15}} </a>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td> {{jobFlow.created_at | slice: 0: 10}}, {{jobFlow.created_at | slice: 12: 19}}   </td>
+                                <td> {{jobFlow.updated_at | slice: 0: 10}}, {{jobFlow.updated_at | slice: 12: 19}}   </td>
+                                <td>
+                                    <div class="hstack gap-2 fs-1">
+                                        <button class="btn btn-icon btn-sm btn-info-light btn-wave waves-effect waves-light"
+                                            (click)="editJobFlow(jobFlow.id)">
+                                            <i class="ri-edit-line"></i>
+                                        </button>
+                                        <button class="btn btn-icon btn-sm btn-danger-light btn-wave waves-effect waves-light"
+                                            (click)="deleteFlow(jobFlow)">
+                                            <i class="ri-delete-bin-7-line"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    } @else if(listType === 'Monitor List'){
+                    <table class="table border text-nowrap text-md-nowrap mb-0">
+                        <thead class="table-primary bg-primary table-primary-position">
+                            <tr>
+                                <th>Title</th>
+                                <th>Schedule At</th>
+                                <th>Latest Run</th>
+                                <th>Next Run</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let monitor of monitorsList | paginate : { itemsPerPage: pageSize, currentPage: page, totalItems: totalItems }; let index = index">
+                                <td>
+                                    <div class="d-flex">
+                                        <div class="imgdf">
+                                            <img src="./assets/images/charts/post-tiled-icon.jpg"
+                                                class="w-7 h-7 border rounded-3  me-4">
+                                        </div>
+                                        <div class="content">
+                                            <a class="cursor-pointer" [ngbTooltip]="monitor.name" (click)="goToMonitor()"> {{monitor.name | slice: 0: 15}} </a>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td> {{monitor.schedule | slice: 0: 10}}, {{monitor.schedule | slice: 12: 19}}  </td>
+                                <td> {{monitor.latest_run | slice: 0: 10}}, {{monitor.latest_run | slice: 12: 19}}  </td>
+                                <td> {{monitor.next_run | slice: 0: 10}}, {{monitor.next_run | slice: 12: 19}}  </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    }
                 </div>
                 }
                 @if(gridView){
                 <div class="row">
-                    <!-- @for(dataFlow of dataFlowList; track dataFlow; let index = $index){ -->
+                    @if(listType === 'Saved Data Flow'){
                     <div class="col-md-12 col-xl-3" *ngFor="let dataFlow of dataFlowList | paginate : { itemsPerPage: pageSize, currentPage: page, totalItems: totalItems }; let index = index">
                         <div class="card card-box-shadow ">
                             <div class="card-header tiled-header-bg bg-primary tiled-card-header-padding">
@@ -106,7 +179,8 @@
                                     </div>
                                     <div class="ms-2 mt-sm-0 mt-2">
                                         <h6 class="mb-1">
-                                            <a [ngbTooltip]="dataFlow.data_flow_name" class="float-start" (click)="editDataFlow(dataFlow.id)"> {{dataFlow.data_flow_name | slice: 0: 15}} </a>
+                                            <a [ngbTooltip]="dataFlow.data_flow_name" class="float-start"
+                                                (click)="editDataFlow(dataFlow.id)"> {{dataFlow.data_flow_name | slice: 0: 15}} </a>
                                         </h6>
                     
                                     </div>
@@ -119,9 +193,11 @@
                                                 class="fe fe-more-vertical fs-18 text-body-secondary"></i>
                                         </a>
                                         <div class="dropdown-menu" ngbDropdownMenu>
-                                            <a class="dropdown-item"><i class="fe fe-edit me-2 d-inline-flex" (click)="editDataFlow(dataFlow.id)"></i>
+                                            <a class="dropdown-item"><i class="fe fe-edit me-2 d-inline-flex"
+                                                    (click)="editDataFlow(dataFlow.id)"></i>
                                                 edit</a>
-                                            <a class="dropdown-item  btn btn-secondary-light" (click)="deleteDataFlow(dataFlow)"><i class="fe fe-trash me-2 d-inline-flex"></i>
+                                            <a class="dropdown-item  btn btn-secondary-light" (click)="deleteFlow(dataFlow)"><i
+                                                    class="fe fe-trash me-2 d-inline-flex"></i>
                                                 delete</a>
                                         </div>
                                     </div>
@@ -132,19 +208,19 @@
                     
                                     <div class="col-md-12">
                                         <div class="row">
-                                            <div class="col-md-6">
+                                            <div class="col-md-5">
                                                 <span class="fw-semibold fs-14">Created At: </span>
                                             </div>
-                                            <div class="col-md-6">
-                                                <span class="fs-14"> {{dataFlow.created_at | slice: 0: 10}} </span>
+                                            <div class="col-md-7">
+                                                <span class="fs-14"> {{dataFlow.created_at | slice: 0: 10}}, {{dataFlow.created_at | slice: 12: 19}} </span>
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-6">
+                                            <div class="col-md-5">
                                                 <span class="fw-semibold fs-14">Last Modified: </span>
                                             </div>
-                                            <div class="col-md-6">
-                                                <span class="fs-14"> {{dataFlow.updated_at | slice: 0: 10}} </span>
+                                            <div class="col-md-7">
+                                                <span class="fs-14"> {{dataFlow.updated_at | slice: 0: 10}}, {{dataFlow.updated_at | slice: 12: 19}} </span>
                                             </div>
                                         </div>
                                     </div>
@@ -152,7 +228,121 @@
                             </div>
                         </div>
                     </div>
-                    <!-- } -->
+                    } @else if(listType === 'Saved Job Flow'){
+                    <div class="col-md-12 col-xl-3" *ngFor="let jobFlow of jobFlowList | paginate : { itemsPerPage: pageSize, currentPage: page, totalItems: totalItems }; let index = index">
+                        <div class="card card-box-shadow ">
+                            <div class="card-header tiled-header-bg bg-primary tiled-card-header-padding">
+                                <div class="d-sm-flex align-items-center">
+                                    <div class="user-image">
+                                        <span class="avatar avatar rounded-circle">
+                                            <img src="./assets/images/charts/post-tiled-icon.jpg" alt="postgresql job flow"
+                                                class="rounded-circle">
+                                        </span>
+                                    </div>
+                                    <div class="ms-2 mt-sm-0 mt-2">
+                                        <h6 class="mb-1">
+                                            <a [ngbTooltip]="jobFlow.data_flow_name" class="float-start"
+                                                (click)="editJobFlow(jobFlow.id)"> {{jobFlow.data_flow_name | slice: 0: 15}} </a>
+                                        </h6>
+                    
+                                    </div>
+                                </div>
+                    
+                                <div class="col-auto">
+                                    <div class="d-flex justify-content-end p-1" ngbDropdown>
+                                        <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button" ngbDropdownToggle
+                                            aria-haspopup="true" aria-expanded="false" class=""><i
+                                                class="fe fe-more-vertical fs-18 text-body-secondary"></i>
+                                        </a>
+                                        <div class="dropdown-menu" ngbDropdownMenu>
+                                            <a class="dropdown-item"><i class="fe fe-edit me-2 d-inline-flex"
+                                                    (click)="editJobFlow(jobFlow.id)"></i>
+                                                edit</a>
+                                            <a class="dropdown-item  btn btn-secondary-light" (click)="deleteFlow(jobFlow)"><i
+                                                    class="fe fe-trash me-2 d-inline-flex"></i>
+                                                delete</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body tiled-card-body-padding">
+                                <div class="row">
+                    
+                                    <div class="col-md-12">
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                <span class="fw-semibold fs-14">Created At: </span>
+                                            </div>
+                                            <div class="col-md-7">
+                                                <span class="fs-14"> {{jobFlow.created_at | slice: 0: 10}}, {{jobFlow.created_at | slice: 12: 19}} </span>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                <span class="fw-semibold fs-14">Last Modified: </span>
+                                            </div>
+                                            <div class="col-md-7">
+                                                <span class="fs-14"> {{jobFlow.updated_at | slice: 0: 10}}, {{jobFlow.updated_at | slice: 12: 19}} </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    } @else if(listType === 'Monitor List'){
+                    <div class="col-md-12 col-xl-3" *ngFor="let monitor of monitorsList | paginate : { itemsPerPage: pageSize, currentPage: page, totalItems: totalItems }; let index = index">
+                        <div class="card card-box-shadow ">
+                            <div class="card-header tiled-header-bg bg-primary tiled-card-header-padding">
+                                <div class="d-sm-flex align-items-center">
+                                    <div class="user-image">
+                                        <span class="avatar avatar rounded-circle">
+                                            <img src="./assets/images/charts/post-tiled-icon.jpg"
+                                                class="rounded-circle">
+                                        </span>
+                                    </div>
+                                    <div class="ms-2 mt-sm-0 mt-2">
+                                        <h6 class="mb-1">
+                                            <a [ngbTooltip]="monitor.name" class="float-start" (click)="goToMonitor()"> {{monitor.name | slice: 0: 15}} </a>
+                                        </h6>
+                    
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body tiled-card-body-padding">
+                                <div class="row">
+                    
+                                    <div class="col-md-12">
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                <span class="fw-semibold fs-14">Scheduled: </span>
+                                            </div>
+                                            <div class="col-md-7">
+                                                <span class="fs-14"> {{monitor.schedule | slice: 0: 10}}, {{monitor.schedule | slice: 12: 19}} </span>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                <span class="fw-semibold fs-14">Latest Run: </span>
+                                            </div>
+                                            <div class="col-md-7">
+                                                <span class="fs-14"> {{monitor.latest_run | slice: 0: 10}}, {{monitor.latest_run | slice: 12: 19}} </span>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                <span class="fw-semibold fs-14">Next Run: </span>
+                                            </div>
+                                            <div class="col-md-7">
+                                                <span class="fs-14"> {{monitor.next_run | slice: 0: 10}}, {{monitor.next_run | slice: 12: 19}} </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    }
                 </div>
                 }
                 <pagination-controls previousLabel="Prev" nextLabel="Next"

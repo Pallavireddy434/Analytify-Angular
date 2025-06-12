@@ -62,6 +62,11 @@ export const admin: Routes = [
     loadComponent: () =>
       import('./quickbooks/quickbooks.component').then((m) => m.QuickbooksComponent),
   },
+  {
+    path: 'hubspot',
+    loadComponent: () =>
+      import('./hubspot/hubspot.component').then((m) => m.HubspotComponent),
+  },
 ]}
 ];
 @NgModule({
