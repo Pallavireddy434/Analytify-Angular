@@ -59,6 +59,7 @@ import { TestPipe } from '../../../test.pipe';
 import { saveAs } from 'file-saver';
 import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
+import { i } from 'mathjs';
 
 interface TableRow {
   [key: string]: any;
@@ -167,7 +168,7 @@ export class SheetsdashboardComponent implements OnDestroy {
  filterName = '';
  dashboardFilterId:any;
  DahboardListFilters = [] as any;
- storeSelectedColData = [] as any
+ storeSelectedColData = {} as any
  colData = [] as any;
  heightGrid : number = 800;
  widthGrid : number = 800;
@@ -227,6 +228,8 @@ export class SheetsdashboardComponent implements OnDestroy {
   @ViewChildren('pivotTableContainer') pivotContainers!: QueryList<ElementRef>;
   @ViewChild('fileInput') fileInput:any;
   @ViewChild('fileInput1') fileInput1:any;
+  @ViewChild('analyzeDashbaordModal') analyzeDashbaordModal:any;
+
   lastRefresh: any;
   nextRefresh: any;
   tabData: any;
@@ -236,6 +239,8 @@ export class SheetsdashboardComponent implements OnDestroy {
   embedFilters: any;
   isdashboardSDKGenerated: boolean = false;
   isEmbeddedFilter : boolean = false;
+  genieHover = false;
+  showGenieTooltip = false;
 
 
   constructor(private workbechService:WorkbenchService,private route:ActivatedRoute,private router:Router,private screenshotService: ScreenshotService,
@@ -283,7 +288,7 @@ export class SheetsdashboardComponent implements OnDestroy {
         }
 
         const navigation = this.router.getCurrentNavigation();
-        const dbSwitched = navigation?.extras?.state?.['dbSwitched'];
+        const dbSwitched = navigation?.extras?.state?.['dbSwitched'] ?? history.state?.['dbSwitched'];
       
         if (dbSwitched) {
           this.getSavedDashboardData();
@@ -601,7 +606,6 @@ export class SheetsdashboardComponent implements OnDestroy {
       .subscribe(() => {
         this.getSavedDashboardDataPublic();
       });
-
   }
 
   fetchDashboardIdFromToken(){
@@ -871,6 +875,7 @@ export class SheetsdashboardComponent implements OnDestroy {
         customizeOptions: sheet?.sheet_data?.customizeOptions
       }));
       this.setSelectedSheetData();
+      this.updateDashboardMetadata();
        this.isSheetsView = false;
       },
       error:(error)=>{
@@ -914,13 +919,13 @@ export class SheetsdashboardComponent implements OnDestroy {
     })
   }
 
-  assignDashboardParams(data: any){
+  assignDashboardParams(data: any,isDashboardTransfer?: boolean){
     this.dashboardName=data.dashboard_name;
         this.isSampleDashboard = data.is_sample;
         this.heightGrid = data.height;
         this.widthGrid = data.width;
         this.gridType = data.grid_type;
-        this.changeGridType(this.gridType);
+        this.changeGridType(this.gridType ? this.gridType : 'fixed');
         this.qrySetId = data.queryset_id;
         this.isdashboardSDKGenerated = data.is_embedded;
         // if(data.file_id && data.file_id.length){
@@ -936,15 +941,6 @@ export class SheetsdashboardComponent implements OnDestroy {
         this.rolesForUpdateDashboard = data.role_ids;
         let self = this;
         let obj = {sheet_ids: this.sheetIdsDataSet};
-        if(!this.isPublicUrl){
-        this.fetchSheetsDataBasedOnSheetIds(obj);
-        }
-        if(!data.dashboard_tag_name){
-          this.dashboardTagName = data.dashboard_name;
-        }
-        else{
-          this.dashboardTagName = data.dashboard_tag_name;
-        }
         this.sheetTabs = data.tab_data ? data.tab_data : [];
         if(this.sheetTabs && this.sheetTabs.length > 0) {
           this.tabData = data.tab_id;
@@ -955,6 +951,15 @@ export class SheetsdashboardComponent implements OnDestroy {
             this.tabHeightGrid = this.sheetTabs[0].tabHeight;
             this.tabWidthGrid =  this.sheetTabs[0].tabWidth;
           }
+        }
+        if(!this.isPublicUrl){
+        this.fetchSheetsDataBasedOnSheetIds(obj);
+        }
+        if(!data.dashboard_tag_name){
+          this.dashboardTagName = data.dashboard_name;
+        }
+        else{
+          this.dashboardTagName = data.dashboard_tag_name;
         }
         this.dashboardTagTitle = this.sanitizer.bypassSecurityTrustHtml(this.dashboardTagName);
         this.dynamicOptionsUpdateinDashboard(this.dashboard, false);
@@ -968,6 +973,9 @@ export class SheetsdashboardComponent implements OnDestroy {
               this.dynamicOptionsUpdateinDashboard(tabsData.dashboard, false);
             }
           });
+        }
+        if(isDashboardTransfer){
+          this.updateDashboard(false,false,true);
         }
   }
 
@@ -1255,7 +1263,7 @@ export class SheetsdashboardComponent implements OnDestroy {
     }
       if(chartId == 1){
         if(sheet?.tableData?.tableItemsPerPage){
-          sheet.tableData.tableItemsPerPage = 10;
+          // sheet.tableData.tableItemsPerPage = 10;
         }
         if(sheet?.tableData?.tablePage){
           sheet.tableData.tablePage = 1;
@@ -1281,6 +1289,26 @@ export class SheetsdashboardComponent implements OnDestroy {
       }
       return target;
     });
+  }
+
+  updateDashboardMetadata() {
+    const applyUpdates = (arr: any[]) => {
+      if (!arr) return;
+      arr.forEach(item => {
+        if (!item || !item.sheetId) return;
+        const fresh = this.dashboardNew.find(d => d['sheetId'] === item.sheetId);
+        if (fresh) {
+          item.qrySetId = fresh['qrySetId'];
+          item.databaseId = fresh['databaseId'];
+        }
+      });
+    };
+
+    applyUpdates(this.dashboard);
+    if (this.sheetTabs && this.sheetTabs.length > 0) {
+      applyUpdates(this.dashboardTest);
+      this.sheetTabs.forEach(tab => applyUpdates(tab.dashboard));
+    }
   }
 
   // saveDashboard(){
@@ -1578,7 +1606,7 @@ export class SheetsdashboardComponent implements OnDestroy {
      })
    
   }
-  updateDashboard(isLiveReloadData : boolean,isShowpopup:boolean){
+  updateDashboard(isLiveReloadData : boolean,isShowpopup:boolean, isDashboardTransfer: boolean){
     this.sheetsIdArray = [
       ...this.dashboard.map(item => item.sheetId).filter(id => id !== undefined),
       ...this.sheetTabs
@@ -1631,9 +1659,11 @@ export class SheetsdashboardComponent implements OnDestroy {
         let sheetIds;
         if(this.sheetTabs && this.sheetTabs.length > 0){
           tabNames = this.sheetTabs.map(tab => tab.name?.trim());
+          if(!isDashboardTransfer){
           tabIds = this.sheetTabs
   .filter(tab => tab.id)
   .map(tab => tab.id);
+          }
           sheetIds = this.sheetTabs.map(tab => tab.dashboard.map((sheet:any) => sheet.sheetId));
         }
         if(this.validateTabs()){
@@ -1717,7 +1747,11 @@ export class SheetsdashboardComponent implements OnDestroy {
             }
           });
         }
-        if(isShowpopup){
+        if(isDashboardTransfer){
+          const encodedDashboardId = btoa(this.dashboardId.toString());
+          this.router.navigate(['/analytify/home/sheetsdashboard/'+encodedDashboardId])
+        }
+        else if(isShowpopup){
         this.toasterService.success('Dashboard Updated Successfully','success',{ positionClass: 'toast-top-right'});
         }
         if(!isLiveReloadData){
@@ -2673,7 +2707,7 @@ allowDrop(ev : any): void {
         }
         if (chartId == 1) {
           if (sheet?.tableData?.tableItemsPerPage) {
-            sheet.tableData.tableItemsPerPage = 10;
+            // sheet.tableData.tableItemsPerPage = 10;
           }
           if (sheet?.tableData?.tablePage) {
             sheet.tableData.tablePage = 1;
@@ -4014,7 +4048,7 @@ clearAllFilters(): void {
 }
 
 
-setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boolean, isDrillDown : boolean, isDrillThrough : boolean, drillThroughSheetId: any, isLiveReloadData : boolean,isLastIndex:boolean, dashboard : any[],switchDb?: boolean){
+setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boolean, isDrillDown : boolean, isDrillThrough : boolean, drillThroughSheetId: any, isLiveReloadData : boolean,isLastIndex:boolean, dashboard : any[],switchDb?: boolean,isDashboardTransfer?: boolean){
   dashboard.forEach((item1:any) => {
     if(item1.sheetId){
     if((((item1.sheetId == item.sheet_id || item1.sheetId == item.sheetId) && (isFilter || isDrillDown)) || (isDrillThrough && item1.sheetId == drillThroughSheetId))){
@@ -4648,7 +4682,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
         if(!item1.originalData && !isLiveReloadData){
           item1['originalData'] = {categories: item1.chartOptions.xaxis.categories , data:item1.chartOptions.series };
         }
-        if(isDrillThrough){
+        // if(isDrillThrough){
           item1.chartOptions = {
             ...item1.chartOptions,
             xaxis: {
@@ -4657,11 +4691,11 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
             },
             series: this.filteredRowData,
           };
-        }
-        else{
-          item1.chartOptions.xaxis.categories = categories;
-          item1.chartOptions.series = this.filteredRowData;
-        }
+        // }
+        // else{
+          // item1.chartOptions.xaxis.categories = categories;
+          // item1.chartOptions.series = this.filteredRowData;
+        // }
       }
       }
       if(item.chart_id == '26'){//heatmap
@@ -4783,14 +4817,10 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
     
   }
 })
-// if (switchDb && isLastIndex) {
-//   this.updateDashboard(false, false);
-// } else if (!switchDb &&) {
-// }
-
-if( isLiveReloadData && isLastIndex){
-  this.updateDashboard(isLiveReloadData, false);
-}
+if (switchDb && isLastIndex) {
+  this.updateDashboard(false, false, false);
+} else if( isLiveReloadData && isLastIndex){
+  this.updateDashboard(isLiveReloadData, false,isDashboardTransfer ? isDashboardTransfer : false);}
 }
 
 formatKPINumber(value : number, KPIDisplayUnits: string, KPIDecimalPlaces : number,KPIPrefix: string,KPISuffix: string  ) {
@@ -6174,7 +6204,7 @@ tableSearchDashboardPublic(item:any,value:any){
   this.pageChangeTableDisplayPublic(item,1);
 }
 pageChangeTableDisplayPublic(item:any,page:any){
-  if(item?.tableData?.tablePage ){
+  if(item?.tableData){
     item.tableData.tablePage = page;
   }
   const obj={
@@ -6363,7 +6393,7 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
               return `${formattedValue}%`;
             };
           }
-          if (sheet.chartOptions?.yaxis?.labels) {
+          else if (sheet.chartOptions?.yaxis?.labels) {
             sheet.chartOptions.yaxis.labels.formatter = (val: number) => {
               return this.formatNumber(val, numberFormat?.decimalPlaces, numberFormat?.displayUnits, numberFormat?.prefix, numberFormat?.suffix);
             };
@@ -6558,7 +6588,7 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
         this.sourceSheetList = updatedSourceSheetList;
 
         data.target_sheet_data[selectedSourceCategory].forEach((sheet:any)=>{
-          if(sheet.sheet_id != this.sourceSheetId){
+          if(sheet.sheet_id != this.sourceSheetId && sheet.sheet_name?.toLowerCase() !== "kpi"){
             this.targetSheetList.push(sheet);
           }
         })
@@ -6694,53 +6724,82 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
     // Return the found configuration or the default values
     return config ? { is_kpi: config.is_kpi, is_drill: config.is_drill , drill_id : config.drill_id} : { is_kpi: false, is_drill: false ,drill_id: 0};
   }
+  getFilterNamesMapping() {
+    const result: { [key: string]: string[] } = {};
+
+    for (const filterId in this.storeSelectedColData.test) {
+      const dashboardFilter = this.DahboardListFilters.find(
+        (filter:any) => filter.dashboard_filter_id === parseInt(filterId, 10)
+      );
+      if (dashboardFilter) {
+        result[dashboardFilter.filter_name] = this.storeSelectedColData.test[filterId];
+      }
+    }
+
+    return result;
+  }
+
   setDrillThrough(selectedValue : any, item : any, isKPIDrill? :boolean){
     let selectedXValue;
     let columnNames : any[] = [];
     let dataTypes: any[] = [];
     let callDrillAPI : boolean = true;
     let object;
+    let filterData = {};
+    if(this.storeSelectedColData && this.storeSelectedColData.test){
+      filterData = this.getFilterNamesMapping();
+    }
     if(isKPIDrill){
       let data = this.findDrillConfig(item.sheetId,this.drillThroughActionList);
       if(!data.is_kpi || (data.is_kpi && !data.is_drill)){
         callDrillAPI = false;
       } else {
         this.actionId = data.drill_id;
-      this.sourceSheetId = item.sheetId;
-      object = {
-        drill_id: data.drill_id,
-        dashboard_id: this.dashboardId,
-        is_kpi: data.is_kpi
+        this.sourceSheetId = item.sheetId;
+          let filterKeys = Object.keys(filterData);
+          let filterValues = Object.values(filterData);
+          object = {
+            drill_id: data.drill_id,
+            dashboard_id: this.dashboardId,
+            is_kpi: data.is_kpi,
+            filter_name: filterKeys,
+            filter_values: filterValues
+          }
       }
-    }
     } else if(item.chartType =='KPI'){
       let data = this.findDrillConfig(item.sheetId,this.drillThroughActionList);
       this.sourceSheetId = item.sheetId;
-      object = {
-        drill_id: data.drill_id,
-        dashboard_id: this.dashboardId,
-        is_kpi: false
-      }
-    }
-    else {
-    if(selectedValue == ''){
+        let filterKeys = Object.keys(filterData);
+        let filterValues = Object.values(filterData);
+        object = {
+          drill_id: data.drill_id,
+          dashboard_id: this.dashboardId,
+          is_kpi: false,
+          filter_name: filterKeys,
+          filter_values: filterValues
+        }
+    } else {
+      if(selectedValue == ''){
       selectedXValue = selectedValue.trim() ? selectedValue.split(',').map((item: string) => [item.trim()]) : [];
-    }
-    else{
+      }
+      else{
       selectedXValue = selectedValue.split(',').map((item : any) => [item]);
       item.column_Data.forEach((col: any) => {
         columnNames.push(col[0]);
         dataTypes.push(col[1]);
       });
       }
-       object = {
-        drill_id: this.actionId,
-        dashboard_id: this.dashboardId,
-        column_name: columnNames,
-        column_data: selectedXValue,
-        datatype: dataTypes,
-      }
-    
+        let filterKeys = Object.keys(filterData);
+        let filterValues = Object.values(filterData);
+        object = {
+          drill_id: this.actionId,
+          dashboard_id: this.dashboardId,
+          column_name: columnNames,
+          column_data: selectedXValue,
+          datatype: dataTypes,
+          filter_name: filterKeys,
+          filter_values: filterValues
+        }    
   }
     if(callDrillAPI){
     
@@ -6799,7 +6858,7 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
         })
       }
     });
-  }
+    }
   }
   actionUpdateOnSheetRemove(sheetId : any){
     let object = {
@@ -7306,6 +7365,55 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
   toggleCustomize(): void {
     this.isCustomizeVisible = !this.isCustomizeVisible;
   }
+  dashboardTransfer(data: any,value : boolean){
+    this.dashboardId = data.dashboard.dashboard_id;
+    this.assignDashboardParams(data.dashboard);
+    let isLastIndex = false;
+    data.sheets.forEach((item: any,index:any) => {
+    this.filteredRowData = [];
+    this.filteredColumnData = [];
+    this.tablePreviewColumn.push(item.sheet_query_data.columns_data);
+    this.tablePreviewRow.push(item.sheet_query_data.rows_data);
+    item.sheet_query_data.columns_data.forEach((res:any) => {      
+      let obj1={
+        name:res.column,
+        values: res.data
+      }
+      this.filteredColumnData.push(obj1);
+      console.log('filtercolumn',this.filteredColumnData)
+    });
+    item.sheet_query_data.rows_data.forEach((res:any) => {
+      let obj={
+        name: res.column,
+        data: res.data
+      }
+      this.filteredRowData.push(obj);
+      console.log('filterowData',this.filteredRowData)
+    });
+    if(index == data.sheets.length - 1){
+      isLastIndex = true;
+    } else {
+      isLastIndex = false;
+    }
+    if(item.chart_id === 1){
+      this.pageChangeTableDisplay(item,1,true,isLastIndex,value);
+      this.tablePage=1
+    }else{
+    this.setDashboardSheetData(item, true , true, false, false, '',true,isLastIndex,this.dashboard,value,true);
+    // if (this.displayTabs) {
+    //   this.sheetTabs.forEach((tabData: any) => {
+    //     this.setDashboardSheetData(item, true, true, false, false, '', true, isLastIndex, tabData.dashboard,value);
+    //   })
+    // }
+    if (data.dashboard.tab_data) {
+      data.dashboard.tab_data.forEach((tabData: any) => {
+        // const isLastInThisTab = this.isLastSheetInData(item.sheet_id, tabData.dashboard, data.sheets);
+        this.setDashboardSheetData(item, true, true, false, false, '', true, isLastIndex, tabData.dashboard, value,true);
+      });
+    }
+    }
+  });
+  }
     // selectIcon(icon: { class: string; name: string }) {
     //   this.selectedIcon = icon.class;
     //   console.log('Selected Icon:', icon);
@@ -7362,7 +7470,7 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
     isLastSheetInData(sheetId: number, dashboard: any[], apiData: any[]): boolean {
       if (!dashboard || dashboard.length === 0) return false;
     
-      const dashboardSheetIds = dashboard.map(d => d.sheet_id);
+      const dashboardSheetIds = dashboard.map(d => d.sheet_id || d.sheetId);
       const matchingData = apiData.filter(d => dashboardSheetIds.includes(d.sheet_id));
       
       if (matchingData.length === 0) return false;
@@ -7998,21 +8106,22 @@ downloadAsPDF() {
   });
 }
 switchDatasourceModalOpen(modal:any){
+  this.switchConditions = [{sourceKey:'', sourceDetails:null, targetDbData:[], targetHierarchyId:''}];
   this.modalService.open(modal, {
     centered: true,size:'lg',
     windowClass: 'animate__animated animate__zoomIn',
   });
-this.getCurrentDbs();
+  this.getCurrentDbs();
 }
 
 currentDbKeys: string[] = [];
-selectedCurrentDb: string = '';
-selectedCurrentDbDetails: any = null;
-targetDbData: any[] = [];  
-sourceDbData: any = {}; 
-currentSelectedDbHierarchyId:any;
-targetSelectedDbHierarchyId:any = '';
-disableAddNew=false;
+sourceDbData: any = {};
+switchConditions: any[] = [{
+  sourceKey: '',
+  sourceDetails: null,
+  targetDbData: [],
+  targetHierarchyId: ''
+}];
 fileData:any;
 getCurrentDbs(){
   const obj ={
@@ -8039,86 +8148,103 @@ getCurrentDbs(){
     }
   })
 }
-loadTargetDbs(){
+loadTargetDbs(index:number){
+  const cond = this.switchConditions[index];
   const obj ={
     dashboard_id:this.dashboardId,
-    server_type:this.selectedCurrentDbDetails.server_type
+    server_type:cond.sourceDetails.server_type
   }
-     this.workbechService.getTargetdbsForSwitch(obj).subscribe({
-        next:(data)=>{
-          const currentHierarchyId = this.selectedCurrentDbDetails.hierarchy_id;
-          this.targetDbData = data.user_connections.filter(
-            (db: any) => db.hierarchy_id !== currentHierarchyId
-          );
-          console.log('Filtered Target DBs:', this.targetDbData);
-        },
-        error:(error)=>{
-          console.log(error);
-          this.toasterService.error(error.error.message, 'error', { positionClass: 'toast-top-right' })
-        }
-      })
-}
-onCurrentDbChange() {
-  const selectedList = this.sourceDbData[this.selectedCurrentDb];
-  this.selectedCurrentDbDetails = selectedList ? selectedList[0] : null;
-  if(this.selectedCurrentDbDetails){
-    this.currentSelectedDbHierarchyId = this.selectedCurrentDbDetails.hierarchy_id;
-    const restrictedTypes = ['GOOGLE_SHEETS', 'GOOGLE_ANALYTICS', 'SALESFORCE', 'QUICKBOOKS','CROSS_DATABASE'];
-    this.disableAddNew = restrictedTypes.includes(this.selectedCurrentDbDetails.server_type);
+  this.workbechService.getTargetdbsForSwitch(obj).subscribe({
+      next:(data)=>{
+        const currentHierarchyId = cond.sourceDetails.hierarchy_id;
+        cond.targetDbData = data.user_connections.filter(
+          (db: any) => db.hierarchy_id !== currentHierarchyId
+        );
+      },
+      error:(error)=>{
+        console.log(error);
+        this.toasterService.error(error.error.message, 'error', { positionClass: 'toast-top-right' })
       }
-  this.loadTargetDbs();
+    })
 }
-onTargetDbChange(event: Event){
-  const selectedIndex = (event.target as HTMLSelectElement).value;
-  const selectedDatabase = this.targetDbData[+selectedIndex];
-  console.log('Selected Object:', selectedDatabase);
-  this.targetSelectedDbHierarchyId = selectedDatabase.hierarchy_id;
+onCurrentDbChange(index:number) {
+  const cond = this.switchConditions[index];
+  const selectedList = this.sourceDbData[cond.sourceKey];
+  cond.sourceDetails = selectedList ? selectedList[0] : null;
+  cond.targetHierarchyId = '';
+  cond.targetDbData = [];
+  if(cond.sourceDetails){
+    this.loadTargetDbs(index);
+  }
 }
-switchDatabase() {
+onTargetDbChange(event: Event,index:number){
+  const selectedId = (event.target as HTMLSelectElement).value;
+  this.switchConditions[index].targetHierarchyId = Number(selectedId);
+}
+switchDatabase(isDuplicate: boolean = false) {
+  const existingIds = this.switchConditions.map(c => c.sourceDetails?.hierarchy_id).filter(id => id);
+  const targetIds = this.switchConditions.map(c => c.targetHierarchyId).filter(id => id);
   const obj ={
-    existing_h_id:this.currentSelectedDbHierarchyId,
-    switch_h_id:this.targetSelectedDbHierarchyId,
-    dashboard_id:this.dashboardId
+    existing_h_id:existingIds,
+    switch_h_id:targetIds,
+    dashboard_id:this.dashboardId,
+    is_duplicate:isDuplicate ? true : false
   }
   this.workbechService.datbaseSwitch(obj).subscribe({
     next:(data)=>{
       console.log(data);
       if(data.message ==='Datasource switched successfully'){
+        if(!isDuplicate){
         this.refreshDashboard(true);
+        }
         Swal.fire({
           icon: 'success',
           title: data.message,
           text: 'Data updated with new datasource',
           width: '400px',
-        })
+        }).then(()=>{
+          if(isDuplicate){
+            const encodedId = btoa(data.dashboard_id.toString());
+            this.router.navigate(['/analytify/home/sheetsdashboard/' + encodedId],{state: {dbSwitched: true}}).then(() => window.location.reload());;
+          }
+        });
       }
       this.modalService.dismissAll();
-      this.currentSelectedDbHierarchyId='';
-      this.targetSelectedDbHierarchyId=null;
-      this.selectedCurrentDb = '';  
     },
     error:(error)=>{
       console.log(error);
       this.toasterService.error(error.error.message, 'error', { positionClass: 'toast-top-right' })
-      // Swal.fire({
-      //   icon: 'error',
-      //   title: 'oops!',
-      //   text: error.error.message,
-      //   width: '400px',
-      // })
     }
   })
 }
+getAvailableSources(index:number){
+  const selected = this.switchConditions.filter((_,i)=>i!==index).map(c=>c.sourceKey).filter(k=>k);
+  return this.currentDbKeys.filter(key => !selected.includes(key));
+}
+addCondition(){
+  this.switchConditions.push({sourceKey:'', sourceDetails:null, targetDbData:[], targetHierarchyId:''});
+}
+removeCondition(index:number){
+  this.switchConditions.splice(index,1);
+}
+canAddCondition(){
+  return this.switchConditions.length < this.currentDbKeys.length;
+}
+isConditionsValid(){
+  return this.switchConditions.every(c => c.sourceKey && c.targetHierarchyId);
+}
 addNewDatabaseConnection(){
-  if(this.selectedCurrentDbDetails.server_type === 'EXCEL'){
+  const details = this.switchConditions[0].sourceDetails;
+  if(!details) return;
+  if(details.server_type === 'EXCEL'){
       this.fileInput1.nativeElement.click();
-  }else if(this.selectedCurrentDbDetails.server_type === 'CSV'){
+  }else if(details.server_type === 'CSV'){
         this.fileInput.nativeElement.click();
   }else{
-  this.modalService.dismissAll('close');
-  const encodedSourceDbId = btoa(this.currentSelectedDbHierarchyId.toString());
-  const encodedDashboardId = btoa(this.dashboardId.toString());
-  this.router.navigate(['analytify/datasources/datasource-switch/'+this.selectedCurrentDbDetails.server_type+'/'+encodedSourceDbId+'/'+encodedDashboardId])
+    this.modalService.dismissAll('close');
+    const encodedSourceDbId = btoa(details.hierarchy_id.toString());
+    const encodedDashboardId = btoa(this.dashboardId.toString());
+    this.router.navigate(['analytify/datasources/datasource-switch/'+details.server_type+'/'+encodedSourceDbId+'/'+encodedDashboardId])
   }
 }
 uploadfileCsv(event:any){
@@ -8138,7 +8264,7 @@ csvUpload(fileInput: any){
       console.log(responce)
           if(responce){
             this.toasterService.success('Connected','success',{ positionClass: 'toast-top-right'});
-            this.targetSelectedDbHierarchyId = responce.hierarchy_id
+            this.switchConditions[0].targetHierarchyId = responce.hierarchy_id;
             this.switchDatabase();
           }
         },
@@ -8171,7 +8297,7 @@ excelUpload(fileInput: any){
     this.workbechService.DbConnectionFiles(formData).subscribe({next: (responce) => {
       console.log(responce)
           if(responce){
-            this.targetSelectedDbHierarchyId = responce.hierarchy_id;
+            this.switchConditions[0].targetHierarchyId = responce.hierarchy_id;
             this.switchDatabase();
           }
         },
@@ -8188,6 +8314,200 @@ excelUpload(fileInput: any){
       }
     )
   }
+  summary:any;
+  report_url:any;
+  analyzeAndDownload(){
+      const obj ={
+    dashboard_id:this.dashboardId,
+    }
+     this.workbechService.analyzeAndDownloadDashboard(obj).subscribe({
+        next:(data)=>{
+          if(data){
+          this.modalService.open(this.analyzeDashbaordModal, {
+              centered: true,
+              size: 'lg',
+              windowClass: 'animate__animated animate__zoomIn',
+            });
+          }
+
+          this.summary=data.summary
+          this.report_url = data.report_url;
+        },
+        error:(error)=>{
+          console.log(error);
+              Swal.fire({
+                icon: 'error',
+                title: 'oops!',
+                text: error.error.error,
+                width: '400px',
+              })        
+            }
+      }) 
+  }
+  getSummaryKeys(): string[] {
+  return this.summary ? Object.keys(this.summary) : [];
+}
+
+getSummaryLines(text: string): string[] {
+  if (!text) return [];
+  // Split by \n, remove empty lines, trim, and remove leading bullets/arrows
+  return text.split('\n')
+    .map(line => line.replace(/^(\s*[-*>]+\s*)/, '').trim())
+    .filter(line => line.length > 0);
+}
+downloadAnalyzeReport() {
+  if (!this.summary) {
+    this.toasterService.error('No summary available to download.', 'Error');
+    return;
+  }
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const margin = 15;
+  let y = margin;
+  const lineHeight = 8;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const maxWidth = pageWidth - margin * 2;
+
+  // Title
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Dashboard Analysis Report', margin, y);
+  y += lineHeight * 2;
+
+  doc.setFontSize(12);
+
+  // GenieAIQ Analysis Section
+  if (this.summary['GenieAIQ Analysis']) {
+    if (y > pageHeight - margin - lineHeight * 2) {
+      doc.addPage();
+      y = margin;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(40, 40, 40);
+    doc.text('GenieAIQ Analysis', margin, y);
+    y += lineHeight;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(60, 60, 60);
+    const lines = this.getSummaryLines(this.summary['GenieAIQ Analysis']);
+    lines.forEach((line) => {
+      const wrapped = doc.splitTextToSize(line, maxWidth - 8);
+      wrapped.forEach((wline: string) => {
+        if (y > pageHeight - margin - lineHeight) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.text('\u2022 ' + wline, margin + 5, y);
+        y += lineHeight;
+      });
+    });
+    y += lineHeight;
+  }
+
+  // Widgets Analysis Section
+  if (this.summary.Widgets && Array.isArray(this.summary.Widgets)) {
+    this.summary.Widgets.forEach((widget: any, index: number) => {
+      if (y > pageHeight - margin - lineHeight * 4) {
+        doc.addPage();
+        y = margin;
+      }
+
+      // Widget Title
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(40, 40, 40);
+      doc.text(widget['Widget Title'] || 'Unnamed Widget', margin, y);
+      y += lineHeight;
+
+      // Description
+      if (widget.Description) {
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        const descWrapped = doc.splitTextToSize(widget.Description, maxWidth - 8);
+        descWrapped.forEach((line: string) => {
+          if (y > pageHeight - margin - lineHeight) {
+            doc.addPage();
+            y = margin;
+          }
+          doc.text(line, margin + 5, y);
+          y += lineHeight;
+        });
+        y += lineHeight / 2;
+      }
+
+      // Observations
+      if (widget.Observations) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Observations:', margin + 5, y);
+        y += lineHeight;
+        
+        doc.setFont('helvetica', 'normal');
+        const obsLines = this.getSummaryLines(widget.Observations);
+        obsLines.forEach((line) => {
+          const wrapped = doc.splitTextToSize(line, maxWidth - 13);
+          wrapped.forEach((wline: string) => {
+            if (y > pageHeight - margin - lineHeight) {
+              doc.addPage();
+              y = margin;
+            }
+            doc.text('\u2022 ' + wline, margin + 10, y);
+            y += lineHeight;
+          });
+        });
+        y += lineHeight / 2;
+      }
+
+      // Insights
+      if (widget.Insights) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Insights:', margin + 5, y);
+        y += lineHeight;
+        
+        doc.setFont('helvetica', 'normal');
+        const insightLines = this.getSummaryLines(widget.Insights);
+        insightLines.forEach((line) => {
+          const wrapped = doc.splitTextToSize(line, maxWidth - 13);
+          wrapped.forEach((wline: string) => {
+            if (y > pageHeight - margin - lineHeight) {
+              doc.addPage();
+              y = margin;
+            }
+            doc.text('\u2022 ' + wline, margin + 10, y);
+            y += lineHeight;
+          });
+        });
+      }
+
+      // Add space between widgets
+      y += lineHeight * 2;
+    });
+  }
+
+  doc.save((this.dashboardName || 'dashboard') + '-analysis-report.pdf');
+}
+playAnalyzeModalAnimation() {
+  const watermark = document.querySelector('.sticky-watermark');
+  if (watermark) {
+    watermark.classList.remove('animate');
+    // Force reflow to restart animation
+    void (watermark as HTMLElement).offsetWidth;
+    watermark.classList.add('animate');
+  }
+}
+playGenieAnimation() {
+  const el = document.querySelector('.genie-animate');
+  if (el) {
+    el.classList.remove('bounce');
+    void (el as HTMLElement).offsetWidth; // force reflow
+    el.classList.add('bounce');
+  }
+}
+
+resetGenieAnimation() {
+  const el = document.querySelector('.genie-animate');
+  if (el) {
+    el.classList.remove('bounce');
+  }
+}
 }
 // export interface CustomGridsterItem extends GridsterItem {
 //   title: string;

@@ -87,6 +87,7 @@ export class InsightEchartComponent {
   @Input() mapChartOptions:any;
   @Input() actionId:any;
   @Input() SDKChartOptions: any;
+  @Input() isRadarDistribution:any;
   @Output() saveOrUpdateChart = new EventEmitter<object>();
   @Output() setDrilldowns = new EventEmitter<object>();
   @Output() drillThrough = new EventEmitter<object>();
@@ -166,7 +167,7 @@ export class InsightEchartComponent {
     }
   }
 
-  barChart(chartsColumnData? : any ,chartsRowData?: any ){
+ barChart(chartsColumnData? : any ,chartsRowData?: any ){
     if(chartsColumnData && chartsRowData){
       this.chartsColumnData = chartsColumnData;
       this.chartsRowData = chartsRowData;
@@ -1401,6 +1402,7 @@ radarChart(){
     }
 ]
   }
+  this.radarDistributionSetOptions();
 }
 heatMapChart(){
   const dimensions: Dimension[] = this.dualAxisColumnData;
@@ -2076,12 +2078,16 @@ chartInitialize(){
       }
     }
     if(changes['color'] || changes['barColor'] || changes['lineColor'] || changes['selectedColorScheme'] || changes['isDistributed']){
+     if(this.chartType === 'radar'){
+      this.radarDistributionSetOptions();
+     }else{
       if(this.chartInstance){
         this.colorSetOptions();
         if(changes['selectedColorScheme']){
           this.resetchartoptions();
         }
       }
+    }
     }
     if(changes['xGridColor']){
       if(this.chartInstance){
@@ -2116,6 +2122,9 @@ chartInitialize(){
     }
     if(changes['isBold']){
       this.setDatalabelsFontWeight();
+    }
+    if(changes['isRadarDistribution'] || changes['selectedColorScheme']){
+      this.radarDistributionSetOptions();
     }
     // if(this.chartType === 'bar' && changes['sortType'] && changes['sortType']?.currentValue !== 0){
     //   this.sortSeries(this.sortType);
@@ -2584,6 +2593,69 @@ chartInitialize(){
        this.chartOptions.series[0].label.color = this.dataLabelsColor
      }
   }
+radarDistributionSetOptions() {
+  if (this.chartType === 'radar') {
+    if (this.isRadarDistribution) {
+      // Update the chart options with colors from selectedColorScheme
+      this.chartOptions.series[0].data = this.radarRowData.map((dataItem: any, index: number) => ({
+        ...dataItem,
+        itemStyle: {
+          color: this.selectedColorScheme[index % this.selectedColorScheme.length]
+        },
+        lineStyle: {
+          color: this.selectedColorScheme[index % this.selectedColorScheme.length]
+        },
+        areaStyle: {
+          color: this.selectedColorScheme[index % this.selectedColorScheme.length],
+          opacity: 0.3
+        },
+        label: {
+          show: this.dataLabels,
+          fontFamily: this.dataLabelsFontFamily,
+          fontSize: this.dataLabelsFontSize,
+          fontWeight: this.isBold ? 700 : 400,
+          color: this.selectedColorScheme[index % this.selectedColorScheme.length],
+          position: this.dataLabelsFontPosition,
+          formatter: (params: any) => this.formatNumber(params.value)
+        }
+      }));
+
+      // Update the color array for the series
+      this.chartOptions.color = this.selectedColorScheme;
+    } else {
+      // Use a single color when distribution is false
+      const defaultColor = this.color;
+      this.chartOptions.series[0].data = this.radarRowData.map((dataItem: any) => ({
+        ...dataItem,
+        itemStyle: {
+          color: defaultColor
+        },
+        lineStyle: {
+          color: defaultColor
+        },
+        areaStyle: {
+          color: defaultColor,
+          opacity: 0.3
+        },
+        label: {
+          show: this.dataLabels,
+          fontFamily: this.dataLabelsFontFamily,
+          fontSize: this.dataLabelsFontSize,
+          fontWeight: this.isBold ? 700 : 400,
+          color: defaultColor,
+          position: this.dataLabelsFontPosition,
+          formatter: (params: any) => this.formatNumber(params.value)
+        }
+      }));
+
+      // Set single color for the series
+      this.chartOptions.color = [defaultColor];
+    }
+
+    // Update the chart with new options
+    this.chartInstance?.setOption(this.chartOptions, true);
+  }
+}
   dataLabelsFontPositionSetOptions(){
       if(this.chartType === 'radar'){
       this.chartOptions.series[0].data.forEach((dataItem: { label: { position: any; }; }) => {

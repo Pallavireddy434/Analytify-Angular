@@ -107,7 +107,6 @@ export class InsightApexComponent {
     } else {
       this.generateChart();
     }
-    
     if(changes['chartsColumnData']  || changes['dualAxisColumnData'] ){
       // if(changes['chartsColumnData'].currentValue.length>0 || changes['dualAxisColumnData'].currentValue.length>0){
         this.updateCategories();
@@ -323,7 +322,6 @@ export class InsightApexComponent {
       this.sideBySideCharts.updateOptions(this.chartOptions);
     }
   }
-
   ngOnDestroy(): void {
     if(this.barCharts){
       this.barCharts.destroy();
@@ -521,7 +519,7 @@ export class InsightApexComponent {
         bar: {
           distributed : this.isDistributed,
           dataLabels: {
-            position: this.dataLabelsFontPosition,
+            position:this.dataLabelsFontPosition,
           },
         },
       },
