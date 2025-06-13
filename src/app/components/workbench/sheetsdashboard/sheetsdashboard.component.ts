@@ -60,6 +60,7 @@ import { saveAs } from 'file-saver';
 import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
 import { i } from 'mathjs';
+import { SanitizeHtmlPipe } from '../../../shared/pipes/sanitize-html.pipe';
 
 interface TableRow {
   [key: string]: any;
@@ -122,7 +123,7 @@ export class CustomVirtualScrollStrategy extends FixedSizeVirtualScrollStrategy 
   imports: [NgxEchartsModule,SharedModule,NgbModule,CommonModule,ResizableModule,GridsterModule,
     CommonModule,GridsterItemComponent,GridsterComponent,NgApexchartsModule,CdkDropListGroup, NgSelectModule,
     CdkDropList, CdkDrag,ChartsStoreComponent,FormsModule, MatTabsModule , CKEditorModule , InsightsButtonComponent,
-    NgxPaginationModule,NgSelectModule, InsightEchartComponent,SharedModule,FilterIconsPipe,FormatMeasurePipe,ScrollingModule,TestPipe],
+    NgxPaginationModule,NgSelectModule, InsightEchartComponent,SharedModule,FilterIconsPipe,FormatMeasurePipe,ScrollingModule,TestPipe,SanitizeHtmlPipe],
   templateUrl: './sheetsdashboard.component.html',
   styleUrl: './sheetsdashboard.component.scss'
 })
@@ -229,7 +230,11 @@ export class SheetsdashboardComponent implements OnDestroy {
   @ViewChild('fileInput') fileInput:any;
   @ViewChild('fileInput1') fileInput1:any;
   @ViewChild('analyzeDashbaordModal') analyzeDashbaordModal:any;
-
+  @ViewChild('textEditorModal') textEditorModal!: any;
+  @ViewChild('ImageUploadText') ImageUploadText!: ElementRef;
+  textItem: any;
+  textEditorContent: string = '';
+  textEditorTitle: string = '';
   lastRefresh: any;
   nextRefresh: any;
   tabData: any;
@@ -2789,7 +2794,7 @@ arraysHaveSameData(arr1: number[], arr2: number[]): boolean {
       this.dashboardTest.splice(this.dashboardTest.indexOf(item), 1);
       this.sheetTabs[this.selectedTabIndex].dashboard = this.dashboardTest;
     } else {
-      if(item['type'] ==='image'){
+      if(item['type'] ==='image' || item['type'] === 'text'){
         let removeIndex = this.dashboard.findIndex((sheet:any) => item.id == sheet.id);
         this.dashboard.splice(removeIndex, 1);
       }else{
@@ -2807,7 +2812,7 @@ arraysHaveSameData(arr1: number[], arr2: number[]): boolean {
     }
     }
     this.canNavigateToAnotherPage = true;
-    if(this.dashboardId && item['type'] !=='image'){
+    if(this.dashboardId && item['type'] !=='image' && item['type'] !== 'text'){
         this.deleteSheetFilter(item.sheetId);
       this.actionUpdateOnSheetRemove(item.sheetId);
     }
@@ -7032,6 +7037,149 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
       }
       }
      }
+  addTextItem() {
+    this.textEditorContent = '';
+    this.textEditorTitle = '';
+
+    this.modalService.open(this.textEditorModal, {
+      backdrop: 'static',
+      keyboard: false,
+      size: 'lg',
+      windowClass: 'text-editor-modal'
+    });
+  }
+
+  showTextTitle: boolean = true; // Controls title visibility
+  saveTextContent() {
+      const formattedContent = `<div class="text-content-wrapper">${this.textEditorContent}</div>`;
+
+      if (this.editingItemId) {
+    // Update existing item
+    const itemIndex = this.dashboard.findIndex(item => item['id'] === this.editingItemId);
+    if (itemIndex !== -1) {
+      this.dashboard[itemIndex].data.content = formattedContent;
+      if (this.showTextTitle) {
+        this.dashboard[itemIndex].data.title = this.textEditorTitle || 'Text';
+      } else {
+        this.dashboard[itemIndex].data.title = '';
+      }
+      this.dashboard[itemIndex]['editorContent'] = formattedContent;
+    }
+    this.editingItemId = null; // Reset editing state
+  } else {
+  const newItem: any = {
+    id: uuidv4(),
+    cols: 2,
+    rows: 2,
+    y: 20,
+    x: 10,
+    type: 'text',
+    data: {
+      content: formattedContent,
+      title: this.showTextTitle ? (this.textEditorTitle || 'Text') : ''
+    },
+    dragEnabled: true,
+    resizeEnabled: true,
+    editorContent: formattedContent
+      };
+
+      // if (this.displayTabs && this.selectedTabIndex >= 0) {
+      //   this.dashboardTest.push(newItem);
+      //   this.sheetTabs[this.selectedTabIndex].dashboard = this.dashboardTest;
+      // } else {
+        this.dashboard.push(newItem);
+      // }
+    }
+      this.modalService.dismissAll();
+      this.canNavigateToAnotherPage = true;
+    }
+    editingItemId: string | null = null;
+    editTextItem(item: any) {
+      this.textEditorContent = item.data.content;
+      this.textEditorTitle = item.data.title;
+        this.showTextTitle = !!item.data.title; // Set toggle based on existing title
+      this.editingItemId = item.id; // Store the ID of item being edited
+
+      this.modalService.open(this.textEditorModal, {
+        backdrop: 'static',
+        keyboard: false,
+        size: 'lg',
+        windowClass: 'text-editor-modal'
+      });
+    }
+    uploadTextImage(item: any) {
+  this.ImageUploadText.nativeElement.click();
+  this.textItem = item;
+}
+
+imageFileSelectForText(event: any) {
+  const file = event.target.files[0];
+  if (file) {
+    if (!file.type.startsWith('image/')) {
+      this.toasterService.error('Not a supported file format. Please select an image file.','info',{ positionClass: 'toast-top-center'})
+      event.target.value = '';
+      return;
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const uploadedImage = e.target.result;
+        if(uploadedImage) {
+          this.updateTextImage(this.textItem, uploadedImage);
+        }
+        event.target.value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+}
+
+updateTextImage(item: any, textImage: any) {
+  const itemIndex = this.dashboard.findIndex((d) => d['id'] === item.id);
+  let tabItemIndex = -1;
+  if(this.displayTabs && this.sheetTabs && this.selectedTabIndex >= 0 && this.sheetTabs[this.selectedTabIndex] && this.sheetTabs[this.selectedTabIndex].dashboard && this.sheetTabs[this.selectedTabIndex].dashboard.length > 0) {
+    tabItemIndex = this.sheetTabs[this.selectedTabIndex].dashboard.findIndex((d:any) => d['id'] === item.id);
+  }
+
+  if (itemIndex !== -1) {
+    this.dashboard[itemIndex] = {
+      ...item,
+      textImage: textImage,
+    };
+    this.canNavigateToAnotherPage = true;
+  } else if(tabItemIndex !== -1) {
+    this.sheetTabs[this.selectedTabIndex].dashboard[tabItemIndex] = {
+      ...item,
+      textImage: textImage,
+    };
+    this.canNavigateToAnotherPage = true;
+  }
+}
+
+removeTextImage(item: any): void {
+  const itemIndex = this.dashboard.findIndex((d) => d['id'] === item.id);
+  let tabItemIndex = -1;
+  if(this.displayTabs && this.sheetTabs && this.selectedTabIndex >= 0 && this.sheetTabs[this.selectedTabIndex] && this.sheetTabs[this.selectedTabIndex].dashboard && this.sheetTabs[this.selectedTabIndex].dashboard.length > 0) {
+    tabItemIndex = this.sheetTabs[this.selectedTabIndex].dashboard.findIndex((d:any) => d['id'] === item.id);
+  }
+
+  if (itemIndex !== -1) {
+    const updatedItem = {
+      ...this.dashboard[itemIndex]
+    };
+    delete updatedItem['textImage'];
+    this.dashboard[itemIndex] = updatedItem;
+    this.canNavigateToAnotherPage = true;
+  } else if(tabItemIndex !== -1) {
+    const updatedItem = {
+      ...this.sheetTabs[this.selectedTabIndex].dashboard[tabItemIndex]
+    };
+    delete updatedItem.textImage;
+    this.sheetTabs[this.selectedTabIndex].dashboard[tabItemIndex] = updatedItem;
+    this.canNavigateToAnotherPage = true;
+  }
+}
+
+
      kpiItem:any;
      uploadedKpiImage:any;
      uploadKpiImage(item:any){
