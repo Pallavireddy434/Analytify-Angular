@@ -300,7 +300,7 @@
                                             <button type="button" 
                                                 class="btn btn-primary w-100" 
                                                 (click)="addTextItem()">
-                                                <i class="fa fa-font"></i> Add Text
+                                                <i class="fa fa-font"></i>   Add Text
                                             </button>
                                             </div>
                                           </div>
@@ -1184,12 +1184,16 @@
                     </button>
 
                     <!-- Add Background Button -->
-                    <button *ngIf="!isPublicUrl && item['type'] === 'text'"  
+                    <button *ngIf="!isPublicUrl && item['type'] === 'text' && !item['textImage']" 
                             (click)="uploadTextImage(item)" 
                             ngbTooltip="Add Background Image">
                       <i class="fa fa-image"></i>
                     </button>
-
+                    <button *ngIf="!isPublicUrl && item['type'] === 'text' && item['textImage']"  
+                              (click)="uploadTextImage(item)" 
+                              ngbTooltip="Edit Background Image">
+                        <i class="fa fa-image"></i>
+                      </button>
                     <!-- Remove Background Button -->
                     <button *ngIf="!isPublicUrl && item['type'] === 'text' && item['textImage']" 
                             (click)="removeTextImage(item)" 
@@ -1312,7 +1316,7 @@
                           [classesList]="'dropdown-item'" [buttonName]="'Remove Image'" [previledgeId]="37" [isBtn]="false"
                           (btnClickEvent)="removeKpiImage(item)" [isIcon]="false"></app-insights-button>
                           <app-insights-button 
-                            *ngIf="!isPublicUrl && item['type'] === 'text'" 
+                            *ngIf="!isPublicUrl && item['type'] === 'text' && !item['textImage']" 
                             [classesList]="'dropdown-item'" 
                             [buttonName]="'Add Background Image'"
                             [previledgeId]="37" 
@@ -1320,7 +1324,15 @@
                             (btnClickEvent)="uploadTextImage(item)" 
                             [isIcon]="false">
                           </app-insights-button>
-
+                          <app-insights-button 
+                            *ngIf="!isPublicUrl && item['type'] === 'text' && item['textImage']" 
+                            [classesList]="'dropdown-item'" 
+                            [buttonName]="'Edit Background Image'"
+                            [previledgeId]="37" 
+                            [isBtn]="false" 
+                            (btnClickEvent)="uploadTextImage(item)" 
+                            [isIcon]="false">
+                          </app-insights-button>
                           <app-insights-button 
                             *ngIf="!isPublicUrl && item['type'] === 'text' && item['textImage']" 
                             [classesList]="'dropdown-item'" 
@@ -2406,7 +2418,7 @@
      <button type="button" class="btn btn-secondary" (click)="modal.dismiss('Cancel click')">
       Close
     </button>
-    <button type="button" class="btn btn-primary" (click)="saveTextContent()">  {{editingItemId ? 'Update Text' : 'Add to Dashboard'}}</button>
+    <button type="button" class="btn btn-primary" [disabled]="!validateTextEditor()" (click)="saveTextContent()">  {{editingItemId ? 'Update Text' : 'Add to Dashboard'}}</button>
   </div>
 </ng-template>
   <!-- Overlay Genie AIQ Icon -->

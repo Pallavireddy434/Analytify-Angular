@@ -7178,7 +7178,17 @@ removeTextImage(item: any): void {
     this.canNavigateToAnotherPage = true;
   }
 }
-
+validateTextEditor(): boolean {
+  // If title is enabled but empty, return false
+  if (this.showTextTitle && (!this.textEditorTitle || this.textEditorTitle.trim() === '')) {
+    return false;
+  }
+  // Check if content is not empty
+  if (!this.textEditorContent || this.textEditorContent.trim() === '') {
+    return false;
+  }
+  return true;
+}
 
      kpiItem:any;
      uploadedKpiImage:any;
