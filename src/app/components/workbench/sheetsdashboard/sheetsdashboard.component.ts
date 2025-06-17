@@ -8360,8 +8360,19 @@ switchDatabase(isDuplicate: boolean = false) {
       this.modalService.dismissAll();
     },
     error:(error)=>{
-      console.log(error);
-      this.toasterService.error(error.error.message, 'error', { positionClass: 'toast-top-right' })
+      const errorMessage = error.error.message;
+      const missingColumns = error.error.missing_columns;
+      let formattedMessage = errorMessage;
+
+      if (missingColumns) {
+        formattedMessage += "\nMissing Columns:";
+        for (const [table, columns] of Object.entries(missingColumns)) {
+          formattedMessage += `\n- Table: ${table}, Columns: ${columns}`;
+        }
+      }
+
+      // Show the formatted error message using the toaster service
+      this.toasterService.error(formattedMessage, 'Error', { positionClass: 'toast-top-right' });
     }
   })
 }
