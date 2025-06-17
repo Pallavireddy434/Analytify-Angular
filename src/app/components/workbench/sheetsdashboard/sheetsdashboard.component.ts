@@ -289,8 +289,10 @@ export class SheetsdashboardComponent implements OnDestroy {
 
         const navigation = this.router.getCurrentNavigation();
         const dbSwitched = navigation?.extras?.state?.['dbSwitched'] ?? history.state?.['dbSwitched'];
-      
-        if (dbSwitched) {
+        const dbcopy = navigation?.extras?.state?.['dbCopy'] ?? history.state?.['dbCopy'];
+        if(dbcopy){
+          this.toasterService.success('Dashboard Copied Successfully.','success',{ positionClass: 'toast-top-right'})
+        }else if (dbSwitched) {
           this.getSavedDashboardData();
            setTimeout(() => {
             this.refreshDashboard(true);  // might run before API completes!
