@@ -294,8 +294,10 @@ export class SheetsdashboardComponent implements OnDestroy {
 
         const navigation = this.router.getCurrentNavigation();
         const dbSwitched = navigation?.extras?.state?.['dbSwitched'] ?? history.state?.['dbSwitched'];
-      
-        if (dbSwitched) {
+        const dbcopy = navigation?.extras?.state?.['dbCopy'] ?? history.state?.['dbCopy'];
+        if(dbcopy){
+          this.toasterService.success('Dashboard Copied Successfully.','success',{ positionClass: 'toast-top-right'})
+        }else if (dbSwitched) {
           this.getSavedDashboardData();
            setTimeout(() => {
             this.refreshDashboard(true);  // might run before API completes!
@@ -6455,21 +6457,27 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
   //   })).filter(sheet => sheet.id != this.sourceSheetId);
   //   console.log('source:',this.sourceSheetList, 'target: ',this.targetSheetList);
   // }
-  getTargetSheetsList(event? : any) {
+  getTargetSheetsList(event?: any) {
     this.targetSheetList = [];
     this.isAllTargetSheetsSelected = false;
-    const sourceCategory = Object.keys(this.sourceSheetList);
-    Object.keys(this.sourceSheetList).forEach((category: any) => {
-      this.targetSheetList.push(
-        ...this.sourceSheetList[category]
-          .filter((sheet: any) => sheet.sheet_id !== this.sourceSheetId && sheet.chart_id !== 25)
-          .map((sheet: any) => ({
-            ...sheet,
-            selected: false,
-          }))
-      );
-    });
-    console.log("Target Sheets:", this.targetSheetList);
+
+    const selectedId = Number(this.sourceSheetId);
+
+    // Determine which category (tab) the selected source sheet belongs to
+    const sourceCategory = Object.keys(this.sourceSheetList).find((category: any) =>
+      this.sourceSheetList[category].some((sheet: any) => Number(sheet.sheet_id) === selectedId)
+    );
+
+    if (sourceCategory) {
+      this.targetSheetList = this.sourceSheetList[sourceCategory]
+        .filter((sheet: any) => Number(sheet.sheet_id) !== selectedId && sheet.chart_id !== 25)
+        .map((sheet: any) => ({
+          ...sheet,
+          selected: false,
+        }));
+    }
+
+    console.log('Target Sheets:', this.targetSheetList);
   }
   
   updateSelectedSheets() {

@@ -178,7 +178,7 @@ copyDashboard(dashboardId:any){
       const newDashboardId = data.dashboard_id;
       this.loaderService.show();
       const encodedDashboardId = btoa(newDashboardId.toString());
-      this.router.navigate(['/analytify/home/sheetsdashboard/'+encodedDashboardId]);
+          this.router.navigate(['/analytify/home/sheetsdashboard/',encodedDashboardId],{state: {dbCopy: true}})
     },
     error:()=>{
       this.toasterservice.error('Dashboard copy failed. Please try again.','error',{ positionClass: 'toast-top-right'});
