@@ -390,7 +390,7 @@ horizontalBarChart(chartsColumnData?: any, chartsRowData?: any) {
         data: this.chartsRowData,
         label: {
           show: true,
-          position: this.dataLabelsFontPosition,
+          position: this.dataLabelsFontPosition ? 'top' : 'right',
           fontFamily: this.dataLabelsFontFamily,
           verticalAlign: 'middle',
           distance:5,
@@ -398,7 +398,8 @@ horizontalBarChart(chartsColumnData?: any, chartsRowData?: any) {
           fontWeight: this.isBold ? 700 : 400,
           color: this.dataLabelsColor,
           formatter: (params: any) => this.formatNumber(params.value)
-        }
+        },
+        colorBy: 'data',
       }
     ],
     color: this.isDistributed ? this.selectedColorScheme : this.color

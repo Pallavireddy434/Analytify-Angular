@@ -1627,6 +1627,9 @@ try {
     this.guage = guage;
     this.map = map;
     this.calendar = calendar;
+    if(this.bar){
+      this.isHorizontalBar = false;
+    }
     if(!(this.bar|| this.horizontalBar || this.pie || this.donut)){
       this.draggedDrillDownColumns = [];
       this.drillDownObject = [];
