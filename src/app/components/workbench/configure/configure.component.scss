@@ -179,6 +179,13 @@ body {  margin: 0;  font-family: 'Segoe UI', sans-serif;  background-color: #f0f
   }
   li#general-tab a {margin: 0px !important;}
 
+  .general-tab {
+      padding: 0px;
+      margin: 0px;
+      border-radius: 7px !important;
+  }
+  .general-tab a {margin: 0px !important;}
+
   li#Side_tab_UI {
       padding: 0px;
       border-radius: 7px !important;
