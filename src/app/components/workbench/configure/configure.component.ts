@@ -24,8 +24,10 @@ export class ConfigureComponent implements OnInit {
   showPassword: boolean = false;
   activeTab = 'configure';
   dashboardId:any;
+  sheetId:any;
   activateEmailTab=false;
   dashboardName:any;
+  sheetName:any;
   selectableDashbaord = false;
   userId:any;
   enabledEmail=false;
@@ -35,25 +37,57 @@ export class ConfigureComponent implements OnInit {
     private router: Router,route:ActivatedRoute,
     private toasterService:ToastrService
   ) {
-    if(this.router.url.includes('/analytify/configure-page/email')){
+    if(this.router.url.includes('/analytify/configure-page/email/dashboard')){
       if (route.snapshot.params['id'])
        this.activeTab = 'email',
        this.dashboardId = +atob(route.snapshot.params['id']);
        this.activateEmailTab=true;
        this.getdashboardDetails(this.dashboardId);
-       this.selectableDashbaord=false
+       this.selectableDashbaord=false;
+       this.disableSheet = true;
+       this.disableDatasource = true;
+      this.activeEmailModule = 'dashboard';
+
+    }else if (this.router.url.includes('/analytify/configure-page/email/sheet')) {
+    this.activeTab = 'email',
+    this.activeEmailModule = 'sheet';
+    this.disableDashboard = true;
+    this.disableSheet = false;
+    this.activateEmailTab=true;
+    this.disableDatasource = true;
+    if (route.snapshot.params['id']) {
+      this.sheetId = +atob(route.snapshot.params['id']);
+      this.getsheetDetails(this.sheetId);
+      this.selectableDashbaord = false;
     }
-    if(this.router.url.includes('/analytify/configure-page/configure')){
-       this.selectableDashbaord=true;
-    }
+  } else {
+    // Default: all enabled
+    this.disableDashboard = false;
+    this.disableSheet = false;
+    this.disableDatasource = false;
+    this.selectableDashbaord = true;
+  }
+    // if(this.router.url.includes('/analytify/configure-page/configure')){
+    //    this.selectableDashbaord=true;
+    // }
 
   }
+  disableDashboard = false;
+disableSheet = false;
+disableDatasource = false;
 emailToggles = {
   update: false,
   sync: false,
   autosync: false
 };
+sheetToggles = {
+  sheet_update: false,
+  sheet_refresh: false,
+};
 dashboards :any=[];
+sheets :any=[];
+
+activeEmailModule = 'dashboard';
 
 ngOnInit(): void {
     // if(this.activateEmailTab){
@@ -62,6 +96,7 @@ ngOnInit(): void {
 }
 
 selectedDashboard: any = null;
+selectedSheet: any = null;
   submitApiKey() {
     const obj = {
       key: this.apiKey,
@@ -122,6 +157,25 @@ selectedDashboard: any = null;
     });
   }
   }
+  getSheetsList(){
+    this.workbechService.getUserSheetList().subscribe({
+      next: (data: any) => {
+        if (data) {
+          console.log(data);
+          this.sheets = data;
+        }
+      },
+      error: (error: any) => {
+        Swal.fire({
+          icon: 'warning',
+          text: error.error.message,
+          width: '300px',
+        });
+        console.log(error);
+      },
+    });
+  }
+
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
   }
@@ -146,11 +200,40 @@ selectedDashboard: any = null;
       },
     });
   }
+  getsheetDetails(id:any){
+    this.workbechService.getMailAlertsSheetsData(id).subscribe({
+      next: (data: any) => {
+        if (data) {
+          console.log(data);
+          this.sheetName = data.data?.sheet_name;
+           this.updateSheetTogglesFromApi(data.data?.mail_action);
+          this.userId =data.data?.id;
+          this.enabledEmail=data.data?.is_enabled;
+        }
+      },
+      error: (error: any) => {
+        Swal.fire({
+          icon: 'warning',
+          text: error.error.message,
+          width: '300px',
+        });
+        console.log(error);
+      },
+    });
+
+  }
   checkSaveorUpdate(){
     if(this.enabledEmail){
       this.updateEmailAlert();
     }else{
       this.emailAlertSave();
+    }
+  }
+  checkSaveorUpdateSheet(){
+    if(this.enabledEmail){
+      this.updateSheetEmailAlert();
+    }else{
+      this.saveSheetEmailAlert();
     }
   }
   updateTogglesFromApi(mailActionString: string) {
@@ -174,10 +257,28 @@ selectedDashboard: any = null;
     autosync: actions.includes('auto-sync')
   };
   }
+  updateSheetTogglesFromApi(mailActionString: string) {
+  let actions: string[] = [];
+  try {
+    if (mailActionString && mailActionString.trim().startsWith('[')) {
+      actions = JSON.parse(mailActionString.replace(/'/g, '"'));
+    }
+  } catch (error) {
+    console.warn('Invalid mailAction string:', mailActionString, error);
+  }
+  this.sheetToggles = {
+    sheet_update: actions.includes('sheet_update'),
+    sheet_refresh: actions.includes('sheet_refresh'),
+  };
+}
   onDashboardSelect(dashboard:any){
     this.dashboardId=dashboard?.dashboard_id;
     console.log(dashboard?.dashboard_id)
     this.getdashboardDetails(dashboard?.dashboard_id)
+  }
+  onSheetSelect(sheet:any){
+    this.sheetId=sheet?.sheet_id;
+    this.getsheetDetails(sheet?.sheet_id);
   }
   readonly toggleKeyMap = {
     update: 'update',
@@ -228,7 +329,7 @@ selectedDashboard: any = null;
       next: (data: any) => {
         if (data) {
           console.log(data);
-          if(data.status ==='success'){
+          if(data){
           this.toasterService.success('Saved Successfully','success',{ positionClass: 'toast-top-right'});
           this.getdashboardDetails(this.dashboardId);
           }
@@ -246,4 +347,60 @@ selectedDashboard: any = null;
       },
     });
   }
+  saveSheetEmailAlert() {
+  const payload = {
+    mail_action: this.getSelectedSheetMailActions(),
+    sheet_id: this.sheetId,
+    is_enabled: true
+  };
+
+  this.workbechService.saveEmailAlerts(payload)
+    .subscribe({
+      next: (res: any) => {
+        if (res) {
+          console.log(res);
+          if(res){
+          this.toasterService.success('Saved Successfully','success',{ positionClass: 'toast-top-right'});
+          this.getdashboardDetails(this.dashboardId);
+          }
+          this.dashboardName = res.data?.dashboard_name;
+          this.updateTogglesFromApi(res.data?.mail_action);
+        } // Optionally refresh sheet alert data here
+      },
+      error: (err) => {
+        this.toasterService.error('Failed to save sheet email alert');
+      }
+    });
+}
+
+updateSheetEmailAlert() {
+  const payload = {
+    id: this.userId,
+    dashboard_id: null,
+    sheet_id: this.sheetId,
+    datasource_id: null,
+    mail_action: this.getSelectedSheetMailActions(),
+    is_enabled: true,
+    alert_level: 'sheet'
+  };
+
+  this.workbechService.updateEmailAlerts(payload)
+    .subscribe({
+      next: (res: any) => {
+        this.toasterService.success('Sheet email alert updated!');
+        // Optionally refresh sheet alert data here
+      },
+      error: (err) => {
+        this.toasterService.error('Failed to update sheet email alert');
+      }
+    });
+}
+
+// Helper to get selected actions as array
+getSelectedSheetMailActions(): string[] {
+  const actions = [];
+  if (this.sheetToggles.sheet_update) actions.push('sheet_update');
+  if (this.sheetToggles.sheet_refresh) actions.push('sheet_refresh');
+  return actions;
+}
 }

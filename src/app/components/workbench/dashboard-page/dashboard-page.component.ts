@@ -457,7 +457,7 @@ viewSchedular(dashboardId:any,modal: any){
 gotoConfigureEmailAlerts(id:any){
     const encodedDatabaseId = btoa(id.toString());
 
-this.router.navigate(['/analytify/configure-page/email/'+encodedDatabaseId])
+this.router.navigate(['/analytify/configure-page/email/dashboard/'+encodedDatabaseId])
 }
 
 

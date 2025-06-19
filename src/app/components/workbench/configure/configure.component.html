@@ -81,21 +81,10 @@
               <li [ngbNavItem]="'email'" id="Side_tab_UI">
                 <a ngbNavLink (click)="getDashbaordList()"><i class="fe fe-mail me-1"></i> Email Configuration</a>
                  <ng-template ngbNavContent id="email">
-                <div class="card profile-card">
+                <!-- <div class="card profile-card">
                 <div class="card-body">
                         <div class="mb-4" *ngIf="selectableDashbaord">
                     <label for="dashboardSelect" class="form-label">Select a Dashboard</label>
-                    <!-- <select
-                        id="dashboardSelect"
-                        class="form-select"
-                        [(ngModel)]="selectedDashboard"
-                        (change)="onDashboardSelect($event.target)">
-                        <option value="" disabled selected>Select Dashboard</option>
-                        <option *ngFor="let dash of dashboards" [value]="dash">{{ dash }}</option>
-                    </select> -->
-                    <!-- <ng-select class="form-control p-0" name="choices-multiple-remove-button" id="choices-multiple-remove-button" (change)="onDashboardSelect($event)"  [closeOnSelect]="false" [(ngModel)]="dashboardName" [multiple]="false" placeholder="Select Dashbaord">
-                   <ng-option *ngFor="let dash of dashboards"  selected>{{dash.dashboard_name}}</ng-option>
-                    </ng-select> -->
                     <ng-select 
                     class="form-control p-0"
                     [items]="dashboards"
@@ -162,7 +151,405 @@
                             </div>
                         </div>    
                     </div>
+                </div> -->
+                <!-- ...existing code... -->
+            <div class="card profile-card">
+                <div class="card-body">
+                <div class="module-switcher mb-4">
+                    <button 
+                    class="module-btn" 
+                    [class.active]="activeEmailModule === 'dashboard'" 
+                    (click)="activeEmailModule = 'dashboard'"
+                    [disabled]="disableDashboard">
+                    <i class="fe fe-grid me-1"></i> Dashboard
+                    </button>
+                    <button 
+                    class="module-btn" 
+                    [class.active]="activeEmailModule === 'sheet'" 
+                    (click)="activeEmailModule = 'sheet';getSheetsList()"
+                     [disabled]="disableSheet">
+                    <i class="fe fe-table me-1"></i> Sheet
+                    </button>
+                    <button 
+                    class="module-btn" 
+                    [class.active]="activeEmailModule === 'datasource'" 
+                    (click)="activeEmailModule = 'datasource'"
+                    [disabled]="disableDatasource">
+                    <i class="fe fe-database me-1"></i> Datasource
+                    </button>
                 </div>
+
+                <div *ngIf="activeEmailModule === 'dashboard'" class="module-section">
+                    <!-- <div class="card-body">
+                        <div class="mb-4" *ngIf="selectableDashbaord">
+                    <label for="dashboardSelect" class="form-label">Select a Dashboard</label>
+                    <ng-select 
+                    class="form-control p-0"
+                    [items]="dashboards"
+                    bindLabel="dashboard_name"
+                    [(ngModel)]="selectedDashboard"
+                    (change)="onDashboardSelect($event)"
+                    [multiple]="false"
+                    [closeOnSelect]="true"
+                    [clearable]="false"
+                    placeholder="Select Dashboard">
+                    </ng-select>
+                    </div>
+                        <div class="row">
+                            <h3 class="mt-2 mb-4"> Email Notification Settings </h3>
+                            <h6 class="text-muted mb-4" *ngIf="dashboardName">
+                            for Dashboard: <strong> {{dashboardName}} </strong>
+                            </h6>
+                            <div class="col-xl-10">
+                                <div class="email-text mt-2">
+                                    <h6>Update Dashboard Alerts</h6>
+                                    <p>Get emails when the dashboard is updated</p>
+                                </div>
+                            </div>
+                           <div class="col-xl-2">
+                            <div 
+                                class="toggle toggle-primary"
+                                [ngClass]="{ 'on': emailToggles.update,'disabled-toggle': !(selectedDashboard || activateEmailTab) }"
+                                (click)="emailToggles.update = !emailToggles.update;checkSaveorUpdate()">
+                                <span></span>
+                            </div>
+                            </div>
+                        </div>
+                          <div class="row">
+                            <div class="col-xl-10">
+                                <div class="email-text mt-2">
+                                    <h6>Refresh Dashboard Alerts</h6>
+                                    <p>Get emails when the dashboard is refreshed manually</p>
+                                </div>
+                            </div>
+                            <div class="col-xl-2">
+                            <div 
+                                class="toggle toggle-primary"
+                                [ngClass]="{ 'on': emailToggles.sync,'disabled-toggle': !(selectedDashboard || activateEmailTab)  }"
+                                (click)="emailToggles.sync = !emailToggles.sync;checkSaveorUpdate()">
+                                <span></span>
+                            </div>
+                            </div>
+
+                        </div>
+                          <div class="row">
+                            <div class="col-xl-10">
+                                <div class="email-text mt-2">
+                                    <h6>Auto-sync Dashboard Alerts</h6>
+                                    <p>Get emails when the dashboard is refreshed  by auto-refresh</p>
+                                </div>
+                            </div>
+                            <div class="col-xl-2">
+                            <div 
+                                class="toggle toggle-primary"
+                                [ngClass]="{ 'on': emailToggles.autosync,'disabled-toggle': !(selectedDashboard || activateEmailTab) }"
+                                (click)="emailToggles.autosync = !emailToggles.autosync;checkSaveorUpdate()">
+                                <span></span>
+                            </div>
+                            </div>
+                        </div>    
+                    </div> -->
+  <div class="dashboard-section">
+    <!-- Dashboard Update Alerts -->
+    <div class="dashboard-flat-card mb-4">
+  <div class="card-body">
+    <div class="mb-4" *ngIf="selectableDashbaord">
+      <label for="dashboardSelect" class="form-label">Select a Dashboard</label>
+      <ng-select 
+        class="form-control p-0"
+        [items]="dashboards"
+        bindLabel="dashboard_name"
+        [(ngModel)]="selectedDashboard"
+        (change)="onDashboardSelect($event)"
+        [multiple]="false"
+        [closeOnSelect]="true"
+        [clearable]="false"
+        placeholder="Select Dashboard">
+      </ng-select>
+    </div>
+    <div class="row">
+      <h3 class="mt-2 mb-4">Email Notification Settings</h3>
+      <h6 class="text-muted mb-4" *ngIf="dashboardName">
+        for Dashboard: <strong>{{dashboardName}}</strong>
+      </h6>
+      <div class="col-xl-10">
+        <div class="email-text mt-2">
+          <h6>Update Dashboard Alerts</h6>
+          <p>Get emails when the dashboard is updated</p>
+        </div>
+      </div>
+      <div class="col-xl-2">
+        <div 
+          class="toggle toggle-primary"
+          [ngClass]="{ 'on': emailToggles.update,'disabled-toggle': !(selectedDashboard || activateEmailTab) }"
+          (click)="emailToggles.update = !emailToggles.update;checkSaveorUpdate()">
+          <span></span>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-10">
+        <div class="email-text mt-2">
+          <h6>Refresh Dashboard Alerts</h6>
+          <p>Get emails when the dashboard is refreshed manually</p>
+        </div>
+      </div>
+      <div class="col-xl-2">
+        <div 
+          class="toggle toggle-primary"
+          [ngClass]="{ 'on': emailToggles.sync,'disabled-toggle': !(selectedDashboard || activateEmailTab)  }"
+          (click)="emailToggles.sync = !emailToggles.sync;checkSaveorUpdate()">
+          <span></span>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-10">
+        <div class="email-text mt-2">
+          <h6>Auto-sync Dashboard Alerts</h6>
+          <p>Get emails when the dashboard is refreshed by auto-refresh</p>
+        </div>
+      </div>
+      <div class="col-xl-2">
+        <div 
+          class="toggle toggle-primary"
+          [ngClass]="{ 'on': emailToggles.autosync,'disabled-toggle': !(selectedDashboard || activateEmailTab) }"
+          (click)="emailToggles.autosync = !emailToggles.autosync;checkSaveorUpdate()">
+          <span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <!-- Threshold Limit Alerts -->
+    <!-- <div class="dashboard-flat-card">
+      <div class="section-title d-flex justify-content-between align-items-center">
+        <span>Threshold Limit Alerts</span>
+        <button class="btn btn-primary btn-sm" >+ Add Alert Rule</button>
+      </div>
+      <div class="dashboard-toggle-row flex-column align-items-center" *ngIf="!dashboardToggles.length">
+        <img src="assets/images/empty-state.svg" alt="No alert rules" style="width:48px; margin-bottom:8px;">
+        <div class="toggle-desc text-center mb-1">No alert rules added yet.</div>
+        <div class="toggle-desc text-center">Create threshold-based alerts to monitor your key metrics.</div>
+      </div>
+      <div *ngFor="let rule of dashboardToggles" class="dashboard-toggle-row">
+        <div>
+          <div class="toggle-title">{{rule.title}}</div>
+          <div class="toggle-desc">{{rule.desc}}</div>
+        </div>
+        <div>
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="rule.value" (change)="checkSaveorUpdate()">
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+    </div> -->
+  </div>
+                </div>
+
+                <div *ngIf="activeEmailModule === 'sheet'" class="module-section">
+                 <div class="dashboard-section">
+    <!-- Dashboard Update Alerts -->
+    <div class="dashboard-flat-card mb-4">
+  <div class="card-body">
+    <div class="mb-4" *ngIf="selectableDashbaord">
+      <label for="sheetSelect" class="form-label">Select a Sheet</label>
+      <ng-select 
+        class="form-control p-0"
+        [items]="sheets"
+        bindLabel="sheet_list_name"
+        [(ngModel)]="selectedSheet"
+        (change)="onSheetSelect($event)"
+        [multiple]="false"
+        [closeOnSelect]="true"
+        [clearable]="false"
+        placeholder="Select Sheet">
+      </ng-select>
+    </div>
+     <div class="row">
+          <h3 class="mt-2 mb-4">Email Notification Settings</h3>
+          <h6 class="text-muted mb-4" *ngIf="sheetName">
+            for Sheet: <strong>{{sheetName}}</strong>
+          </h6>
+          <div class="col-xl-10">
+            <div class="email-text mt-2">
+              <h6>Update Sheet Alerts</h6>
+              <p>Get emails when the sheet is updated</p>
+            </div>
+          </div>
+          <div class="col-xl-2">
+            <div 
+              class="toggle toggle-primary"
+              [ngClass]="{ 'on': sheetToggles.sheet_update, 'disabled-toggle': !(selectedSheet || activateEmailTab) }"
+              (click)="sheetToggles.sheet_update = !sheetToggles.sheet_update; checkSaveorUpdateSheet()">
+              <span></span>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xl-10">
+            <div class="email-text mt-2">
+              <h6>Refresh Sheet Alerts</h6>
+              <p>Get emails when the sheet is refreshed manually</p>
+            </div>
+          </div>
+          <div class="col-xl-2">
+            <div 
+              class="toggle toggle-primary"
+              [ngClass]="{ 'on': sheetToggles.sheet_refresh, 'disabled-toggle': !(selectedSheet || activateEmailTab) }"
+              (click)="sheetToggles.sheet_refresh = !sheetToggles.sheet_refresh; checkSaveorUpdateSheet()">
+              <span></span>
+            </div>
+          </div>
+        </div>
+        
+  </div>
+</div>
+    <!-- Threshold Limit Alerts -->
+    <!-- <div class="dashboard-flat-card">
+      <div class="section-title d-flex justify-content-between align-items-center">
+        <span>Threshold Limit Alerts</span>
+        <button class="btn btn-primary btn-sm" >+ Add Alert Rule</button>
+      </div>
+      <div class="dashboard-toggle-row flex-column align-items-center" *ngIf="!dashboardToggles.length">
+        <img src="assets/images/empty-state.svg" alt="No alert rules" style="width:48px; margin-bottom:8px;">
+        <div class="toggle-desc text-center mb-1">No alert rules added yet.</div>
+        <div class="toggle-desc text-center">Create threshold-based alerts to monitor your key metrics.</div>
+      </div>
+      <div *ngFor="let rule of dashboardToggles" class="dashboard-toggle-row">
+        <div>
+          <div class="toggle-title">{{rule.title}}</div>
+          <div class="toggle-desc">{{rule.desc}}</div>
+        </div>
+        <div>
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="rule.value" (change)="checkSaveorUpdate()">
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+    </div> -->
+  </div>
+                </div>
+
+                <div *ngIf="activeEmailModule === 'datasource'" class="module-section">
+                    <h3 class="mt-2 mb-4">Datasource Email Notification Settings</h3>
+                    <!-- <div class="row mb-3" *ngFor="let toggle of datasourceToggles">
+                    <div class="col-xl-10">
+                        <div class="email-text mt-2">
+                        <h6>{{toggle.title}}</h6>
+                        <p>{{toggle.desc}}</p>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 d-flex align-items-center">
+                        <div 
+                        class="toggle toggle-primary"
+                        [ngClass]="{ 'on': toggle.value }"
+                        (click)="toggle.value = !toggle.value; checkSaveorUpdate()">
+                        <span></span>
+                        </div>
+                    </div>
+                    </div> -->
+                </div>
+                </div>
+            </div>
+            <!-- ...existing code... -->
+  <!-- <div class="card profile-card">
+    <div class="card-body">
+      <div class="accordion" id="emailAccordion">
+        <div class="accordion-item mb-3">
+          <h2 class="accordion-header" id="headingDashboard">
+            <button class="accordion-button" type="button" [attr.aria-expanded]="activeEmailModule === 'dashboard'"
+              [class.collapsed]="activeEmailModule !== 'dashboard'"
+              (click)="activeEmailModule = activeEmailModule === 'dashboard' ? '' : 'dashboard'">
+              <i class="fe fe-grid me-2"></i> Dashboard Email Notification
+            </button>
+          </h2>
+          <div [ngClass]="{'accordion-collapse collapse show': activeEmailModule === 'dashboard', 'accordion-collapse collapse': activeEmailModule !== 'dashboard'}">
+            <div class="accordion-body">
+              <div class="row mb-3" *ngFor="let toggle of dashboardToggles">
+                <div class="col-xl-10">
+                  <div class="email-text mt-2">
+                    <h6>{{toggle.title}}</h6>
+                    <p>{{toggle.desc}}</p>
+                  </div>
+                </div>
+                <div class="col-xl-2 d-flex align-items-center">
+                  <div 
+                    class="toggle toggle-primary"
+                    [ngClass]="{ 'on': toggle.value, 'disabled-toggle': !selectedDashboard }"
+                    (click)="toggle.value = !toggle.value; checkSaveorUpdate()">
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item mb-3">
+          <h2 class="accordion-header" id="headingSheet">
+            <button class="accordion-button" type="button" [attr.aria-expanded]="activeEmailModule === 'sheet'"
+              [class.collapsed]="activeEmailModule !== 'sheet'"
+              (click)="activeEmailModule = activeEmailModule === 'sheet' ? '' : 'sheet'">
+              <i class="fe fe-table me-2"></i> Sheet Email Notification
+            </button>
+          </h2>
+          <div [ngClass]="{'accordion-collapse collapse show': activeEmailModule === 'sheet', 'accordion-collapse collapse': activeEmailModule !== 'sheet'}">
+            <div class="accordion-body">
+              <div class="row mb-3" *ngFor="let toggle of sheetToggles">
+                <div class="col-xl-10">
+                  <div class="email-text mt-2">
+                    <h6>{{toggle.title}}</h6>
+                    <p>{{toggle.desc}}</p>
+                  </div>
+                </div>
+                <div class="col-xl-2 d-flex align-items-center">
+                  <div 
+                    class="toggle toggle-primary"
+                    [ngClass]="{ 'on': toggle.value }"
+                    (click)="toggle.value = !toggle.value; checkSaveorUpdate()">
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item mb-3">
+          <h2 class="accordion-header" id="headingDatasource">
+            <button class="accordion-button" type="button" [attr.aria-expanded]="activeEmailModule === 'datasource'"
+              [class.collapsed]="activeEmailModule !== 'datasource'"
+              (click)="activeEmailModule = activeEmailModule === 'datasource' ? '' : 'datasource'">
+              <i class="fe fe-database me-2"></i> Datasource Email Notification
+            </button>
+          </h2>
+          <div [ngClass]="{'accordion-collapse collapse show': activeEmailModule === 'datasource', 'accordion-collapse collapse': activeEmailModule !== 'datasource'}">
+            <div class="accordion-body">
+              <div class="row mb-3" *ngFor="let toggle of datasourceToggles">
+                <div class="col-xl-10">
+                  <div class="email-text mt-2">
+                    <h6>{{toggle.title}}</h6>
+                    <p>{{toggle.desc}}</p>
+                  </div>
+                </div>
+                <div class="col-xl-2 d-flex align-items-center">
+                  <div 
+                    class="toggle toggle-primary"
+                    [ngClass]="{ 'on': toggle.value }"
+                    (click)="toggle.value = !toggle.value; checkSaveorUpdate()">
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div> -->
+<!-- ...existing code... -->
+<!-- ...existing code... -->
             </ng-template>
               </li>
             </ul>

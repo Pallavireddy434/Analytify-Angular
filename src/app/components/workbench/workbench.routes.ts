@@ -347,7 +347,13 @@ export const admin: Routes = [
           import('./configure/configure.component').then((m) => m.ConfigureComponent),
       },
        {
-        path: 'configure-page/email/:id',
+        path: 'configure-page/email/dashboard/:id',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./configure/configure.component').then((m) => m.ConfigureComponent),
+      },
+       {
+        path: 'configure-page/email/sheet/:id',
         canActivate: [authGuard],
         loadComponent: () =>
           import('./configure/configure.component').then((m) => m.ConfigureComponent),
