@@ -1214,7 +1214,7 @@
                             accept="image/*">
                   </div>
                 </div>
-                <div class="card-header d-flex justify-content-between p-1"  [style.display]="(item.data?.title ? 'flex' : 'none') + ' !important'">
+                <div class="card-header d-flex justify-content-between p-1" [attr.style]="((item.data?.title || item['type'] === 'image') ? 'display: flex !important;' : 'display: none !important;')">
                   @if((item['chartId'] === 6|| item['chartId'] === 24 || item['chartId'] === 10 || item['chartId'] === 29) &&
                   item['drillDownHierarchy'] && item['drillDownHierarchy'].length > 0){
                   <!-- <div class="col-lg-3 col-md-3"> -->
