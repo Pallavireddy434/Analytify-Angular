@@ -341,10 +341,27 @@ export class TemplateDashboardService {
           result_data: data
         }));
       
-        const transformedRows = sheet_query_data.rows_data.map(({ data, ...rowRest }: any) => ({
-          ...rowRest,
-          result_data: data
-        }));
+        let transformedRows = {};
+        if (chart_id == 9) {
+          transformedRows = sheet_query_data.rows_data.map((data: any) => ({
+            col: data.column,
+            result_data: data.data
+          }));
+        } else {
+          transformedRows = sheet_query_data.rows_data.map(({ data, ...rowRest }: any) => ({
+            ...rowRest,
+            result_data: data
+          }));
+        }
+
+        let pivotMeasureData = {};
+        if (chart_id == 9) {
+          pivotMeasureData = sheet_query_data.pivot_data.map((data: any) => ({
+            col: data.column,
+            result_data: data.data
+          }));
+        }
+
         const KPIRows = sheet_query_data.rows_data.map(({ data, ...rowRest }: any) => ({
           ...rowRest,
           result: data
@@ -353,7 +370,7 @@ export class TemplateDashboardService {
           col: row.column,
           result_data: row.data
         }));
-        let transformData = this.transformDashboardTransferData(sheet.sheet_query_data)
+        let transformData = this.transformDashboardTransferData(sheet.sheet_query_data, chart_id)
         let chartTransformaedData = this.transformTableAndChartData(transformData);
         let chartOptions = sheet.sheet_data.savedChartOptions;
         chartOptions = this.updateChartOptions(chartOptions,sheet.chart_type,sheet.sheet_data.isApexChart,chartTransformaedData.xAxisCategories,chartTransformaedData.multiSeriesChartData);
@@ -367,6 +384,7 @@ export class TemplateDashboardService {
             ...sheet_data,
             col: transformedColumns,
             row: transformedRows,
+            ...(chart_id === 9 && { pivotMeasure_Data: pivotMeasureData })
           }
         };
         if(chart_id == 25 ){
@@ -378,13 +396,27 @@ export class TemplateDashboardService {
         }
         this.sheetsInstance.setSheetData(transformed,false,null , true);
         if(chart_id == 1){
-          sheet.sheet_data.results = {"tableData":this.sheetsInstance.saveTableData,
-          "tableColumns":this.sheetsInstance.savedisplayedColumns,
+          sheet.sheet_data.results = {"tableData":this.sheetsInstance.tableDataStore,
+          "tableColumns":this.sheetsInstance.displayedColumns,
           "banding":this.sheetsInstance.banding,
           "color1":this.sheetsInstance.color1,
           "color2":this.sheetsInstance.color2,
           "items_per_page":this.sheetsInstance.itemsPerPage,
-          "total_items":this.sheetsInstance.totalItems}
+          "total_items":this.sheetsInstance.tableDataStore.length}
+        } else if(chart_id == 9){
+          this.sheetsInstance.pivotTableDatatransform(false);
+          sheet.sheet_data = {
+            ...sheet.sheet_data,
+            pivotMeasure_Data: this.sheetsInstance.pivotMeasureData.map((data:any)=>{
+              return {
+                col: data.col,
+                result_data: data.result_data
+              }
+            }),
+            pivotTransformedData: this.sheetsInstance.transformedData,
+            col: this.sheetsInstance.pivotColumnData,
+            row: this.sheetsInstance.pivotRowData
+          }
         }
       });
         let responseData = _.cloneDeep(this.mergeSheetData(responesData));
@@ -1002,10 +1034,11 @@ export class TemplateDashboardService {
       this.rowsHALOPSAArray = rowsArray;  
     }
 
-    transformDashboardTransferData(inputData: any): any {
+    transformDashboardTransferData(inputData: any, chartId:any): any {
       const transformedData = {
         col: [],
-        row: []
+        row: [],
+        ...(chartId === 9 && { pivotMeasure: [] })
       };
 
       // Transform columns_data to col
@@ -1019,6 +1052,14 @@ export class TemplateDashboardService {
       // Transform rows_data to row
       if (inputData.rows_data) {
         transformedData.row = inputData.rows_data.map((item: any) => ({
+          col: item.column,
+          result_data: item.data
+        }));
+      }
+
+      // Transform pivot_measure to pivotMeasure
+      if (chartId === 9 && inputData.pivot_data) {
+        transformedData.pivotMeasure = inputData.pivot_data.map((item: any) => ({
           col: item.column,
           result_data: item.data
         }));
@@ -1039,7 +1080,13 @@ export class TemplateDashboardService {
               dashboardItem.kpiData.rows = sheet.dashboardKPIRows;
             } else if(dashboardItem.chartId == 1 || sheet.chart_id == 1){
               let tableData = this.dashboardInstance.getTableData(sheet.sheet_data)
-              dashboardItem.tableData = tableData;
+              dashboardItem.tableData.rows = tableData.rows.slice(0, tableData.tableItemsPerPage);
+            } else if(dashboardItem.chartId == 9 || sheet.chart_id == 9){
+              dashboardItem.pivotData.pivotColData = sheet?.sheet_data?.col;
+              dashboardItem.pivotData.pivotMeasureData = sheet?.sheet_data?.pivotMeasure_Data;
+              dashboardItem.pivotData.pivotRowData = sheet?.sheet_data?.row;
+              dashboardItem.transformedData = sheet?.sheet_data?.pivotTransformedData;
+              delete dashboardItem.pivot_data;
             } else {
             if (sheet.sheet_data.isEChart) {
               dashboardItem.echartOptions = sheet.sheet_data.savedChartOptions;
@@ -1058,7 +1105,13 @@ export class TemplateDashboardService {
                   dashboardItem.kpiData.rows = sheet.dashboardKPIRows;
                 } else if (dashboardItem.chartId == 1 || sheet.chart_id == 1) {
                   let tableData = this.dashboardInstance.getTableData(sheet.sheet_data)
-                  dashboardItem.tableData = tableData;
+                  dashboardItem.tableData.rows = tableData.rows.slice(0, tableData.tableItemsPerPage);
+                } else if (dashboardItem.chartId == 9 || sheet.chart_id == 9) {
+                  dashboardItem.pivotData.pivotColData = sheet?.sheet_data?.col;
+                  dashboardItem.pivotData.pivotMeasureData = sheet?.sheet_data?.pivotMeasure_Data;
+                  dashboardItem.pivotData.pivotRowData = sheet?.sheet_data?.row;
+                  dashboardItem.transformedData = sheet?.sheet_data?.pivotTransformedData;
+                  delete dashboardItem.pivot_data;
                 } else {
                   if (sheet.sheet_data.isEChart) {
                     dashboardItem.echartOptions = sheet.sheet_data.savedChartOptions;
@@ -1130,7 +1183,7 @@ export class TemplateDashboardService {
   
     updateChartOptions(chartOptions: any, chartType: string, isApexChart: boolean,
       xAxisCategories: string[], multiSeriesChartData: { name: string; data: number[] }[]): any {
-        chartType = chartType?.toLowerCase();
+        // chartType = chartType?.toLowerCase();
       // if (!chartOptions) chartOptions = {};
   
       // if (isApexChart) {
@@ -1160,9 +1213,12 @@ export class TemplateDashboardService {
        if (!chartOptions) chartOptions = {};
   
     if (isApexChart) {
-      if (['pie', 'donut', 'guage','GAUGE','gauge'].includes(chartType)) {
+      if (['pie', 'DONUT'].includes(chartType)) {
         chartOptions.series = multiSeriesChartData[0]?.data || [];
         chartOptions.labels = xAxisCategories;
+      } else if(chartType === 'GAUGE'){
+        chartOptions.series = multiSeriesChartData[0]?.data || [];
+        chartOptions.labels = [multiSeriesChartData[0]?.name];
       } else {
         chartOptions.series?.forEach((row: any, index: number) => {
           row.data = multiSeriesChartData[index]?.data || [];
@@ -1171,33 +1227,47 @@ export class TemplateDashboardService {
         chartOptions.xaxis.categories = xAxisCategories;
       }
     } else {
-      if (!['radar', 'heatmap', 'calendar', 'map','RADAR'].includes(chartType)) {
+      if (!['RADAR', 'HEAT MAP', 'CALENDAR', 'WORLD MAP', 'pie', 'DONUT', 'FUNNEL'].includes(chartType)) {
         chartOptions.series?.forEach((row: any, index: number) => {
           row.data = multiSeriesChartData[index]?.data || [];
         });
-      } else if (chartType === 'heatmap') {
-        chartOptions.series?.forEach((row: any, index: number) => {
-          row.data?.forEach((value: any, i: number) => {
-            value[2] = multiSeriesChartData[index]?.data[i];
+      } else if (chartType === 'HEAT MAP') {
+        const heatmapData: any[][] = [];
+        multiSeriesChartData.forEach((row, rowIndex: any) => {
+          row.data.forEach((value, colIndex: any) => { // Assuming each row has a data array
+            if (value !== null && value !== undefined) { // Ensure value is valid
+              heatmapData.push([colIndex, rowIndex, value]); // [xIndex, yIndex, value]
+            }
           });
+        });
+
+        chartOptions.series.forEach((row: any, index: any) => {
+          row.data = heatmapData;
         });
       }
   
-      if (chartType === 'barline') {
+      if (chartType === 'DUAL COMBINATION') {
         chartOptions.xAxis?.forEach((column: any) => {
           column.data = xAxisCategories;
         });
-      } else if (['hstocked', 'hgrouped'].includes(chartType)) {
+      } else if (['HORIZONTAL STACKED BAR', 'HORIZONTAL SIDE BY SIDE'].includes(chartType)) {
         chartOptions.yAxis?.forEach((column: any) => {
           column.data = xAxisCategories;
         });
-      } else if (chartType === 'radar' || chartType == 'RADAR') {
-        chartOptions.series[0]?.data?.forEach((row: any, index: number) => {
-          row.value = multiSeriesChartData[index]?.data || [];
+      } else if (chartType == 'RADAR') {
+        let radarArray = xAxisCategories.map((value: any, index: number) => ({
+          name: xAxisCategories[index]
+        }));
+        const transformedArray = multiSeriesChartData.map((obj: any) => ({
+          name: obj.name,
+          value: obj.data
+        }));
+        chartOptions.radar.indicator = radarArray;
+        // this.chartOptions.series[0].data = transformedArray;
+        chartOptions.series[0].data.forEach((row: any, index: any) => {
+          row.value = multiSeriesChartData[index].data;
         });
-        chartOptions.radar = chartOptions.radar || {};
-        chartOptions.radar.indicator = xAxisCategories;
-      } else if (chartType === 'calendar') {
+      } else if (chartType === 'CALENDAR') {
         let calendarData: any[] = [];
         let years: Set<any> = new Set();
   
@@ -1253,7 +1323,7 @@ export class TemplateDashboardService {
         } else {
           chartOptions = {};
         }
-      } else if (chartType === 'map') {
+      } else if (chartType === 'WORLD MAP') {
         const result: any[] = [];
         let minData = 0;
         const maxData = Math.max(...multiSeriesChartData[0].data);
@@ -1296,6 +1366,12 @@ export class TemplateDashboardService {
         };
   
         chartOptions.series[0].data = result;
+      } else if(['pie', 'DONUT', 'FUNNEL'].includes(chartType)){
+        let data: any[] = [];
+        xAxisCategories.forEach((col: any, index: any) => {
+          data.push({ value: multiSeriesChartData[0].data[index], name: col })
+        });
+        chartOptions.series[0].data = data;
       } else {
         chartOptions.xAxis = {
           ...(chartOptions.xAxis || {}),
