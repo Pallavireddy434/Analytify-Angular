@@ -2634,4 +2634,8 @@ connectGoogleSheets(){
     const encodedDashboardId = btoa(this.dashbaordIdToSwitch.toString());
     this.router.navigate(['/analytify/home/sheetsdashboard/',encodedDashboardId])
   }
+  gotoConfigureEmailAlerts(id:any){
+    const encodedId = btoa(id.toString());
+    this.router.navigate(['/analytify/configure-page/email/datasource/' + encodedId]);
+  }
 }

@@ -109,7 +109,9 @@
                                   (btnClickEvent)="viewSheet(sheets.hierarchy_id,sheets.queryset_id,sheets.sheet_id)"
                                   [toolTip]="'Edit'" [faIconList]="'ri-edit-line'" [isIcon]="true"></app-insights-button>
                                   <a (click)="redirectSDK(sheets.sheet_id);" tabindex="0" class="btn btn-icon btn-sm btn-info-light btn-wave waves-effect waves-light" style="cursor: pointer;"><i class="fe fe-code" data-bs-toggle="tooltip" ngbTooltip="Embed SDK" ></i></a>
-                                <app-insights-button [classesList]="'btn btn-icon btn-sm btn-danger-light btn-wave waves-effect waves-light'"
+                                  <button class="btn btn-icon btn-sm btn-orange-light btn-wave waves-effect waves-light" ngbTooltip="Set Alerts" (click)="gotoConfigureEmailAlerts(sheets.sheet_id)"><i class="fa fa-bell" ></i></button>
+
+                                  <app-insights-button [classesList]="'btn btn-icon btn-sm btn-danger-light btn-wave waves-effect waves-light'"
                                   [previledgeId]="19" [isBtn]="false" [toolTip]="'Delete sheet'"
                                   (btnClickEvent)="deleteSheet(sheets.hierarchy_id,sheets.queryset_id,sheets.sheet_id)"
                                   [faIconList]="'ri-delete-bin-7-line'" [isIcon]="true"></app-insights-button>
@@ -242,7 +244,9 @@
                       [tabIndex]="0" (btnClickEvent)="viewSheet(sheets.hierarchy_id,sheets.queryset_id,sheets.sheet_id)"
                       [faIconList]="'fe fe-edit me-2 d-inline-flex'" [isIcon]="true"></app-insights-button>
                       <a (click)="redirectSDK(sheets.sheet_id);" tabindex="0" class="dropdown-item" style="cursor: pointer;"><i class="fe fe-code me-2 d-inline-flex" data-bs-toggle="tooltip" ngbTooltip="Embed SDK" ></i>Embed SDK</a>
-                    <app-insights-button [buttonName]="' Delete'" [classesList]="'dropdown-item  btn btn-secondary-light'"
+                      <a (click)="gotoConfigureEmailAlerts(sheets.sheet_id)" tabindex="0" class="dropdown-item" style="cursor: pointer;"><i class="fa fa-bell me-2 d-inline-flex" data-bs-toggle="tooltip" ></i>Set Alerts</a>
+
+                      <app-insights-button [buttonName]="' Delete'" [classesList]="'dropdown-item  btn btn-secondary-light'"
                       [previledgeId]="19" [isBtn]="false" [tabIndex]="0"
                       (btnClickEvent)="deleteSheet(sheets.hierarchy_id,sheets.queryset_id,sheets.sheet_id)"
                       [faIconList]="'fe fe-trash me-2 d-inline-flex'" [isIcon]="true"></app-insights-button>

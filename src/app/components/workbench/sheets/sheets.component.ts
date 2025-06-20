@@ -62,6 +62,7 @@ import { TestPipe } from '../../../test.pipe';
 import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
 import { CustomSheetsComponent } from '../custom-sheets/custom-sheets.component';
+import { error } from 'jquery';
 
 declare type HorizontalAlign = 'left' | 'center' | 'right';
 declare type VerticalAlign = 'top' | 'center' | 'bottom';
@@ -771,6 +772,9 @@ try {
             this.pivotColumnData = responce?.data?.col;
             this.pivotRowData = responce?.data?.row;
             this.pivotMeasureData = responce?.data?.pivot_measure;
+            if(isSyncData){
+              this.sheetUpdateRefreshMail('sync')
+            }
             if (this.chartsRowData.length > 0) {
               // this.enableDisableCharts();
               // this.chartsOptionsSet();
@@ -2566,7 +2570,7 @@ if(this.retriveDataSheet_id){
       }
     })
   }
-  
+  this.sheetUpdateRefreshMail('update');
   },
   error: (error) => {
     console.log(error);
@@ -7664,5 +7668,28 @@ qoqOptions = [
   'QOQ Option 7', 'QOQ Option 8'
 ];
 
+
+sheetUpdateRefreshMail(value:any) {
+  let obj;
+if(value === 'sync'){
+   obj={
+   "sheet_id":this.retriveDataSheet_id,
+    "action_type":"sheet_refresh"
+  }
+}else{
+   obj={
+    "sheet_id":this.retriveDataSheet_id,
+    "action_type":"sheet_update"
+  }
+}
+this.workbechService.sheetUpdateRefreshMail(obj).subscribe({
+  next: (response: any) => {
+    console.log(response);
+  },
+error: (error:any) => {
+    console.log(error);
+  }
+});
+}
 }
 
