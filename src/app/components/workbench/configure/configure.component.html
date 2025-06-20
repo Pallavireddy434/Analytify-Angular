@@ -173,7 +173,7 @@
                     <button 
                     class="module-btn" 
                     [class.active]="activeEmailModule === 'datasource'" 
-                    (click)="activeEmailModule = 'datasource'"
+                    (click)="activeEmailModule = 'datasource';getDatasourceList()"
                     [disabled]="disableDatasource">
                     <i class="fe fe-database me-1"></i> Datasource
                     </button>
@@ -433,25 +433,49 @@
   </div>
                 </div>
 
-                <div *ngIf="activeEmailModule === 'datasource'" class="module-section">
-                    <h3 class="mt-2 mb-4">Datasource Email Notification Settings</h3>
-                    <!-- <div class="row mb-3" *ngFor="let toggle of datasourceToggles">
-                    <div class="col-xl-10">
-                        <div class="email-text mt-2">
-                        <h6>{{toggle.title}}</h6>
-                        <p>{{toggle.desc}}</p>
-                        </div>
-                    </div>
-                    <div class="col-xl-2 d-flex align-items-center">
-                        <div 
-                        class="toggle toggle-primary"
-                        [ngClass]="{ 'on': toggle.value }"
-                        (click)="toggle.value = !toggle.value; checkSaveorUpdate()">
-                        <span></span>
-                        </div>
-                    </div>
-                    </div> -->
-                </div>
+             <div *ngIf="activeEmailModule === 'datasource'" class="module-section">
+  <div class="dashboard-section">
+    <div class="dashboard-flat-card mb-4">
+      <div class="card-body">
+        <div class="mb-4" *ngIf="selectableDashbaord">
+          <label for="datasourceSelect" class="form-label">Select a Datasource</label>
+          <ng-select 
+            class="form-control p-0"
+            [items]="datasources"
+            bindLabel="display_name"
+            [(ngModel)]="selectedDatasource"
+            (change)="getDatasourceDetails(selectedDatasource.hierarchy_id)"
+            [multiple]="false"
+            [closeOnSelect]="true"
+            [clearable]="false"
+            placeholder="Select Datasource">
+          </ng-select>
+        </div>
+        <div class="row">
+          <h3 class="mt-2 mb-4">Email Notification Settings</h3>
+          <h6 class="text-muted mb-4" *ngIf="datasourceName">
+            for Datasource: <strong>{{datasourceName}}</strong>
+          </h6>
+          <div class="col-xl-10">
+            <div class="email-text mt-2">
+              <h6>Datasource Update Alerts</h6>
+              <p>Get emails when the datasource is updated</p>
+            </div>
+          </div>
+          <div class="col-xl-2">
+            <div 
+              class="toggle toggle-primary"
+              [ngClass]="{ 'on': datasourceToggles.datasource_update, 'disabled-toggle': !(selectedDatasource || activateEmailTab) }"
+              (click)="datasourceToggles.datasource_update = !datasourceToggles.datasource_update; checkSaveorUpdateDatasource()">
+              <span></span>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
                 </div>
             </div>
             <!-- ...existing code... -->

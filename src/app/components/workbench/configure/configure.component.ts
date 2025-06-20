@@ -25,9 +25,11 @@ export class ConfigureComponent implements OnInit {
   activeTab = 'configure';
   dashboardId:any;
   sheetId:any;
+  dbId:any;
   activateEmailTab=false;
   dashboardName:any;
   sheetName:any;
+  datasourceName:any;
   selectableDashbaord = false;
   userId:any;
   enabledEmail=false;
@@ -60,6 +62,18 @@ export class ConfigureComponent implements OnInit {
       this.getsheetDetails(this.sheetId);
       this.selectableDashbaord = false;
     }
+  }else if (this.router.url.includes('/analytify/configure-page/email/datasource')) {
+    this.activeTab = 'email',
+    this.activeEmailModule = 'datasource';
+    this.disableDashboard = true;
+    this.disableSheet = true;
+    this.activateEmailTab=true;
+    this.disableDatasource = false;
+    if (route.snapshot.params['id']) {
+      this.dbId = +atob(route.snapshot.params['id']);
+      this.getDatasourceDetails(this.dbId);
+      this.selectableDashbaord = false;
+    }
   } else {
     // Default: all enabled
     this.disableDashboard = false;
@@ -84,8 +98,12 @@ sheetToggles = {
   sheet_update: false,
   sheet_refresh: false,
 };
+datasourceToggles = {
+  datasource_update: false,
+};
 dashboards :any=[];
 sheets :any=[];
+datasources: any[] = [];
 
 activeEmailModule = 'dashboard';
 
@@ -94,7 +112,7 @@ ngOnInit(): void {
     //   this.getdashboardDetails()
     // }
 }
-
+selectedDatasource: any = null;
 selectedDashboard: any = null;
 selectedSheet: any = null;
   submitApiKey() {
@@ -175,7 +193,27 @@ selectedSheet: any = null;
       },
     });
   }
-
+  getDatasourceList() {
+    const obj = {
+      need_pagination: false
+    };
+    this.workbechService.getdatabaseConnectionsList(obj).subscribe({
+      next: (data: any) => {
+        if (data) {
+          console.log(data);
+          this.datasources = data;
+        }
+      },
+      error: (error: any) => {
+        Swal.fire({
+          icon: 'warning',
+          text: error.error.message,
+          width: '300px',
+        });
+        console.log(error);
+      },
+    });
+  }
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
   }
@@ -222,6 +260,28 @@ selectedSheet: any = null;
     });
 
   }
+  getDatasourceDetails(id:any){
+    this.dbId = id;
+    this.workbechService.getMailAlertsDatasourceData(id).subscribe({
+      next: (data: any) => {
+        if (data) {
+          console.log(data);
+          this.datasourceName = data.data?.datasource_name;
+          this.updateDatasourceTogglesFromApi(data.data?.mail_action);
+          this.userId =data.data?.id;
+          this.enabledEmail=data.data?.is_enabled;
+        }
+      },
+      error: (error: any) => {
+        Swal.fire({
+          icon: 'warning',
+          text: error.error.message,
+          width: '300px',
+        });
+        console.log(error);
+      },
+    });
+  }
   checkSaveorUpdate(){
     if(this.enabledEmail){
       this.updateEmailAlert();
@@ -236,6 +296,13 @@ selectedSheet: any = null;
       this.saveSheetEmailAlert();
     }
   }
+  checkSaveorUpdateDatasource() {
+  if (this.enabledEmail) {
+    this.updateDatasourceEmailAlert();
+  } else {
+    this.saveDatasourceEmailAlert();
+  }
+}
   updateTogglesFromApi(mailActionString: string) {
      let actions: string[] = [];
 
@@ -269,6 +336,21 @@ selectedSheet: any = null;
   this.sheetToggles = {
     sheet_update: actions.includes('sheet_update'),
     sheet_refresh: actions.includes('sheet_refresh'),
+  };
+}
+updateDatasourceTogglesFromApi(mailAction: any) {
+  let actions: string[] = [];
+  if (typeof mailAction === 'string') {
+    try {
+      actions = JSON.parse(mailAction.replace(/'/g, '"'));
+    } catch (e) {
+      actions = [];
+    }
+  } else if (Array.isArray(mailAction)) {
+    actions = mailAction;
+  }
+  this.datasourceToggles = {
+    datasource_update: actions.includes('datasource_update'),
   };
 }
   onDashboardSelect(dashboard:any){
@@ -361,7 +443,7 @@ selectedSheet: any = null;
           console.log(res);
           if(res){
           this.toasterService.success('Saved Successfully','success',{ positionClass: 'toast-top-right'});
-          this.getdashboardDetails(this.dashboardId);
+          this.getsheetDetails(this.sheetId);
           }
           this.dashboardName = res.data?.dashboard_name;
           this.updateTogglesFromApi(res.data?.mail_action);
@@ -370,6 +452,27 @@ selectedSheet: any = null;
       error: (err) => {
         this.toasterService.error('Failed to save sheet email alert');
       }
+    });
+}
+saveDatasourceEmailAlert() {
+  const payload = {
+    mail_action: this.getSelectedDatasourceMailActions(),
+    datasource_id: this.dbId,
+    is_enabled: true
+  };
+  this.workbechService.saveEmailAlerts(payload)
+    .subscribe({
+      next: (res:any) =>{   if (res) {
+          console.log(res);
+          if(res){
+          this.toasterService.success('Saved Successfully','success',{ positionClass: 'toast-top-right'});
+          this.getDatasourceDetails(this.dbId);
+          }
+          this.dashboardName = res.data?.dashboard_name;
+          this.updateTogglesFromApi(res.data?.mail_action);
+        } 
+      },
+      error: () => this.toasterService.error('Failed to save datasource email alert')
     });
 }
 
@@ -395,12 +498,35 @@ updateSheetEmailAlert() {
       }
     });
 }
-
+updateDatasourceEmailAlert() {
+  const payload = {
+    id: this.userId,
+    dashboard_id: null,
+    sheet_id: null,
+    datasource_id: this.dbId,
+    mail_action: this.getSelectedDatasourceMailActions(),
+    is_enabled: true,
+    alert_level: 'datasource'
+  };
+  this.workbechService.updateEmailAlerts(payload)
+    .subscribe({
+      next: (res:any) => {
+        this.toasterService.success('Datasource email alert updated!');
+        // Optionally refresh datasource alert data here
+      },
+      error: (err) => {this.toasterService.error('Failed to update datasource email alert')}
+    });
+}
 // Helper to get selected actions as array
 getSelectedSheetMailActions(): string[] {
   const actions = [];
   if (this.sheetToggles.sheet_update) actions.push('sheet_update');
   if (this.sheetToggles.sheet_refresh) actions.push('sheet_refresh');
+  return actions;
+}
+getSelectedDatasourceMailActions(): string[] {
+  const actions = [];
+  if (this.datasourceToggles.datasource_update) actions.push('datasource_update');
   return actions;
 }
 }
