@@ -7589,7 +7589,7 @@ sheetUpdateRefreshMail(value:any) {
 if(value === 'sync'){
    obj={
    "sheet_id":this.retriveDataSheet_id,
-    "action_type":"sheet_sync"
+    "action_type":"sheet_refresh"
   }
 }else{
    obj={
