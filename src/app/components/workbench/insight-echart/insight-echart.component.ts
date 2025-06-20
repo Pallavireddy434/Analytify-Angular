@@ -2824,7 +2824,7 @@ radarDistributionSetOptions() {
     });
     this.chartInstance?.setOption(this.chartOptions,true)
      }
-     else{
+     else if(this.chartType !== 'map'){
        let obj ={
          series :[
           {

@@ -936,6 +936,7 @@ try {
                 if(this.page === 1 && this.pageNo === 1){
                   this.displayedColumns = this.tableColumnsDisplay;
                   this.tableDataStore = this.tableDataDisplay;
+                  console.log(this.displayedColumns, this.tableDataStore);
                 }
                 if(isSyncData){
                   this.sheetSave();
@@ -2780,7 +2781,30 @@ this.isTopFilter = !this.dimetionMeasure.some((column: any) => column.top_bottom
     this.guage = false;
     this.calendar = false;
     this.itemsPerPage = this.sheetResponce?.results?.items_per_page;
-    this.tableDisplayPagination(false);
+    if (isDashboardTransfer) {
+      let rowCountData: any;
+      if (this.tablePreviewColumn[0]?.result_data?.length) {
+        rowCountData = this.tablePreviewColumn[0]?.result_data?.length;
+      } else {
+        rowCountData = this.tablePreviewRow[0]?.result_data?.length;
+      }
+      this.tableColumnsDisplay = this.tablePreviewColumn.map((col: any) => col.column).concat(this.tablePreviewRow.map((row: any) => row.column));
+
+      for (let i = 0; i < rowCountData; i++) {
+        const tableRow: TableRow = {};
+        this.tablePreviewColumn?.forEach((col: any) => {
+          tableRow[col.column] = col.result_data[i];
+        });
+        this.tablePreviewRow?.forEach((rowData: any) => {
+          tableRow[rowData.column] = rowData.result_data[i];
+        });
+        this.tableDataDisplay.push(tableRow);
+      }
+      this.displayedColumns = this.tableColumnsDisplay;
+      this.tableDataStore = this.tableDataDisplay.slice(0, this.itemsPerPage);
+    } else {
+      this.tableDisplayPagination(false);
+    }
   }
   if(responce.chart_id == 9){
     // this.tableData = this.sheetResponce.results.tableData;
