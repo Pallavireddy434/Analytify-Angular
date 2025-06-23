@@ -57,6 +57,7 @@ export class WorkbenchComponent implements OnInit{
   openMySqlForm = false;
   openConnectWiseForm = false;
   openHaloPSAForm = false;
+  openHubspotForm = false;
   openShopifyForm =false;
   openGoogleAnalyticsForm = false;
   openOracleForm = false;
@@ -113,6 +114,78 @@ export class WorkbenchComponent implements OnInit{
   ninjaRMMScopes = ['monitoring', 'management', 'control'];
   selectedNinjaRMMScopes: string[] = [];
   ninjaRMMScopeError: boolean = false;
+  hubspotClientId!: string;
+  hubspotClientSecret!: string;
+  hubspotRedirectURL!: string;
+  hubspotScopes: string[] = [
+    "cms.domains.read",
+    "cms.functions.read",
+    "cms.knowledge_base.articles.read",
+    "cms.knowledge_base.settings.read",
+    "cms.membership.access_groups.read",
+    "cms.performance.read",
+    "communication_preferences.read",
+    "communication_preferences.statuses.batch.read",
+    "conversations.custom_channels.read",
+    "conversations.read",
+    "crm.dealsplits.read_write",
+    "crm.lists.read",
+    "crm.objects.appointments.read",
+    "crm.objects.carts.read",
+    "crm.objects.commercepayments.read",
+    "crm.objects.companies.read",
+    "crm.objects.contacts.read",
+    "crm.objects.courses.read",
+    "crm.objects.custom.read",
+    "crm.objects.deals.read",
+    "crm.objects.feedback_submissions.read",
+    "crm.objects.owners.read",
+    "crm.objects.quotes.read",
+    "crm.schemas.courses.read",
+    "crm.objects.marketing_events.read",
+    "crm.schemas.contacts.read",
+    "crm.schemas.companies.read",
+    "crm.schemas.deals.read",
+    "crm.objects.goals.read",
+    "crm.objects.invoices.read",
+    "crm.objects.leads.read",
+    "crm.objects.line_items.read",
+    "crm.objects.listings.read",
+    "crm.objects.orders.read",
+    "crm.objects.partner-clients.read",
+    "crm.objects.products.read",
+    "crm.objects.services.read",
+    "crm.objects.subscriptions.read",
+    "crm.objects.users.read",
+    "crm.pipelines.orders.read",
+    "crm.schemas.custom.read",
+    "crm.schemas.appointments.read",
+    "crm.schemas.carts.read",
+    "crm.schemas.commercepayments.read",
+    "crm.schemas.invoices.read",
+    "crm.schemas.line_items.read",
+    "crm.schemas.listings.read",
+    "crm.schemas.orders.read",
+    "crm.schemas.quotes.read",
+    "crm.schemas.services.read",
+    "crm.schemas.subscriptions.read",
+    "ctas.read",
+    "marketing.campaigns.read",
+    "marketing.campaigns.revenue.read",
+    "settings.users.read",
+    "settings.users.teams.read",
+    "content",
+    "hubdb",
+    "tickets",
+    "crm.import",
+    "account-info.security.read",
+    "settings.currencies.read"
+  ];
+  selectedHubspotScopes: string[] = [];
+  hubspotClientIdError = false;
+  hubspotClientSecretError = false;
+  hubspotRedirectURLError = false;
+  hubspotScopeError = false;
   openImmybot: boolean = false;
   clientIDImmyBotError: boolean = false;
   clientIdImmybot! : string ;
@@ -223,6 +296,9 @@ export class WorkbenchComponent implements OnInit{
     }
     else if(this.databaseSwitchType === 'NINJA'){
     this.connectNinjaRMM();
+    }
+    else if(this.databaseSwitchType === 'HUBSPOT'){
+    this.connectHubspot();
     }
   }
   routeNewDatabase(){
@@ -538,6 +614,9 @@ export class WorkbenchComponent implements OnInit{
     this.ninjaRMMClientid = '';
     this.ninjaRMMClientSecret = '';
     this.selectedNinjaRMMScopes = [];
+    this.hubspotClientId = '';
+    this.hubspotClientSecret = '';
+    this.selectedHubspotScopes = [];
     
   } 
   googleSheetsData = [] as any;
@@ -990,6 +1069,12 @@ export class WorkbenchComponent implements OnInit{
       this.databaseconnectionsList= false;
       this.viewNewDbs = false;
     }
+    connectHubspot(){
+      this.openHubspotForm = true;
+      this.databaseconnectionsList = false;
+      this.viewNewDbs = false;
+      this.emptyVariables();
+    }
     companyIdError(){
       if(this.companyId){
         this.companyIDError = false;
@@ -1110,6 +1195,23 @@ export class WorkbenchComponent implements OnInit{
       }else{
         this.shopifyNameError = true;
       }
+    }
+
+    hubspotClientIdInput(){
+      this.hubspotClientIdError = !this.hubspotClientId;
+    }
+
+  hubspotClientSecretInput(){
+    this.hubspotClientSecretError = !this.hubspotClientSecret;
+  }
+
+  hubspotRedirectURLInput(){
+    this.hubspotRedirectURLError = !this.hubspotRedirectURL;
+  }
+
+    onHubspotScopeChange(event:any){
+      this.selectedHubspotScopes = event;
+      this.hubspotScopeError = this.selectedHubspotScopes.length <= 0;
     }
     shopifySignIn(){
       const obj={
@@ -1349,6 +1451,24 @@ export class WorkbenchComponent implements OnInit{
       }, error: (error)=>{
         this.toasterservice.error(error.error.message,'error',{ positionClass: 'toast-center-center'})
       }});
+    hubspotSignIn(){
+      const obj = {
+        "client_id": this.hubspotClientId,
+        "client_secret": this.hubspotClientSecret,
+        "redirect_uri": this.hubspotRedirectURL,
+        "display_name": this.displayName,
+        "scopes": this.selectedHubspotScopes
+      }
+      this.workbechService.hubspotConnection(obj).subscribe({next:(data)=>{
+          if(data){
+            localStorage.setItem('hubspotHierarchyId', data.hierarchy_id);
+            this.modalService.dismissAll();
+            this.document.location.href = data.authorisation_url;
+          }
+        },
+        error:(error)=>{
+          this.toasterservice.error(error.error.message,'error',{ positionClass: 'toast-center-center'})
+        }});
     }
 
     mySqlSignIn(){
@@ -2179,6 +2299,7 @@ connectGoogleSheets(){
   this.openHaloPSAForm = false;
   this.openShopifyForm = false;
   this.openTallyForm = false;
+  this.openHubspotForm = false;
   this.openGoogleAnalyticsForm = false;
   this.openGoogleAnalyticsForm = false;
   this.postGreServerName = '';
@@ -2201,6 +2322,11 @@ connectGoogleSheets(){
   this.ninjaRMMClientid = '';
   this.ninjaRMMClientSecret = '';
   this.selectedNinjaRMMScopes = [];
+  this.hubspotClientId = '';
+  this.hubspotClientSecret = '';
+  this.selectedHubspotScopes = [];
+  this.hubspotRedirectURL = '';
+  this.hubspotRedirectURLError = false;
   }
 
   serverError:boolean = false;

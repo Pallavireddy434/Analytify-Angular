@@ -36,11 +36,11 @@ export class EtlJobFlowComponent {
   tableTypeTabId: number = 1;
   nodeTypeCounts: { [key: string]: number } = {};
   etlName: string = '';
-  dataFlowId!: string;
+  jobFlowId!: string;
   nodeName: string = '';
   isRunEnable: boolean = false;
   objectType: string = 'select';
-  dataFlowStatus: any[] = [];
+  jobFlowStatus: any[] = [];
   runId: string = '';
   nodeLogs: any[] = [];
   pollingInterval: any;
@@ -52,21 +52,17 @@ export class EtlJobFlowComponent {
   allChecked: boolean = false;
   isSourceClicked: boolean = false;
   isRefrshEnable: boolean = false;
-  dataFlowRunStatus: string = '';
+  jobFlowRunStatus: string = '';
   expression: string = '';
   selectedField: any = {};
   groupedColumns: any = {};
   selectedGroup: any = '';
   selectedColumn: any = {};
   selectedIndex: number = -1;
-  isJoinerCondition: boolean = false;
   isCanvasSelected: boolean = false;
   canvasData: any = { parameters: [], sqlParameters: [] };
   isParameter: boolean = false;
   isSQLParameter: boolean = false;
-  isHaving: boolean = false;
-  isWhere: boolean = false;
-  isFilter: boolean = false;
   sourceSearchTerm: string = '';
   groupSearchTerm: string = '';
   attributeSearchTerm: string = '';
@@ -77,10 +73,18 @@ export class EtlJobFlowComponent {
   selectedGroupAttributeIndex: number | null = null;
   selectedAttributeIndex: number | null = null;
   isCollapsed = false;
-
-  toggleCollapse() {
-    this.isCollapsed = !this.isCollapsed;
-  }
+  dataPointOptions: any[] = [];
+  selectedDataPoint: any = null;
+  isDataPointChange: boolean = false;
+  srcConnections: any[] = [];
+  transformations: any[] = [];
+  isTaskCommand: boolean = false;
+  isDbCommand: boolean = false;
+  isLoopCommand: boolean = false;
+  isTo: boolean = false;
+  isCC: boolean = false;
+  isSubject: boolean = false;
+  isMessage: boolean = false;
   returnTypes: string[] = ['varchar', 'char', 'byteint', 'bigint', 'smallint', 'integer', 'numeric', 'boolean', 'date', 'time with time zone',
     'interval', 'time', 'timestamp', 'decimal', 'real', 'double', 'float', 'nvarchar', 'nchar', 'array[string]', 'array[int]', 'param', 'string', 'datetime'
   ];
@@ -137,10 +141,10 @@ export class EtlJobFlowComponent {
   constructor(private modalService: NgbModal, private toasterService: ToastrService, private workbechService: WorkbenchService,
     private loaderService: LoaderService, private router: Router, private route: ActivatedRoute) {
 
-    if (this.router.url.startsWith('/analytify/etlList/etl')) {
+    if (this.router.url.startsWith('/analytify/etlList/jobFlow')) {
       if (route.snapshot.params['id1']) {
         const id = +atob(route.snapshot.params['id1']);
-        this.dataFlowId = id.toString();
+        this.jobFlowId = id.toString();
       }
     }
   }
@@ -159,8 +163,8 @@ export class EtlJobFlowComponent {
       this.drawflow.zoom_refresh();
       this.drawflow.drawflow.drawflow[this.drawflow.module].canvasData = this.canvasData;
 
-      if (this.dataFlowId) {
-        this.getDataFlow();
+      if (this.jobFlowId) {
+        this.getJobFlow();
       }
 
       const canvasElement = container.querySelector('.drawflow') as HTMLElement;
@@ -310,6 +314,12 @@ export class EtlJobFlowComponent {
         windowClass: 'animate__animated animate__zoomIn',
       });
       this.getDataFlowList();
+    } else if(this.nodeToAdd === 'dbCommand') {
+      this.modalService.open(this.modal, {
+        centered: true,
+        windowClass: 'animate__animated animate__zoomIn',
+      });
+      this.getDataPointList();
     } else {
       this.addNode(this.nodeToAdd, this.posX, this.posY);
     }
@@ -324,14 +334,18 @@ export class EtlJobFlowComponent {
       dataFlow: {},
       general: { name: '' },
       properties: {
-        truncate: false, create: false,
-        havingClause: '', filterCondition: '', whereClause: '',
-        nodeNamesDropdown: [], primaryObject: null, joinList: []
+        successCodes: '0, 99', retryEnable: false, 
+        type: 'sql', command: '', returnType: 'varchar', delimiter: '', iterationMode: 'sequential', failZeroRowsReturn: false, looperStartJob: '',
+        to: '', cc: '', subject: '', attachment: '', message: ''
       },
-      attributes: [],
-      groupAttributes: [],
-      sourceAttributes: [],
-      attributeMapper: [] as any[],
+      command: {
+        commandType: 'external', commandDesc: '', timeOut: 0, sleepInterval: 0,
+        runDBCommandFile: false, continueExecutionFailure: false, dbCommand: '', dbCommandOutputFile: '$$SrcFileDir'
+      },
+      dataPoints: {dataPoint: this.selectedDataPoint?.display_name ?? '', dataPointSchema: '', selectedDataPoint: this.selectedDataPoint},
+      connections: [] as any[],
+      transformations: [] as any[],
+      dataFlowParameters: {}
     };
 
     /** per‑type config for icon/alt text, port counts, initial name, etc. */
@@ -357,6 +371,8 @@ export class EtlJobFlowComponent {
         name: this.selectedDataFlow?.data_flow_name,
         extraNodeData: {
           dataFlow: this.selectedDataFlow,
+          connections: this.srcConnections,
+          transformations: this.transformations
         },
       },
       taskCommand: {
@@ -387,6 +403,11 @@ export class EtlJobFlowComponent {
         type: nodeType,
         nodeData: { ...defaults, general: { name: nodeName }, ...extraData }
       };
+      if(nodeName.includes('Loop_End_Name_')){
+        if(nodeData?.nodeData?.properties?.looperStartJob){
+          nodeData.nodeData.properties.looperStartJob = nodeName;
+        }
+      }
       let label = nodeName;
       if (label.length > 8) {
         label = label.substring(0, 8) + '..';
@@ -407,6 +428,7 @@ export class EtlJobFlowComponent {
 
     // === unchanged post‑add housekeeping ===
     this.selectedDataFlow = null;
+    this.selectedDataPoint = null;
     const allNodes = this.drawflow.drawflow.drawflow[this.drawflow.module].data;
     Object.entries(allNodes).forEach(([id, node]) =>
       console.log('Node ID:', id, 'Node Data:', node)
@@ -470,14 +492,14 @@ export class EtlJobFlowComponent {
     if(this.selectedNode.data.type === 'loop_end'){
       this.tableTabId = 2;
     }
-    if (this.isRefrshEnable && !['success', 'failed'].includes(this.dataFlowRunStatus)) {
+    if (this.isRefrshEnable && !['success', 'failed'].includes(this.jobFlowRunStatus)) {
       this.tableTypeTabId = 2;
-      this.getDataFlowLogs(this.nodeName);
+      this.getJobFlowLogs(this.nodeName);
     }
   }
 
   getDataFlowList() {
-    this.workbechService.getEtlDataFlowList(1, 100, '').subscribe({
+    this.workbechService.getEtlDataFlowList(1, 100, '','dataflow').subscribe({
       next: (data: any) => {
         console.log(data);
         this.dataFlowOptions = data.data;
@@ -488,96 +510,108 @@ export class EtlJobFlowComponent {
       }
     });
   }
-  saveOrUpdateEtlDataFlow() {
+
+  getDataPointList(){
+    this.workbechService.getConnectionsForEtl('POSTGRESQL').subscribe({
+      next: (data) => {
+        console.log(data);
+        this.dataPointOptions = data.data;
+      },
+      error: (error: any) => {
+        console.log(error);
+        this.toasterService.error(error.error.message, 'error', { positionClass: 'toast-top-right' });
+      }
+    });
+  }
+
+  saveOrUpdateEtlJobFlow(): void {
     const exportedData = this.drawflow.export();
     const nodes = exportedData.drawflow.Home.data;
-    console.log(exportedData);
-    console.log(nodes);
 
     const tasks: any[] = [];
     const flows: string[][] = [];
+    const visitedEdges = new Set<string>();
+    const allTo = new Set<number>();
+    const adjacency = new Map<number, number[]>();
 
-    const result: number[][] = [];
-    const queue: number[] = [];
-
-    // Step 1: Add all nodes with empty inputs (sources) to queue
     for (const key in nodes) {
-      const node = nodes[key];
-      if (!node.inputs || Object.keys(node.inputs).length === 0) {
-        queue.push(Number(key)); // Use key directly here
+      const from = Number(key);
+      const outputs = nodes[key].outputs;
+      if (!outputs) {
+        continue;
       }
-    }
-
-    const visited = new Set<string>();
-
-    // Step 2: Process the queue
-    while (queue.length > 0) {
-      const current = queue.shift();
-      if (current === undefined) continue; // type guard
-
-      const node = nodes[current];
-      if (!node || !node.outputs) continue;
-
-      for (const outputKey in node.outputs) {
-        const connections = node.outputs[outputKey]?.connections || [];
-        for (const conn of connections) {
+      for (const outKey in outputs) {
+        for (const conn of outputs[outKey]?.connections ?? []) {
           const to = Number(conn.node);
-          const key = `${current}-${to}`;
-          if (!visited.has(key)) {
-            visited.add(key);
-            result.push([current, to]);
-            flows.push([this.drawflow.getNodeFromId(current).data.nodeData.general.name, this.drawflow.getNodeFromId(to).data.nodeData.general.name]);
-            queue.push(to);
+          allTo.add(to);
+          if (!adjacency.has(from)) {
+            adjacency.set(from, []);
           }
+          adjacency.get(from)!.push(to);
         }
       }
     }
 
-    result.forEach((connection, index) => {
-      const [prevNode, currentNode] = connection;
+    const sources = Object.keys(nodes)
+      .map(id => Number(id))
+      .filter(id => !allTo.has(id));
 
-      const task = this.generateTasks(prevNode, nodes);
-      if (!tasks.some((t: any) => t.id === task.id)) {
-        tasks.push(task);
+    const queue = [...sources];
+    while (queue.length) {
+      const current = queue.shift()!;
+      const neighbors = adjacency.get(current) || [];
+      for (const target of neighbors) {
+        const edgeKey = `${current}-${target}`;
+        if (visitedEdges.has(edgeKey)) {
+          continue;
+        }
+        visitedEdges.add(edgeKey);
+
+        const sourceName = this.drawflow.getNodeFromId(current).data.nodeData.general.name;
+        const targetName = this.drawflow.getNodeFromId(target).data.nodeData.general.name;
+        flows.push([sourceName, targetName]);
+
+        const taskA = this.generateTasks(current, nodes);
+        if (!tasks.some(t => t.id === taskA.id)) {
+          tasks.push(taskA);
+        }
+        const taskB = this.generateTasks(target, nodes);
+        if (!tasks.some(t => t.id === taskB.id)) {
+          tasks.push(taskB);
+        }
+
+        queue.push(target);
       }
-    });
+    }
 
-    result.forEach((connection, index) => {
-      const [prevNode, currentNode] = connection;
-
-      const task = this.generateTasks(currentNode, nodes);
-      if (!tasks.some((t: any) => t.id === task.id)) {
-        tasks.push(task);
-      }
-    });
-
-    console.log(result);
-    console.log(flows);
     console.log(tasks);
+    console.log(flows);
 
     const etlFlow = {
       dag_id: this.etlName,
-      tasks: tasks,
-      flow: flows
+      tasks,
+      flow: flows,
+      flow_type: 'jobflow'
     };
-
     console.log(etlFlow);
 
     const jsonString = JSON.stringify(exportedData);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const file = new File([blob], 'etl-drawflow.json', { type: 'application/json' });
+    const flow_type = 'jobflow';
 
     const formData = new FormData();
     formData.append('transformation_flow', file);
     formData.append('ETL_flow', JSON.stringify(etlFlow));
+    formData.append('flow_type', flow_type);
 
-    if (this.dataFlowId) {
-      formData.append('id', this.dataFlowId);
+    if(this.jobFlowId){
+      formData.append('id', this.jobFlowId);
       this.workbechService.updateEtl(formData).subscribe({
         next: (data: any) => {
           console.log(data);
           this.isRunEnable = true;
-          this.dataFlowId = data.dataflow_id;
+          this.jobFlowId = data.dataflow_id;
           this.toasterService.success(data.message, 'success', { positionClass: 'toast-top-right' });
         },
         error: (error: any) => {
@@ -586,13 +620,15 @@ export class EtlJobFlowComponent {
           console.log(error);
         }
       });
-    } else {
+    } else{
       this.workbechService.saveEtl(formData).subscribe({
         next: (data: any) => {
           console.log(data);
           this.isRunEnable = true;
-          this.dataFlowId = data.dataflow_id;
-          this.toasterService.success(data.message, 'success', { positionClass: 'toast-top-right' });
+          this.jobFlowId = data.dataflow_id;
+          const encodedId = btoa(this.jobFlowId.toString());
+          this.router.navigate(['/analytify/etlList/jobFlow/'+encodedId]);
+          this.toasterService.success('JobFlow Saved Successfully', 'success', { positionClass: 'toast-top-right' });
         },
         error: (error: any) => {
           this.isRunEnable = false;
@@ -602,7 +638,8 @@ export class EtlJobFlowComponent {
       });
     }
   }
-  runDataFlow() {
+
+  runJobFlow() {
     this.workbechService.runEtl(this.etlName).subscribe({
       next: (data: any) => {
         console.log(data);
@@ -621,7 +658,7 @@ export class EtlJobFlowComponent {
           }
         });
         this.isLogShow = true;
-        this.getDataFlowStatus(data.run_id);
+        this.getJobFlowStatus(data.run_id);
         this.toasterService.success('Run Successfully', 'success', { positionClass: 'toast-top-right' });
       },
       error: (error: any) => {
@@ -636,7 +673,7 @@ export class EtlJobFlowComponent {
       }
     });
   }
-  getDataFlowStatus(runId: any) {
+  getJobFlowStatus(runId: any) {
     let object = {
       dag_id: this.etlName,
       run_id: runId
@@ -645,18 +682,15 @@ export class EtlJobFlowComponent {
     this.workbechService.getDataFlowStatus(object).subscribe({
       next: (data: any) => {
         console.log(data);
-        this.dataFlowStatus = data.tasks;
-        this.dataFlowRunStatus = data.status;
-        // if (data.status === 'success' || data.status === 'failed') {
-        //   clearInterval(this.pollingInterval);
-        // }
+        this.jobFlowStatus = data.tasks;
+        this.jobFlowRunStatus = data.status;
 
         Object.entries(this.drawflow.drawflow.drawflow[this.drawflow.module].data).forEach(([id, node]) => {
           const node1 = this.drawflow.getNodeFromId(id);
           const nodeName = node1.data.nodeData.general.name;
 
           // Find matching task status from dataFlowStatus
-          const matchedTask = this.dataFlowStatus.find(task => task.task === nodeName);
+          const matchedTask = this.jobFlowStatus.find(task => task.task === nodeName);
 
           if (matchedTask) {
             let status = matchedTask.state;
@@ -673,10 +707,10 @@ export class EtlJobFlowComponent {
             }
           }
         });
-        this.tableTypeTabId = 2;
+        // this.tableTypeTabId = 2;
         if (!['success', 'failed'].includes(data.status)) {
           setTimeout(() => {
-            this.getDataFlowStatus(runId);
+            this.getJobFlowStatus(runId);
           }, 3000);
         } else {
           this.isRefrshEnable = false;
@@ -688,7 +722,7 @@ export class EtlJobFlowComponent {
       }
     });
   }
-  getDataFlowLogs(taskId: any) {
+  getJobFlowLogs(taskId: any) {
     let object = {
       dag_id: this.etlName,
       run_id: this.runId,
@@ -712,122 +746,30 @@ export class EtlJobFlowComponent {
       id: nodes[nodeId].data.nodeData.general.name,
     };
 
-    if (nodes[nodeId].data.type === 'source_data_object') {
-      let sourceAttr: any[] = [];
-      nodes[nodeId].data.nodeData.sourceAttributes.forEach((atrr: any) => {
-        const array = [atrr.attributeName, atrr.dataType, atrr.selectedColumn.label, atrr.selectedColumn.dataType];
-        sourceAttr.push(array);
-      });
-      let attr: any[] = [];
-      nodes[nodeId].data.nodeData.attributes.forEach((atrr: any) => {
-        const array = [atrr.attributeName, atrr.dataType, atrr.expression];
-        attr.push(array);
-      });
-      task.format = 'database',
-        task.hierarchy_id = nodes[nodeId].data.nodeData.connection.hierarchy_id,
-        task.path = '',
-        task.source_table_name = nodes[nodeId].data.nodeData.dataObject.tables;
-      task.attributes = attr;
-      task.source_attributes = sourceAttr;
-    } else {
-      if (nodes[nodeId].data.type === 'target_data_object') {
-        if (!nodes[nodeId].data.nodeData.properties.create) {
-          let attrMapper: any[] = [];
-          nodes[nodeId].data.nodeData.attributeMapper.forEach((atrr: any) => {
-            const array = [atrr.column, atrr.dataType, atrr.selectedColumn.label, atrr.selectedDataType];
-            attrMapper.push(array);
-          });
-          task.attribute_mapper = attrMapper;
-        }
-        task.format = 'database',
-          task.hierarchy_id = nodes[nodeId].data.nodeData.connection.hierarchy_id,
-          task.path = '',
-          task.target_table_name = nodes[nodeId].data.nodeData.properties.create ? nodes[nodeId].data.nodeData.dataObject : nodes[nodeId].data.nodeData.dataObject.tables;
-        task.truncate = nodes[nodeId].data.nodeData.properties.truncate;
-        task.create = nodes[nodeId].data.nodeData.properties.create;
-      } else if (nodes[nodeId].data.type === 'Rollup') {
-        let grp: any[] = [];
-        nodes[nodeId].data.nodeData.groupAttributes.forEach((atrr: any) => {
-          const array = [atrr.aliasName, '', atrr.selectedColumn.group + '.' + atrr.selectedColumn.label];
-          grp.push(array);
-        });
-        let attr: any[] = [];
-        nodes[nodeId].data.nodeData.attributes.forEach((atrr: any) => {
-          const array = [atrr.attributeName, atrr.dataType, atrr.expression];
-          attr.push(array);
-        });
-        task.group_attributes = grp;
-        task.having_clause = nodes[nodeId].data.nodeData.properties.havingClause;
-        task.attributes = attr;
-      } else if (nodes[nodeId].data.type === 'Filter') {
-        task.filter_conditions = nodes[nodeId].data.nodeData.properties.filterCondition;
-      } else if (nodes[nodeId].data.type === 'Joiner') {
-        task.primary_table = nodes[nodeId].data.nodeData.properties.primaryObject.label;
-        let joins: any[] = [];
-        nodes[nodeId].data.nodeData.properties.joinList.forEach((join: any) => {
-          const array = [join.joinType, join.secondaryObject, join.joinCondition];
-          joins.push(array);
-        });
-        let attr: any[] = [];
-        nodes[nodeId].data.nodeData.attributes.forEach((atrr: any) => {
-          const array = [atrr.attributeName, atrr.dataType, atrr.expression];
-          attr.push(array);
-        });
-        task.joining_list = joins;
-        task.where_clause = nodes[nodeId].data.nodeData.properties.whereClause;
-        task.attributes = attr;
-      } else if (nodes[nodeId].data.type === 'Expression') {
-        let exps: any[] = [];
-        nodes[nodeId].data.nodeData.attributes.forEach((atrr: any) => {
-          const array = [atrr.attributeName, atrr.dataType, atrr.expression];
-          exps.push(array);
-        });
-        task.expressions_list = exps;
-      }
+    if (nodes[nodeId].data.type === 'taskCommand') {
+      task.command_type = nodes[nodeId].data.nodeData.command.commandType;
+      task.commands = nodes[nodeId].data.nodeData.command.commandDesc;
+      task.time_out = nodes[nodeId].data.nodeData.command.timeOut;
+      task.sleep_interval = nodes[nodeId].data.nodeData.command.sleepInterval;
+    } else if(nodes[nodeId].data.type === 'dbCommand'){
+      task.queries = nodes[nodeId].data.nodeData.command.dbCommand;
+      task.hierarchy_id = nodes[nodeId].data.nodeData.dataPoints.selectedDataPoint.hierarchy_id;
+    } else if(nodes[nodeId].data.type === 'loop'){
+      
+    } else if(nodes[nodeId].data.type === 'emailNotification'){
+      
+    } else if(nodes[nodeId].data.type === 'dataFlow'){
+      task.trigger_dag = nodes[nodeId].data.nodeData.dataFlow.data_flow_name;
+    }
 
-      const inputConnections = nodes[nodeId].inputs?.input_1?.connections || [];
-      if (inputConnections.length > 0) {
-        const prevTaskIds = inputConnections.map((conn: any) => nodes[conn.node].data.nodeData.general.name);
-        if (nodes[nodeId].data.type === 'Joiner') {
-          task.previous_task_id = prevTaskIds;
-        } else {
-          task.previous_task_id = prevTaskIds[0];
-        }
-      }
+
+    const inputConnections = nodes[nodeId].inputs?.input_1?.connections || [];
+    if (inputConnections.length > 0) {
+      const prevTaskIds = inputConnections.map((conn: any) => nodes[conn.node].data.nodeData.general.name);
+      task.previous_task_id = prevTaskIds;
     }
 
     return task;
-  }
-  addNewAttribute() {
-    let count = this.selectedNode.data.nodeData.attributes.length + 1;
-    let attribute = { attributeName: 'ATTR_NAME_' + count, dataType: 'varchar', expression: '' }
-    this.selectedNode.data.nodeData.attributes.push(attribute);
-  }
-  deleteAttribute(index: number) {
-    this.selectedNode.data.nodeData.attributes.splice(index, 1);
-    this.updateNode('attribute');
-  }
-  addNewGroupAttribute() {
-    let attribute = { aliasName: '', selectColumnDropdown: this.selectedNode.data.nodeData.dataObject, selectedColumn: null, dataType: '', }
-    this.selectedNode.data.nodeData.groupAttributes.push(attribute);
-  }
-  deleteGroupAttribute(index: number) {
-    this.selectedNode.data.nodeData.groupAttributes.splice(index, 1);
-    this.updateNode('groupattribute');
-  }
-  deleteSourceAttribute(index: number) {
-    this.selectedNode.data.nodeData.sourceAttributes.splice(index, 1);
-    this.updateNode('');
-  }
-  startPollingDataFlowStatus(runId: any) {
-    // Clear any existing polling
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-    }
-
-    this.pollingInterval = setInterval(() => {
-      this.getDataFlowStatus(runId);
-    }, 2000); // Poll every 3 seconds
   }
 
   openAttributesSelection(modal: any) {
@@ -926,20 +868,7 @@ export class EtlJobFlowComponent {
       }));
     } else {
       const nodeData = JSON.parse(JSON.stringify(this.selectedNode.data.nodeData));
-
-      if (this.selectedNode.data.type === 'source_data_object') {
-        const columns = nodeData.dataObject.columns || [];
-        const group = this.selectedNode.data.nodeData.general.name;
-
-        dataObject = columns.map((col: any) => ({
-          label: col.col,
-          value: col.col,
-          dataType: col.dtype,
-          group: group
-        }));
-      } else {
-        dataObject = nodeData.dataObject || [];
-      }
+      dataObject = nodeData.dataObject || [];
     }
 
     this.groupedColumns = dataObject.reduce((acc: any, attr: any) => {
@@ -953,21 +882,7 @@ export class EtlJobFlowComponent {
     const groupKeys = Object.keys(this.groupedColumns);
     this.selectedGroup = groupKeys.length > 0 ? groupKeys[0] : null;
 
-    if (attribute.hasOwnProperty('secondaryObject')) {
-      this.isJoinerCondition = true;
-      this.isParameter = false;
-      this.isSQLParameter = false;
-      this.isHaving = false;
-      this.isWhere = false;
-      this.isFilter = false;
-      this.selectedField = attribute.secondaryObject;
-      this.selectedColumn = this.groupedColumns[this.selectedGroup][0];
-      this.expression = attribute.joinCondition;
-    } else if (attribute.hasOwnProperty('paramName')) {
-      this.isJoinerCondition = false;
-      this.isHaving = false;
-      this.isWhere = false;
-      this.isFilter = false;
+    if (attribute.hasOwnProperty('paramName')) {
       this.selectedField = attribute;
       this.selectedColumn = '';
       if (attribute.hasOwnProperty('sql')) {
@@ -977,46 +892,82 @@ export class EtlJobFlowComponent {
         this.isParameter = true;
         this.expression = attribute.default;
       }
-    } else if (attribute === 'having') {
-      this.isJoinerCondition = false;
-      this.isParameter = false;
-      this.isSQLParameter = false;
-      this.isWhere = false;
-      this.isFilter = false;
-      this.isHaving = true;
-      this.selectedField = 'Having Clause';
-      this.selectedColumn = this.groupedColumns[this.selectedGroup][0];;
-      this.expression = this.selectedNode.data.nodeData.properties.havingClause;
-    } else if (attribute === 'where') {
-      this.isJoinerCondition = false;
-      this.isParameter = false;
-      this.isSQLParameter = false;
-      this.isHaving = false;
-      this.isFilter = false;
-      this.isWhere = true;
-      this.selectedField = 'Where Clause';
-      this.selectedColumn = this.groupedColumns[this.selectedGroup][0];;
-      this.expression = this.selectedNode.data.nodeData.properties.whereClause;
-    } else if (attribute === 'filter') {
-      this.isJoinerCondition = false;
-      this.isParameter = false;
-      this.isSQLParameter = false;
-      this.isHaving = false;
-      this.isWhere = false;
-      this.isFilter = true;
-      this.selectedField = 'Filter Condition';
-      this.selectedColumn = this.groupedColumns[this.selectedGroup][0];;
-      this.expression = this.selectedNode.data.nodeData.properties.filterCondition;
+      this.isTaskCommand = false;
+      this.isDbCommand = false;
+      this.isLoopCommand = false;
+      this.isTo = false;
+      this.isCC = false;
+      this.isSubject = false;
+      this.isMessage = false;
     } else {
-      this.isJoinerCondition = false;
       this.isParameter = false;
       this.isSQLParameter = false;
-      this.isHaving = false;
-      this.isWhere = false;
-      this.isFilter = false;
       this.selectedField = attribute;
-      this.selectedColumn = attribute;
-      this.expression = attribute.expression;
+      this.selectedColumn = '';
+      if(attribute === 'command') {
+        this.isTaskCommand = true;
+        this.isDbCommand = false;
+        this.isLoopCommand = false;
+        this.isTo = false;
+        this.isCC = false;
+        this.isSubject = false;
+        this.isMessage = false;
+        this.expression = this.selectedNode.data.nodeData.command.commandDesc;
+      } else if(attribute === 'dbCommand') {
+        this.isTaskCommand = false;
+        this.isDbCommand = true;
+        this.isLoopCommand = false;
+        this.isTo = false;
+        this.isCC = false;
+        this.isSubject = false;
+        this.isMessage = false;
+        this.expression = this.selectedNode.data.nodeData.command.dbCommand;
+      } else if(attribute === 'loopCommand') {
+        this.isTaskCommand = false;
+        this.isDbCommand = false;
+        this.isLoopCommand = true;
+        this.isTo = false;
+        this.isCC = false;
+        this.isSubject = false;
+        this.isMessage = false;
+        this.expression = this.selectedNode.data.nodeData.properties.command;
+      } else if(attribute === 'to') {
+        this.isTaskCommand = false;
+        this.isDbCommand = false;
+        this.isLoopCommand = false;
+        this.isTo = true;
+        this.isCC = false;
+        this.isSubject = false;
+        this.isMessage = false;
+        this.expression = this.selectedNode.data.nodeData.properties.to;
+      } else if(attribute === 'cc') {
+        this.isTaskCommand = false;
+        this.isDbCommand = false;
+        this.isLoopCommand = false;
+        this.isTo = false;
+        this.isCC = true;
+        this.isSubject = false;
+        this.isMessage = false;
+        this.expression = this.selectedNode.data.nodeData.properties.cc;
+      } else if(attribute === 'subject') {
+        this.isTaskCommand = false;
+        this.isDbCommand = false;
+        this.isLoopCommand = false;
+        this.isTo = false;
+        this.isCC = false;
+        this.isSubject = true;
+        this.isMessage = false;
+        this.expression = this.selectedNode.data.nodeData.properties.subject;
+      } else if(attribute === 'message') {
+        this.isTaskCommand = false;
+        this.isDbCommand = false;
+        this.isLoopCommand = false;
+        this.isTo = false;
+        this.isCC = false;
+        this.isSubject = false;
+        this.isMessage = true;
+        this.expression = this.selectedNode.data.nodeData.properties.message;
+      } 
     }
     this.modalService.open(modal, {
       centered: true,
@@ -1026,20 +977,24 @@ export class EtlJobFlowComponent {
   }
 
   updateExpressionToNode() {
-    if (this.isJoinerCondition) {
-      this.selectedNode.data.nodeData.properties.joinList[this.selectedIndex].joinCondition = this.expression;
-    } else if (this.isParameter) {
+    if (this.isParameter) {
       this.canvasData.parameters[this.selectedIndex].default = this.expression;
     } else if (this.isSQLParameter) {
       this.canvasData.sqlParameters[this.selectedIndex].sql = this.expression;
-    } else if (this.isHaving) {
-      this.selectedNode.data.nodeData.properties.havingClause = this.expression;
-    } else if (this.isWhere) {
-      this.selectedNode.data.nodeData.properties.whereClause = this.expression;
-    } else if (this.isFilter) {
-      this.selectedNode.data.nodeData.properties.filterCondition = this.expression;
-    } else {
-      this.selectedNode.data.nodeData.attributes[this.selectedIndex].expression = this.expression;
+    } else if( this.isTaskCommand) {
+      this.selectedNode.data.nodeData.command.commandDesc = this.expression;
+    } else if(this.isDbCommand) {
+      this.selectedNode.data.nodeData.command.dbCommand = this.expression;
+    } else if(this.isLoopCommand) { 
+      this.selectedNode.data.nodeData.properties.command = this.expression;
+    } else if(this.isTo) {
+      this.selectedNode.data.nodeData.properties.to = this.expression;
+    } else if(this.isCC) {
+      this.selectedNode.data.nodeData.properties.cc = this.expression;
+    } else if(this.isSubject) {
+      this.selectedNode.data.nodeData.properties.subject = this.expression;
+    }  else if(this.isMessage) {
+      this.selectedNode.data.nodeData.properties.message = this.expression;
     }
 
     if (!this.isParameter && !this.isSQLParameter) {
@@ -1051,10 +1006,15 @@ export class EtlJobFlowComponent {
     this.selectedGroup = '';
     this.selectedColumn = {};
     this.selectedIndex = -1;
-    this.isJoinerCondition = false;
-    this.isHaving = false;
-    this.isWhere = false;
-    this.isFilter = false;
+    this.isTaskCommand = false;
+    this.isDbCommand = false;
+    this.isLoopCommand = false;
+    this.isTo = false;
+    this.isCC = false;
+    this.isSubject = false;
+    this.isMessage = false;
+    this.isParameter = false;
+    this.isSQLParameter = false;
   }
 
   insertOrReplace(text: string, textarea: HTMLTextAreaElement): void {
@@ -1071,12 +1031,12 @@ export class EtlJobFlowComponent {
     });
   }
 
-  getDataFlow() {
-    this.workbechService.getEtlDataFlow(this.dataFlowId).subscribe({
+  getJobFlow() {
+    this.workbechService.getEtlDataFlow(this.jobFlowId, 'jobflow').subscribe({
       next: (data) => {
         console.log(data);
         this.etlName = data.dag_id;
-        this.dataFlowId = data.id;
+        this.jobFlowId = data.id;
         const drawFlowJson = JSON.parse(data.transformation_flow);
         this.drawflow.import(drawFlowJson);
         console.log(drawFlowJson);
@@ -1090,6 +1050,10 @@ export class EtlJobFlowComponent {
         setTimeout(() => {
           const allNodes = this.drawflow.drawflow.drawflow['Home'].data;
           Object.entries(allNodes).forEach(([id, node]: [string, any]) => {
+            const type = node.data?.type;
+            if (type && type !== 'dataFlow') {
+              this.nodeTypeCounts[type] = (this.nodeTypeCounts[type] || 0) + 1;
+            }
             const displayName = (node.data?.nodeData?.general?.name || '').substring(0, 8) + '..';
             const nodeElement = document.querySelector(`#node-${id}`);
             if (nodeElement) {
@@ -1108,16 +1072,6 @@ export class EtlJobFlowComponent {
         this.toasterService.error(error.error.message, 'error', { positionClass: 'toast-top-right' });
       }
     });
-  }
-
-  setAttributeAutoMapper() {
-    const mapper = this.selectedNode.data.nodeData.attributeMapper
-    if (mapper.length > 0) {
-      mapper.forEach((attr: any) => {
-        attr.selectedDataType = attr.dataType;
-      });
-      this.drawflow.updateNodeDataFromId(this.selectedNode.id, this.selectedNode.data);
-    }
   }
 
   addNewParameter() {
@@ -1174,70 +1128,8 @@ export class EtlJobFlowComponent {
     this.updateNode('parameter');
   }
 
-  moveUp(type: string) {
-    let isChanged: boolean = false;
-    if (type === 'sourceAttributes') {
-      if (this.selectedSourceAttributeIndex !== null && this.selectedSourceAttributeIndex > 0) {
-        const index = this.selectedSourceAttributeIndex;
-        const attrs = this.selectedNode.data.nodeData.sourceAttributes;
-        [attrs[index - 1], attrs[index]] = [attrs[index], attrs[index - 1]];
-        this.selectedSourceAttributeIndex--;
-        isChanged = true;
-      }
-    } else if (type === 'groupAttributes') {
-      if (this.selectedGroupAttributeIndex !== null && this.selectedGroupAttributeIndex > 0) {
-        const index = this.selectedGroupAttributeIndex;
-        const attrs = this.selectedNode.data.nodeData.groupAttributes;
-        [attrs[index - 1], attrs[index]] = [attrs[index], attrs[index - 1]];
-        this.selectedGroupAttributeIndex--;
-        isChanged = true;
-      }
-    } else if (type === 'attributes') {
-      if (this.selectedAttributeIndex !== null && this.selectedAttributeIndex > 0) {
-        const index = this.selectedAttributeIndex;
-        const attrs = this.selectedNode.data.nodeData.attributes;
-        [attrs[index - 1], attrs[index]] = [attrs[index], attrs[index - 1]];
-        this.selectedAttributeIndex--;
-        isChanged = true;
-      }
-    }
-
-    if (isChanged) {
-      this.updateNode('');
-    }
-  }
-
-  moveDown(type: string) {
-    let isChanged: boolean = false;
-    if (type === 'sourceAttributes') {
-      if (this.selectedSourceAttributeIndex !== null && this.selectedSourceAttributeIndex < this.selectedNode.data.nodeData.sourceAttributes.length - 1) {
-        const index = this.selectedSourceAttributeIndex;
-        const attrs = this.selectedNode.data.nodeData.sourceAttributes;
-        [attrs[index + 1], attrs[index]] = [attrs[index], attrs[index + 1]];
-        this.selectedSourceAttributeIndex++;
-        isChanged = true;
-      }
-    } else if (type === 'groupAttributes') {
-      if (this.selectedGroupAttributeIndex !== null && this.selectedGroupAttributeIndex < this.selectedNode.data.nodeData.groupAttributes.length - 1) {
-        const index = this.selectedGroupAttributeIndex;
-        const attrs = this.selectedNode.data.nodeData.groupAttributes;
-        [attrs[index + 1], attrs[index]] = [attrs[index], attrs[index + 1]];
-        this.selectedGroupAttributeIndex++;
-        isChanged = true;
-      }
-    } else if (type === 'attributes') {
-      if (this.selectedAttributeIndex !== null && this.selectedAttributeIndex < this.selectedNode.data.nodeData.attributes.length - 1) {
-        const index = this.selectedAttributeIndex;
-        const attrs = this.selectedNode.data.nodeData.attributes;
-        [attrs[index + 1], attrs[index]] = [attrs[index], attrs[index + 1]];
-        this.selectedAttributeIndex++;
-        isChanged = true;
-      }
-    }
-
-    if (isChanged) {
-      this.updateNode('');
-    }
+  toggleCollapse() {
+    this.isCollapsed = !this.isCollapsed;
   }
 
   canvasZoomOut() {
@@ -1248,5 +1140,37 @@ export class EtlJobFlowComponent {
   }
   canvasZoomIn() {
     this.drawflow.zoom_in();
+  }
+
+  changeDataPointPopup(modal:any){
+    this.modalService.open(this.modal, {
+      centered: true,
+      windowClass: 'animate__animated animate__zoomIn',
+    });
+    this.selectedDataPoint = this.selectedNode.data.nodeData.dataPoints.selectedDataPoint
+    this.getDataPointList();
+  }
+
+  updateDataPointToNode(){
+    this.selectedNode.data.nodeData.dataPoints.selectedDataPoint = this.selectedDataPoint;
+    this.selectedNode.data.nodeData.dataPoints.dataPoint = this.selectedDataPoint?.display_name;
+    this.updateNode('');
+  }
+
+  getDataFlow(id: any) {
+    this.workbechService.getEtlDataFlow(id, 'dataflow').subscribe({
+      next: (data) => {
+        console.log(data);
+        const drawFlowJson = JSON.parse(data.transformation_flow);
+        console.log(drawFlowJson);
+        const allNodes = Object.values(drawFlowJson.drawflow.Home.data);
+        this.srcConnections = allNodes.filter((node: any) => node.data.type === 'source_data_object' || node.data.type === 'target_data_object');
+        this.transformations = allNodes.filter((node: any) => node.data.type !== 'source_data_object' && node.data.type !== 'target_data_object');
+      },
+      error: (error: any) => {
+        console.log(error);
+        this.toasterService.error(error.error.message, 'error', { positionClass: 'toast-top-right' });
+      }
+    });
   }
 }

@@ -161,6 +161,8 @@ export class DatabaseComponent {
   crossDbId= '';
   crossDbFilteredTablesT1: any[] = [];
   originalCrossDbTablesT1: any;
+  crossDbConnections: any[] = [];
+  isCrossDb = false;
   dragTablestoSemanticLayer = false;
   deleteTablesFromSemanticLayer = false;
   canSearchTablesInSemanticLayer = false;
@@ -277,6 +279,10 @@ export class DatabaseComponent {
           this.templateDashboardService.buildSampleSalesforceDashboard(this.container, this.databaseId);
         }
       });
+    }
+    if(currentUrl.includes('/analytify/database-connection/hubspot/')){
+      this.fromDatabasId = true;
+      this.databaseId = +atob(route.snapshot.params['id']);
     }
 }
   ngOnInit(){
@@ -434,6 +440,8 @@ getSchemaTablesFromConnectedDb(){
   const IdToPass = this.databaseId
   this.schematableList =[];
   this.workbechService.getSchemaTablesFromConnectedDb(IdToPass,obj).subscribe({next: (data) => {
+    this.crossDbConnections = data;
+    this.isCrossDb = data[0]?.is_cross_db;
     if(data[0].cross_db_id){
       this.crossDbId = data[0].cross_db_id;
       console.log(this.crossDbId.length)
@@ -1997,5 +2005,37 @@ clearRelationCondns(){
   this.selectedCndn ='Operator';
   this.selectedClmnT1=null
   this.selectedClmnT2=null;
+}
+
+openDeleteCrossDbModal(modal: any){
+  this.modalService.open(modal, {
+    centered: true,
+    windowClass: 'animate__animated animate__zoomIn',
+  });
+}
+
+deleteConnectedDb(db:any){
+  const obj = {
+    cross_db_id: db.cross_db_id,
+    delete_db_id: db.hierarchy_id
+  };
+  this.workbechService.crossDbDeletion(obj).subscribe({
+    next: (data: any) => {
+      this.crossDbConnections = this.crossDbConnections.filter((item: any) => item.hierarchy_id !== db.hierarchy_id);
+      this.isCrossDb = this.crossDbConnections.length > 1;
+      if(this.crossDbConnections.length){
+        this.databaseName = this.crossDbConnections[0].display_name;
+      }
+      if(this.crossDbConnections.length <= 1){
+        this.modalService.dismissAll('close');
+      }
+      this.databaseId = data.id;
+      this.getSchemaTablesFromConnectedDb();
+      this.toasterService.success('Database Deleted Successfully','success',{ positionClass: 'toast-top-right'});
+    },
+    error: (data:any) => {
+      this.toasterService.error('Unable to delete database.'+ data?.error?.message,'error',{ positionClass: 'toast-top-right'});
+    }
+  });
 }
 }

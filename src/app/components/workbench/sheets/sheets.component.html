@@ -752,7 +752,7 @@
                                                     <a ngbNavLink class="p-3 TabShadow">General</a>
                                                     <ng-template ngbNavContent>
                                                         <div class="tab-pane active" id="activetabs">
-                                                            <div class="d-flex">
+                                                            <div *ngIf="toggleTableSearch" class="d-flex">
                                                                 <input type="text" class="form-control border-end-0 " placeholder="Search" [(ngModel)]="filterSearch"  aria-describedby="button-addon2" >
                                                                 <button class="btn btn-primary border me-2 search-icon-border-radius"  type="button" id="button-addon2"><i class="fe fe-search "></i></button>
                                                             </div>
@@ -2441,7 +2441,7 @@
                 <div class="sheet-search">
                     <div class="">
                     </div>
-                    <div *ngIf="table &&(draggedRows?.length > 0 || draggedColumns?.length > 0 )" class="input-group mt-1 p-1 sheet-table-search">
+                    <div *ngIf="table &&(draggedRows?.length > 0 || draggedColumns?.length > 0 ) && toggleTableSearch" class="input-group mt-1 p-1 sheet-table-search">
                         <input type="text" placeholder="Search" aria-describedby="button-addon2" [(ngModel)]="tableChartSearch" (keyup.enter)="tableDisplayPaginationSearch()" class="form-control border-end-0 ">
                         <button type="button" id="button-addon2" class="btn btn-primary border me-2 search-icon-border-radius" (click)="tableDisplayPaginationSearch()" >
                         <i class="fe fe-search"></i></button>
@@ -2491,7 +2491,7 @@
                                     
                                     </tbody>
                                   </table>
-                                  <pagination-controls *ngIf="table &&(draggedRows?.length > 0 || draggedColumns?.length > 0 )" previousLabel="Prev" nextLabel="Next" (pageChange)="pageChangeTableDisplay((page = $event))"></pagination-controls>
+                                  <pagination-controls *ngIf="table &&(draggedRows?.length > 0 || draggedColumns?.length > 0 ) && toggleTablePagination" previousLabel="Prev" nextLabel="Next" (pageChange)="pageChangeTableDisplay((page = $event))"></pagination-controls>
                                 }
                                 @if(pivotTable && chartId){
                                     <div id="pivotTableContainer" #pivotTableContainer></div>                                }
@@ -2505,7 +2505,7 @@
                                 @if(isApexCharts && !table && !kpi && !pivotTable){
               <!-- @if(bar && chartId){ -->
 
-                <app-insight-apex [chartsRowData]="chartsRowData" [chartsColumnData]="chartsColumnData" [dualAxisColumnData]="dualAxisColumnData" 
+                <app-insight-apex [chartsRowData]="chartsRowData" [chartsColumnData]="chartsColumnData" [dualAxisColumnData]="dualAxisColumnData"
                 [dualAxisRowData]="dualAxisRowData" [tablePreviewRow]="tablePreviewRow" [chartType]="chartType" [xGridSwitch]="xGridSwitch"
                 [xLabelSwitch]="xLabelSwitch" [yLabelSwitch]="yLabelSwitch" [yGridSwitch]="yGridSwitch" [xLabelFontFamily]="xLabelFontFamily"
                 [xLabelFontSize]="xLabelFontSize" [xlabelFontWeight]="xlabelFontWeight" [backgroundColor]="backgroundColor" [color]="color"
@@ -2655,7 +2655,7 @@
             @else if(radar && chartId){
                 <div class="card-body">
                     <app-insight-echart  [chartType]="chartType" [color]="color"  [isBold]="isBold" [radarRowData]="radarRowData" [dataLabelsFontPosition]="dataLabelsFontPosition" [dimensionAlignment] = "dimensionAlignment" [dualAxisRowData]="dualAxisRowData" [dualAxisColumnData]="dualAxisColumnData"
-                    [backgroundColor]="backgroundColor" [legendSwitch]="legendSwitch" [xLabelColor]="xLabelColor" [dataLabels]="dataLabels" [dataLabelsFontFamily]="dataLabelsFontFamily" 
+                    [backgroundColor]="backgroundColor" [legendSwitch]="legendSwitch" [xLabelColor]="xLabelColor" [dataLabels]="dataLabels" [dataLabelsFontFamily]="dataLabelsFontFamily"  [isRadarDistribution]="isRadarDistribution" [selectedColorScheme]="selectedColorScheme"
                     [dataLabelsFontSize]="dataLabelsFontSize" [dataLabelsColor]="dataLabelsColor" [legendsAllignment]="legendsAllignment" [chartsRowData]="chartsRowData" [chartsColumnData]="chartsColumnData"
                     [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix" [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" (saveOrUpdateChart)="setChartOptions($event)"></app-insight-echart>
                 </div>
@@ -4387,6 +4387,17 @@
                                                                     [format] = "'hex'"
                                                                      ></ngx-colors>
                                                     </div>
+                                                    <div *ngIf="(table && chartId) && (draggedColumns?.length !== 0 || draggedRows?.length !==0)" class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2 p-2 border rounded-2">
+                                                         <div class=""> 
+                                                            <label class="mb-0">Search </label>
+                                                        </div>
+                                                        <div *ngIf="toggleTableSearch" class="toggle toggle-sm on mb-0" (click)="toggleTableSearch=!toggleTableSearch;toggleTableSearchBarOff()">
+                                                            <span></span>
+                                                        </div>
+                                                        <div *ngIf="!toggleTableSearch" class="toggle toggle-sm off mb-0" (click)="toggleTableSearch=!toggleTableSearch">
+                                                            <span></span>
+                                                        </div>
+                                                    </div>
                                                     <div *ngIf="(pivotTable && chartId) && (draggedColumns?.length !== 0 || draggedRows?.length !==0)" class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2 p-2 border rounded-2">
                                                         <div class=""> 
                                                             <label class="mb-0">Column Totals </label>
@@ -4409,10 +4420,19 @@
                                                             <span></span>
                                                         </div>
                                                     </div>
-                                                    <div *ngIf="(table && chartId) && (draggedColumns?.length !== 0 || draggedRows?.length !==0)" class=" mb-2 p-2 border rounded-2">
-                                                        <div class="d-flex align-items-center justify-content-between mb-0 flex-wrap gap-2">
+                                                    <div *ngIf="(table && chartId) && (draggedColumns?.length !== 0 || draggedRows?.length !==0)" class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2 p-2 border rounded-2">
+                                                             <div class=""> 
+                                                            <label class="mb-0">Table Pagination </label>
+                                                        </div>
+                                                        <div *ngIf="toggleTablePagination" class="toggle toggle-sm on mb-0" (click)="toggleTablePagination=!toggleTablePagination">
+                                                            <span></span>
+                                                        </div>
+                                                        <div *ngIf="!toggleTablePagination" class="toggle toggle-sm off mb-0" (click)="toggleTablePagination=!toggleTablePagination">
+                                                            <span></span>
+                                                        </div>
+                                                        <div *ngIf="toggleTablePagination" class="d-flex align-items-center justify-content-between mb-0 flex-wrap gap-2">
                                                             <label class="mb-0">Page Length</label>
-                                                            <select  [(ngModel)]="itemsPerPage" (ngModelChange)="tableDisplayPagination(false)" class="form-control cursor w-40 p-1">
+                                                            <select  [(ngModel)]="itemsPerPage" (ngModelChange)="tableDisplayPageLength()" class="form-control cursor w-40 p-1">
                                                                 <option  [ngValue]="''" disabled> select page length</option>
                                                                   <option  [ngValue]="10"> 10</option>
                                                                   <option  value="50"> 50</option>
@@ -4421,7 +4441,12 @@
                                                                   <option  value="1000"> 1000</option>
                                                             </select>
                                                          </div>
+                                                         <div *ngIf="!toggleTablePagination" class="w-100 text-muted small mt-1">
+                                                            <i class="bi bi-info-circle-fill me-1"></i>
+                                                            Pagination is turned off. The data shown in the sheet will reflect only the currently visible set, not the entire dataset.
+                                                        </div>
                                                     </div>
+                                                    
                                                     <div *ngIf="!isApexCharts && isEChatrts && !(pie || donut || funnel || calendar || radar || kpi || table || pivotTable)" class="d-flex align-items-center justify-content-between  mb-2 flex-wrap gap-2 p-2 border rounded-2">
                                                         <div class=""> 
                                                             <label class="mb-0">Zoom </label>
@@ -4588,7 +4613,7 @@
                                                                      ></ngx-colors>
                                                                 </div>
 
-                                                                <div *ngIf="!((table && chartId) || (pie && chartId)||donut||kpi||barLine||sidebyside||stocked||horizentalStocked||grouped||multiLine||heatMap || calendar) && ((!isDistributed && (bar || funnel)) || area || line || radar)" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
+                                                                <div *ngIf="!((table && chartId) || (pie && chartId)||donut||kpi||barLine||sidebyside||stocked||horizentalStocked||grouped||multiLine||heatMap || calendar) && ((!isDistributed && (bar || funnel)) || area || line || (radar && !isRadarDistribution))" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
                                                                     <div class=""> 
                                                                         <p>Chart</p>
                                                                     </div>
@@ -4604,7 +4629,18 @@
                                                                     (ngModelChange)="marksColor2($event)"
                                                                     [format]="'hex'"></ngx-colors>
                                                                 </div>
-
+                                                                <div *ngIf="radar && chartColorSwitch" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
+                                                                    <div class=""> 
+                                                                        <p>Color Distribution</p>
+                                                                    </div>
+                                                                    <div *ngIf="isRadarDistribution" class="toggle toggle-sm on mb-0" (click)="isRadarDistribution = !isRadarDistribution;">
+                                                                        <span></span>
+                                                                    </div>
+                                                                    <div *ngIf="!isRadarDistribution" class="toggle toggle-sm off mb-0" (click)="isRadarDistribution = !isRadarDistribution;">
+                                                                        <span></span>
+                                                                    </div>
+                                                                 
+                                                                </div>
                                                                 <!-- <div 
                                                                 class="dropdown" 
                                                                 *ngIf="pie || donut || sidebyside || stocked || horizentalStocked || grouped || multiLine || heatMap || calendar || (funnel && isDistributed)"> -->
@@ -4758,7 +4794,7 @@
                                                                     <ngx-colors *ngIf="funnelColorSwitch" [(ngModel)]="color" ngx-colors-trigger [format]="'hex'">
                                                                     </ngx-colors>
                                                                 </div> -->
-                                                                <div *ngIf="pie || donut || sidebyside || stocked || horizentalStocked || grouped || multiLine || heatMap || ((funnel || bar) && isDistributed)" class="p-2">
+                                                                <div *ngIf="pie || donut || sidebyside || stocked || horizentalStocked || grouped || multiLine || heatMap || ((funnel || bar) && isDistributed || (radar && isRadarDistribution ))" class="p-2">
                                                                     <div class="d-flex justify-content-between p-1 border rounded-3">
                                                                         <div class="colors-card">
                                                                             <ul class="d-flex flex-wrap">

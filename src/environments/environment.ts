@@ -20,6 +20,7 @@ export const environment = {
     // QA server
     // apiUrl:'http://13.52.99.241:80/v1',
         apiUrl:'https://api.qa.insightapps.ai/v1',
+        airflowApiUrl: 'http://3.101.147.3:8080/api/v2', // TODO: Set to your Airflow API base URL
     // demo url
       // apiUrl:'https://api.insightapps.ai/v1'
 };

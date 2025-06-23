@@ -45,7 +45,7 @@ import { fontWeight } from 'html2canvas/dist/types/css/property-descriptors/font
 import { COLOR_PALETTE } from '../../../shared/models/color-palette.model';
 import { fontFamily } from 'html2canvas/dist/types/css/property-descriptors/font-family';
 import { lastValueFrom, Subscription, timer } from 'rxjs';
-import { evaluate, i, parse } from 'mathjs';
+import { evaluate, i, parse, re } from 'mathjs';
 import { InsightApexComponent } from '../insight-apex/insight-apex.component';
 import { InsightEchartComponent } from '../insight-echart/insight-echart.component';
 import { SharedService } from '../../../shared/services/shared.service';
@@ -251,7 +251,8 @@ export class SheetsComponent{
   createdBy : any;
   calculatedFieldFunction : string = '';
   nestedCalculatedFieldData : string = '';
-
+  toggleTableSearch:boolean=true;
+  toggleTablePagination:boolean=true;
   radar: boolean = false;
   radarRowData: any = [];
   xlabelAlignment  = 'left';
@@ -387,6 +388,7 @@ export class SheetsComponent{
   locationHeirarchyFieldList: string[] = ['country', 'state', 'city'];
   locationHeirarchyList: string[] = ['country', 'state', 'city'];
   isLocationFeild: boolean = false;
+  isRadarDistribution: boolean = false;
   @ViewChild('pivotTableContainer', { static: false }) pivotContainer!: ElementRef;
   @ViewChild('virtualScrollContainer', { static: false }) container!: ElementRef;
   @ViewChild(CdkVirtualScrollViewport) viewport!: CdkVirtualScrollViewport;
@@ -871,6 +873,19 @@ try {
         this.pageNo = 1;
         this.page = 1;
         this.tableDisplayPagination(false);
+      }
+      tableDisplayPageLength(){
+        this.pageNo = 1;
+        this.page = 1;
+        this.tableDisplayPagination(false);
+      }
+      toggleTableSearchBarOff(){
+        if(this.tableChartSearch.length > 0){
+        this.tableChartSearch = '';
+        this.pageNo = 1;
+        this.page = 1;
+        this.tableDisplayPagination(false);
+        }else return;
       }
       tableDisplayPagination(isSyncData : boolean) {
         if (this.draggedRows.length > 0 || this.draggedColumns.length > 0) {
@@ -2166,7 +2181,7 @@ try {
   donutOptions : any = undefined;
   eMapChartOptions : any;
 
-sheetSave(){
+sheetSave(isDashboardTransfer?: boolean){
   let savedChartOptions ;
   let kpiData;
   let kpiColor;
@@ -2387,6 +2402,9 @@ sheetSave(){
     pivotColumnTotals : this.pivotColumnTotals,
     bandingOddColor :this.bandingOddColor,
     bandingEvenColor:this.bandingEvenColor,
+    toggleTableSearch:this.toggleTableSearch,
+    toggleTablePagination:this.toggleTablePagination,
+    isRadarDistribution:this.isRadarDistribution
   }
   // this.sheetTagName = this.sheetTitle;
   let draggedColumnsObj;
@@ -2507,18 +2525,11 @@ console.log(this.retriveDataSheet_id)
 if(this.retriveDataSheet_id){
   console.log("Sheet Update")
   this.workbechService.sheetUpdate(obj,this.retriveDataSheet_id).subscribe({next: (responce:any) => {
-   this.tabs[this.SheetIndex].sheet_name = this.sheetTitle;
-    if(responce){
-      // Swal.fire({
-      //   icon: 'success',
-      //   text: responce.message,
-      //   width: '200px',
-      // })
-      this.toasterService.success(responce.message,'success',{ positionClass: 'toast-top-right'});
-
-    //   this.getSheetNames();
-    //  this.sheetRetrive();
+    if(this.tabs[this.SheetIndex]){
+      this.tabs[this.SheetIndex].sheet_name = this.sheetTitle;
     }
+    if(responce && !isDashboardTransfer){
+      this.toasterService.success(responce.message,'success',{ positionClass: 'toast-top-right'});
       let obj : object= {
         "sheet_id":this.retriveDataSheet_id
       }
@@ -2527,6 +2538,7 @@ if(this.retriveDataSheet_id){
         console.log(responce);
       }
     })
+  }
   
   },
   error: (error) => {
@@ -2615,6 +2627,642 @@ mergeFilters(filtersData: any[], filtersList: any[]): any[] {
   });
 }
 
+setSheetData(responce :any, isDuplicate : boolean,duplicateFilterData?:any,isDashboardTransfer? :boolean){
+  if(isDuplicate){
+    this.retriveDataSheet_id = '';
+  } else {
+    if (isDashboardTransfer) {
+      this.qrySetId = responce?.queryset_id;
+      this.databaseId = responce?.hierarchy_id;
+      this.chartOptionsSet = responce.sheet_data.savedChartOptions;
+    }
+    this.retriveDataSheet_id = responce?.sheet_id;
+    this.sheetName = responce?.sheet_name;
+    this.sheetTitle = responce?.sheet_name;
+    this.is_sheet_Embed = responce?.is_embedded;
+    this.sheetfilter_querysets_id = responce?.sheetfilter_querysets_id || responce?.sheet_filter_quereyset_ids;
+    if(!responce.sheet_tag_name){
+      this.sheetTagName = responce?.sheet_name;
+    }
+    else{
+      this.sheetTagName = responce?.sheet_tag_name;
+    }
+  }
+  this.chartId = responce?.chart_id;
+  this.sheetChartId = responce?.chart_id;
+  this.sheetCustomQuery = responce?.custom_query;
+  this.sheetResponce = responce?.sheet_data;
+  this.draggedColumns=this.sheetResponce?.columns;
+  if(this.draggedColumns){
+    this.checkDateFormatForYOY();
+  }
+  if(!this.filterQuerySetId){
+    this.filterQuerySetId = responce?.datasource_queryset_id;
+  }
+  this.draggedRows = this.sheetResponce?.rows;
+  if(this.draggedRows){
+    this.checkAggregationForYOY();
+  }
+  this.draggedMeasureValues = this.sheetResponce?.pivotMeasure || []; 
+  this.mulColData = responce?.col_data;
+  this.mulRowData = responce?.row_data;
+  this.pivotMeasureValues = responce?.pivot_measure
+
+  this.pivotMeasureData = this.sheetResponce?.pivotMeasure_Data;
+  this.pivotColumnData = this.sheetResponce?.col;
+  this.pivotRowData = this.sheetResponce?.row;
+
+  this.tablePaginationRows=responce?.row_data;
+  this.tablePaginationColumn=responce?.col_data;
+if (isDuplicate && duplicateFilterData) {
+let filterData = responce?.filters_data;
+this.dimetionMeasure = this.mergeFilters(filterData, duplicateFilterData);
+} else {
+this.dimetionMeasure = responce?.filters_data;
+}
+  this.createdBy = responce?.created_by;
+  this.color1 = responce?.sheet_data?.results?.color1;
+  this.color2 = responce?.sheet_data?.results?.color2;
+  this.tablePaginationCustomQuery = responce?.custom_query;
+  this.donutDecimalPlaces = this.sheetResponce?.results.decimalplaces;
+  if(this.sheetResponce?.numberFormat?.decimalPlaces){ 
+    this.decimalPlaces = this.sheetResponce?.numberFormat?.decimalPlaces;
+  }
+  if(this.sheetResponce?.numberFormat?.displayUnits){
+    this.displayUnits = this.sheetResponce?.numberFormat?.displayUnits;
+  }
+  if(this.sheetResponce?.numberFormat?.prefix){
+    this.prefix = this.sheetResponce?.numberFormat?.prefix;
+  }
+  if(this.sheetResponce?.numberFormat?.suffix){
+    this.suffix = this.sheetResponce?.numberFormat?.suffix;
+  }
+  // this.GridColor = responce.sheet_data.savedChartOptions.chart.background;
+  // this.apexbBgColor = responce.sheet_data.savedChartOptions.grid.borderColor;
+  if(isDuplicate && duplicateFilterData){
+    duplicateFilterData.forEach((filter: any)=>{
+      this.filterId.push(filter.id);
+    });
+  } else {
+  responce?.filters_data.forEach((filter: any)=>{
+    this.filterId.push(filter.filter_id);
+  });
+}
+this.isTopFilter = !this.dimetionMeasure.some((column: any) => column.top_bottom && column.top_bottom.length>0);
+  this.isEChatrts = this.sheetResponce?.isEChart;
+  this.isApexCharts = this.sheetResponce?.isApexChart;
+  this.dateDrillDownSwitch = this.sheetResponce?.isDrillDownData;
+  this.locationDrillDownSwitch = this.sheetResponce?.customizeOptions?.locationDrillDownSwitch;
+  this.isLocationFeild = this.sheetResponce?.customizeOptions?.isLocationField;
+  this.draggedDrillDownColumns = this.sheetResponce?.drillDownHierarchy ? this.sheetResponce.drillDownHierarchy : [];
+  this.heirarchyColumnData = this.sheetResponce?.heirarchyColumnData ? this.sheetResponce?.heirarchyColumnData : [];
+  this.selectedSortColumnData = this.sheetResponce?.selectedSortColumnData ? this.sheetResponce?.selectedSortColumnData : null;
+  if(this.isEChatrts){
+    this.selectedChartPlugin = 'echart';
+  } else {
+    this.isApexCharts = true;
+    this.selectedChartPlugin = 'apex';
+  }
+  this.sheetTagTitle = this.sanitizer.bypassSecurityTrustHtml(this.sheetTagName);
+  // this.displayUnits = 'none';
+  
+  if(this.sheetResponce.columns_data){
+    this.draggedColumnsData = this.sheetResponce?.columns_data;
+  }
+  else{
+    this.draggedColumns.forEach((res:any) => {
+      this.draggedColumnsData.push([res.column,res.data_type,"",""])
+    });
+  }
+  if(this.sheetResponce.rows_data){
+    this.draggedRowsData = this.sheetResponce?.rows_data;
+  }
+  else{
+    this.draggedRows.forEach((res:any) => {
+      this.draggedRowsData.push([res.column,res.data_type,"",res.alias ? res.alias : ""])
+    });
+  }
+  if(this.sheetResponce.pivotMeasure){
+    this.draggedMeasureValues = this.sheetResponce?.pivotMeasure;
+    this.draggedMeasureValuesData = this.sheetResponce?.pivotMeasureValuesData
+  }
+  else if(this.draggedMeasureValues){
+    this.draggedMeasureValues.forEach((res:any) => {
+      this.draggedMeasureValuesData.push([res.column,res.data_type,"",res.alias ? res.alias : ""])
+    });
+  }
+  // this.table = false;
+  this.chartsDataSet(responce);
+  if(responce.chart_id == 1){
+    // this.tableData = this.sheetResponce.results.tableData;
+    // this.displayedColumns = this.sheetResponce?.results.tableColumns;
+    this.bandingSwitch = this.sheetResponce?.results.banding;
+    this.color1 = this.sheetResponce?.results?.color1;
+    this.color2 = this.sheetResponce?.results?.color2;
+    this.table = true;
+    this.pivotTable = false;
+    this.bar = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.map = false
+    this.funnel = false;
+    this.guage = false;
+    this.calendar = false;
+    this.itemsPerPage = this.sheetResponce?.results?.items_per_page;
+    this.tableDisplayPagination(false);
+  }
+  if(responce.chart_id == 9){
+    // this.tableData = this.sheetResponce.results.tableData;
+    this.displayedColumns = this.sheetResponce?.results.tableColumns;
+    this.table = false;
+    this.pivotTable = true;
+    this.bar = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.map = false
+    this.funnel = false;
+    this.guage = false;
+    this.calendar = false;
+    this.pivotTableDatatransform(false);
+  }
+  if(responce.chart_id == 25){
+    this.tablePreviewRow = this.sheetResponce?.results?.kpiData;
+    this.KPINumber = this.sheetResponce?.results?.kpiNumber;
+    this.kpiFontSize = this.sheetResponce?.results?.kpiFontSize;
+    this.kpiColor = this.sheetResponce?.results?.kpicolor;
+    if(this.sheetResponce?.results?.kpiPrefix) {
+      this.KPIPrefix = this.sheetResponce.results.kpiPrefix;
+    }
+    if(this.sheetResponce?.results?.kpiSuffix) {
+      this.KPISuffix = this.sheetResponce.results.kpiSuffix;
+    }
+    this.KPIDisplayUnits = this.sheetResponce?.results?.kpiDecimalUnit,
+    this.KPIDecimalPlaces = this.sheetResponce?.results?.kpiDecimalPlaces,
+    this.table = false;
+    this.pivotTable = false;
+    this.bar = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = true;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+  }
+  if(responce.chart_id == 29){
+    this.http.get('./assets/maps/world.json').subscribe((geoJson: any) => {
+      echarts.registerMap('world', geoJson);  // Register the map data
+    });
+    this.table = false;
+    this.pivotTable = false;
+    this.bar = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = true;
+    this.calendar = false;
+    this.chartType = 'map';
+  }
+ if(responce.chart_id == 6){
+  // this.chartsRowData = this.sheetResponce.results.barYaxis;
+  // this.chartsColumnData = this.sheetResponce.results.barXaxis;
+  this.chartType = 'bar';
+//  this.barChart();
+  this.bar = true;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 24){
+  this.chartType = 'pie';
+  // this.pieChart();
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = true;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.map = false;
+    this.guage = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 13){
+  this.chartType = 'line';
+  // this.lineChart();
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = true;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 17){
+  this.chartType = 'area';
+  // this.areaChart();
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = true;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 7){
+  this.chartType = 'sidebyside';
+  // this.sidebysideBar();
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = true;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 5){
+  this.chartType = 'stocked';
+  // this.stockedBar();
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = true;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.map = false;
+    this.guage = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 4){
+  this.chartType = 'barline';
+  // this.barLineChart();
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = true;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.map = false;
+    this.guage = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 12){
+  this.chartType = 'radar';
+  // this.dualAxisColumnData = this.sheetResponce.results.barLineXaxis;
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = true;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 2){
+  this.chartType = 'hstocked';
+  // this.horizentalStockedBar();
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = true;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.map = false;
+    this.guage = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 3){
+  this.chartType = 'hgrouped';
+  // this.hGrouped();
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = true;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 8){
+  this.chartType = 'multiline';
+  // this.multiLineChart();
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = true;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 10){
+  this.chartType = 'donut';
+  // this.donutChart();
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = true;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 26){
+  this.chartType = 'heatmap';
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = true;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 27){
+  this.chartType = 'funnel';
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = true;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 28){
+  this.chartType = 'guage';
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = true;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 11){
+  this.chartType = 'calendar';
+  this.bar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = true;
+ }
+ if(this.sheetResponce.customizeOptions){
+ this.setCustomizeOptions(this.sheetResponce.customizeOptions);
+ }
+ this.getDimensionAndMeasures();
+ this.changeSelectedColumn();
+  // setTimeout(()=>{
+  //   // this.updateNumberFormat();
+  // }, 1000);
+  if(isDashboardTransfer){
+    this.sheetSave(isDashboardTransfer);
+  }
+
+}
+
 sheetRetrive(isDuplicate : boolean,duplicateFilterData?:any){
   this.getChartData();
   console.log(this.tabs);
@@ -2624,635 +3272,13 @@ sheetRetrive(isDuplicate : boolean,duplicateFilterData?:any){
 }
 
 this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (responce:any) => {
-        if(isDuplicate){
-          this.retriveDataSheet_id = '';
-        } else {
-          this.retriveDataSheet_id = responce?.sheet_id;
-          this.sheetName = responce?.sheet_name;
-          this.sheetTitle = responce?.sheet_name;
-          this.is_sheet_Embed = responce?.is_embedded;
-          this.sheetfilter_querysets_id = responce?.sheetfilter_querysets_id || responce?.sheet_filter_quereyset_ids;
-          if(!responce.sheet_tag_name){
-            this.sheetTagName = responce?.sheet_name;
-          }
-          else{
-            this.sheetTagName = responce?.sheet_tag_name;
-          }
-        }
-        this.chartId = responce?.chart_id;
-        this.sheetChartId = responce?.chart_id;
-        this.sheetCustomQuery = responce?.custom_query;
-        this.sheetResponce = responce?.sheet_data;
-        this.draggedColumns=this.sheetResponce?.columns;
-        if(this.draggedColumns){
-          this.checkDateFormatForYOY();
-        }
-        if(!this.filterQuerySetId){
-          this.filterQuerySetId = responce?.datasource_queryset_id;
-        }
-        this.draggedRows = this.sheetResponce?.rows;
-        if(this.draggedRows){
-          this.checkAggregationForYOY();
-        }
-        this.draggedMeasureValues = this.sheetResponce?.pivotMeasure || []; 
-        this.mulColData = responce?.col_data;
-        this.mulRowData = responce?.row_data;
-        this.pivotMeasureValues = responce?.pivot_measure
-
-        this.pivotMeasureData = this.sheetResponce?.pivotMeasure_Data;
-        this.pivotColumnData = this.sheetResponce?.col;
-        this.pivotRowData = this.sheetResponce?.row;
-
-        this.tablePaginationRows=responce?.row_data;
-        this.tablePaginationColumn=responce?.col_data;
-  if (isDuplicate && duplicateFilterData) {
-    let filterData = responce?.filters_data;
-    this.dimetionMeasure = this.mergeFilters(filterData, duplicateFilterData);
-  } else {
-    this.dimetionMeasure = responce?.filters_data;
-  }
-        this.createdBy = responce?.created_by;
-        this.color1 = responce?.sheet_data?.results?.color1;
-        this.color2 = responce?.sheet_data?.results?.color2;
-        this.tablePaginationCustomQuery = responce?.custom_query;
-        this.donutDecimalPlaces = this.sheetResponce?.results.decimalplaces;
-        if(this.sheetResponce?.numberFormat?.decimalPlaces){ 
-          this.decimalPlaces = this.sheetResponce?.numberFormat?.decimalPlaces;
-        }
-        if(this.sheetResponce?.numberFormat?.displayUnits){
-          this.displayUnits = this.sheetResponce?.numberFormat?.displayUnits;
-        }
-        if(this.sheetResponce?.numberFormat?.prefix){
-          this.prefix = this.sheetResponce?.numberFormat?.prefix;
-        }
-        if(this.sheetResponce?.numberFormat?.suffix){
-          this.suffix = this.sheetResponce?.numberFormat?.suffix;
-        }
-        // this.GridColor = responce.sheet_data.savedChartOptions.chart.background;
-        // this.apexbBgColor = responce.sheet_data.savedChartOptions.grid.borderColor;
-        if(isDuplicate && duplicateFilterData){
-          duplicateFilterData.forEach((filter: any)=>{
-            this.filterId.push(filter.id);
-          });
-        } else {
-        responce?.filters_data.forEach((filter: any)=>{
-          this.filterId.push(filter.filter_id);
-        });
-      }
-      this.isTopFilter = !this.dimetionMeasure.some((column: any) => column.top_bottom && column.top_bottom.length>0);
-        this.isEChatrts = this.sheetResponce?.isEChart;
-        this.isApexCharts = this.sheetResponce?.isApexChart;
-        this.dateDrillDownSwitch = this.sheetResponce?.isDrillDownData;
-        this.locationDrillDownSwitch = this.sheetResponce?.customizeOptions?.locationDrillDownSwitch;
-        this.isLocationFeild = this.sheetResponce?.customizeOptions?.isLocationField;
-        this.draggedDrillDownColumns = this.sheetResponce?.drillDownHierarchy ? this.sheetResponce.drillDownHierarchy : [];
-        this.heirarchyColumnData = this.sheetResponce?.heirarchyColumnData ? this.sheetResponce?.heirarchyColumnData : [];
-        this.selectedSortColumnData = this.sheetResponce?.selectedSortColumnData ? this.sheetResponce?.selectedSortColumnData : null;
-        if(this.isEChatrts){
-          this.selectedChartPlugin = 'echart';
-        } else {
-          this.isApexCharts = true;
-          this.selectedChartPlugin = 'apex';
-        }
-        this.sheetTagTitle = this.sanitizer.bypassSecurityTrustHtml(this.sheetTagName);
-        // this.displayUnits = 'none';
-        
-        if(this.sheetResponce.columns_data){
-          this.draggedColumnsData = this.sheetResponce?.columns_data;
-        }
-        else{
-          this.draggedColumns.forEach((res:any) => {
-            this.draggedColumnsData.push([res.column,res.data_type,"",""])
-          });
-        }
-        if(this.sheetResponce.rows_data){
-          this.draggedRowsData = this.sheetResponce?.rows_data;
-        }
-        else{
-          this.draggedRows.forEach((res:any) => {
-            this.draggedRowsData.push([res.column,res.data_type,"",res.alias ? res.alias : ""])
-          });
-        }
-        if(this.sheetResponce.pivotMeasure){
-          this.draggedMeasureValues = this.sheetResponce?.pivotMeasure;
-          this.draggedMeasureValuesData = this.sheetResponce?.pivotMeasureValuesData
-        }
-        else if(this.draggedMeasureValues){
-          this.draggedMeasureValues.forEach((res:any) => {
-            this.draggedMeasureValuesData.push([res.column,res.data_type,"",res.alias ? res.alias : ""])
-          });
-        }
-        // this.table = false;
-        this.chartsDataSet(responce);
-        if(responce.chart_id == 1){
-          // this.tableData = this.sheetResponce.results.tableData;
-          // this.displayedColumns = this.sheetResponce?.results.tableColumns;
-          this.bandingSwitch = this.sheetResponce?.results.banding;
-          this.color1 = this.sheetResponce?.results?.color1;
-          this.color2 = this.sheetResponce?.results?.color2;
-          this.table = true;
-          this.pivotTable = false;
-          this.bar = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.map = false
-          this.funnel = false;
-          this.guage = false;
-          this.calendar = false;
-          this.tableDisplayPagination(false);
-        }
-        if(responce.chart_id == 9){
-          // this.tableData = this.sheetResponce.results.tableData;
-          this.displayedColumns = this.sheetResponce?.results.tableColumns;
-          this.table = false;
-          this.pivotTable = true;
-          this.bar = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.map = false
-          this.funnel = false;
-          this.guage = false;
-          this.calendar = false;
-          this.pivotTableDatatransform(false);
-        }
-        if(responce.chart_id == 25){
-          this.tablePreviewRow = this.sheetResponce?.results?.kpiData;
-          this.KPINumber = this.sheetResponce?.results?.kpiNumber;
-          this.kpiFontSize = this.sheetResponce?.results?.kpiFontSize;
-          this.kpiColor = this.sheetResponce?.results?.kpicolor;
-          if(this.sheetResponce?.results?.kpiPrefix) {
-            this.KPIPrefix = this.sheetResponce.results.kpiPrefix;
-          }
-          if(this.sheetResponce?.results?.kpiSuffix) {
-            this.KPISuffix = this.sheetResponce.results.kpiSuffix;
-          }
-          this.KPIDisplayUnits = this.sheetResponce?.results?.kpiDecimalUnit,
-          this.KPIDecimalPlaces = this.sheetResponce?.results?.kpiDecimalPlaces,
-          this.table = false;
-          this.pivotTable = false;
-          this.bar = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = true;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-        }
-        if(responce.chart_id == 29){
-          this.http.get('./assets/maps/world.json').subscribe((geoJson: any) => {
-            echarts.registerMap('world', geoJson);  // Register the map data
-          });
-          this.table = false;
-          this.pivotTable = false;
-          this.bar = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = true;
-          this.calendar = false;
-          this.chartType = 'map';
-        }
-       if(responce.chart_id == 6){
-        // this.chartsRowData = this.sheetResponce.results.barYaxis;
-        // this.chartsColumnData = this.sheetResponce.results.barXaxis;
-        this.chartType = 'bar';
-      //  this.barChart();
-        this.bar = true;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 24){
-        this.chartType = 'pie';
-        // this.pieChart();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = true;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.map = false;
-          this.guage = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 13){
-        this.chartType = 'line';
-        // this.lineChart();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = true;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 17){
-        this.chartType = 'area';
-        // this.areaChart();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = true;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 7){
-        this.chartType = 'sidebyside';
-        // this.sidebysideBar();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = true;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 5){
-        this.chartType = 'stocked';
-        // this.stockedBar();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = true;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.map = false;
-          this.guage = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 4){
-        this.chartType = 'barline';
-        // this.barLineChart();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = true;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.map = false;
-          this.guage = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 12){
-        this.chartType = 'radar';
-        // this.dualAxisColumnData = this.sheetResponce.results.barLineXaxis;
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = true;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 2){
-        this.chartType = 'hstocked';
-        // this.horizentalStockedBar();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = true;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.map = false;
-          this.guage = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 3){
-        this.chartType = 'hgrouped';
-        // this.hGrouped();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = true;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 8){
-        this.chartType = 'multiline';
-        // this.multiLineChart();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = true;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 10){
-        this.chartType = 'donut';
-        // this.donutChart();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = true;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 26){
-        this.chartType = 'heatmap';
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = true;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 27){
-        this.chartType = 'funnel';
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = true;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 28){
-        this.chartType = 'guage';
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = true;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 11){
-        this.chartType = 'calendar';
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = true;
-       }
-       if(this.sheetResponce.customizeOptions){
-       this.setCustomizeOptions(this.sheetResponce.customizeOptions);
-       }
-       this.getDimensionAndMeasures();
-       this.changeSelectedColumn();
-        // setTimeout(()=>{
-        //   // this.updateNumberFormat();
-        // }, 1000);
-      },
-      error: (error) => {
-        console.log(error);
-        this.getChartData();
-      }
-    }
+  this.setSheetData(responce,isDuplicate,duplicateFilterData,false);
+},
+error: (error) => {
+  console.log(error);
+  this.getChartData();
+}
+}
   )
   }
   filterName:any
@@ -4277,7 +4303,11 @@ customizechangeChartPlugin() {
     this.pivotRowTotals = data.pivotRowTotals ?? true,
     this.pivotColumnTotals = data.pivotColumnTotals ?? true,
     this.bandingEvenColor= data.bandingEvenColor ?? '#ffffff' 
-    this.bandingOddColor= data.bandingOddColor ?? '#f5f7fa' 
+    this.bandingOddColor= data.bandingOddColor ?? '#f5f7fa',
+    this.toggleTableSearch = data.toggleTableSearch ?? true,
+    this.toggleTablePagination = data.toggleTablePagination ?? true
+    this.bandingOddColor= data.bandingOddColor ?? '#f5f7fa'
+    this.isRadarDistribution = data.isRadarDistribution ?? false; 
   }
 
   resetCustomizations(){
@@ -4373,7 +4403,9 @@ customizechangeChartPlugin() {
     this.pivotColumnTotals = true;
     this.pivotRowTotals = true;
     this.bandingEvenColor= '#ffffff' 
-    this.bandingOddColor= '#f5f7fa' 
+    this.bandingOddColor= '#f5f7fa'
+    this.toggleTableSearch = true;
+    this.toggleTablePagination = true;
     // this.KPIDecimalPlaces = 0,
     // this.KPIDisplayUnits = 'none',
     // this.KPIPrefix = '',
