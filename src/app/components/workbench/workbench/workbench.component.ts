@@ -28,6 +28,7 @@ import _ from 'lodash';
 
 import { TemplateDashboardService } from '../../../services/template-dashboard.service';
 import { NgSelectModule } from '@ng-select/ng-select';
+import { TallyIntegrationService } from '../../../services/tally-integration.service';
 
 
 @Component({
@@ -63,6 +64,7 @@ export class WorkbenchComponent implements OnInit{
   openMicrosoftSqlServerForm = false;
   openSnowflakeServerForm = false;
   openMongoDbForm = false;
+  openTallyForm = false;
   sqlLiteForm = false;
   openTablesUI = false;
   ibmDb2Form = false;
@@ -195,7 +197,7 @@ export class WorkbenchComponent implements OnInit{
   subDomainError: boolean = false;
 
   constructor(private modalService: NgbModal, private workbechService:WorkbenchService,private router:Router,private toasterservice:ToastrService,private route:ActivatedRoute,
-    private viewTemplateService:ViewTemplateDrivenService,@Inject(DOCUMENT) private document: Document,private loaderService:LoaderService,private cd:ChangeDetectorRef,private templateDashboardService: TemplateDashboardService,private toasterService:ToastrService){ 
+    private viewTemplateService:ViewTemplateDrivenService,@Inject(DOCUMENT) private document: Document,private loaderService:LoaderService,private cd:ChangeDetectorRef,private templateDashboardService: TemplateDashboardService,private toasterService:ToastrService,private tallyService:TallyIntegrationService){
     localStorage.setItem('QuerySetId', '0');
     localStorage.setItem('customQuerySetId', '0');
 
@@ -286,6 +288,9 @@ export class WorkbenchComponent implements OnInit{
     else if(this.databaseSwitchType === 'HALOPS'){
     this.connectHaloPSA();
     }
+    else if(this.databaseSwitchType === 'TALLY'){
+    this.connectTally();
+    }
     else if(this.databaseSwitchType === 'IMMYBOT'){
     this.connectImmybot();
     }
@@ -345,6 +350,7 @@ export class WorkbenchComponent implements OnInit{
     path='';
     shopifyToken = '';
     shopifyName = '';
+    tallyToken = '';
 
     googleAnalytics: {
       type: string;
@@ -858,6 +864,28 @@ export class WorkbenchComponent implements OnInit{
       )
 
     }
+
+    tallyUpdate(){
+      const obj = {
+        "token_key": this.tallyToken,
+        "display_name": this.displayName,
+        "hierarchy_id": this.databaseId
+      }
+
+      this.tallyService.update(obj).subscribe({next: (res)=>{
+            this.modalService.dismissAll('close');
+            if(res){
+              this.toasterservice.success('Updated Successfully','success',{ positionClass: 'toast-top-right'});
+            }
+            this.getDbConnectionList();
+          },
+          error: (error) => {
+            this.toasterservice.error(error.error.message,'error',{ positionClass: 'toast-center-center'})
+          }
+        }
+      )
+
+    }
     googleAnalyticsUpdate(){
       const g = this.googleAnalytics;
      const obj = { type: g.type,
@@ -1024,6 +1052,12 @@ export class WorkbenchComponent implements OnInit{
       this.viewNewDbs = false;
       this.emptyVariables();
     }
+    connectTally(){
+      this.openTallyForm = true;
+      this.databaseconnectionsList= false;
+      this.viewNewDbs = false;
+      this.emptyVariables();
+    }
     connectGoogleAnalytics(){
       this.openGoogleAnalyticsForm = true;
       this.databaseconnectionsList= false;
@@ -1146,6 +1180,13 @@ export class WorkbenchComponent implements OnInit{
         this.shopifyApiTokenError = false;
       }else{
         this.shopifyApiTokenError = true;
+      }
+    }
+    tallyTokenInputError(){
+      if(this.tallyToken){
+        this.tallyTokenError = false;
+      }else{
+        this.tallyTokenError = true;
       }
     }
     shopfyNameError(){
@@ -1384,6 +1425,32 @@ export class WorkbenchComponent implements OnInit{
       )
     }
 
+    tallySignIn(){
+      const obj = {
+        "token_key": this.tallyToken,
+        "display_name": this.displayName
+      }
+      this.tallyService.create(obj).subscribe({next: (res)=>{
+        if(res){
+          this.toasterservice.success('Connected','success',{ positionClass: 'toast-top-right'});
+          this.databaseId = res?.hierarchy_id;
+          this.modalService.dismissAll();
+          if(!this.datasourceSwitchUI){
+          this.openTallyForm = false;
+          }
+          const encodedId = btoa(this.databaseId.toString());
+          if(this.iscrossDbSelect){
+            this.selectedHirchyIdCrsDb = this.databaseId
+            this.connectCrossDbs();
+          }else if(this.datasourceSwitchUI){
+            this.switchDatabase();
+          }else{
+            this.router.navigate(['/analytify/database-connection/tables/'+encodedId]);
+          }
+        }
+      }, error: (error)=>{
+        this.toasterservice.error(error.error.message,'error',{ positionClass: 'toast-center-center'})
+      }});
     hubspotSignIn(){
       const obj = {
         "client_id": this.hubspotClientId,
@@ -2081,6 +2148,9 @@ connectGoogleSheets(){
       this.displayName = editData.display_name;
       this.shopifyName = editData.shop_name;
       this.shopifyToken = editData.api_token;
+    } else if (this.databaseType == "tally") {
+      this.displayName = editData.display_name;
+      this.tallyToken = editData.token_key;
     }else if (this.databaseType === 'google_analytics') {
       this.googleAnalytics = {
         type: 'service_account',
@@ -2228,6 +2298,7 @@ connectGoogleSheets(){
   this.openConnectWiseForm = false;
   this.openHaloPSAForm = false;
   this.openShopifyForm = false;
+  this.openTallyForm = false;
   this.openHubspotForm = false;
   this.openGoogleAnalyticsForm = false;
   this.openGoogleAnalyticsForm = false;
@@ -2246,6 +2317,8 @@ connectGoogleSheets(){
   this.siteURL = '';
   this.companyId = '';
   this.siteURLPSA = '';
+  this.tallyToken = '';
+  this.tallyTokenError = false;
   this.ninjaRMMClientid = '';
   this.ninjaRMMClientSecret = '';
   this.selectedNinjaRMMScopes = [];
@@ -2274,6 +2347,7 @@ connectGoogleSheets(){
 
   shopifyApiTokenError:boolean = false;
   shopifyNameError:boolean = false;
+  tallyTokenError:boolean = false;
 
   serverConditionError(){
     if(this.schemaList && this.schemaList.length > 0){
