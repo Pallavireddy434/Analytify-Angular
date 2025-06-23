@@ -2247,6 +2247,10 @@ export class SheetsdashboardComponent implements OnDestroy {
       let savedOptions = sheet.sheet_data.savedChartOptions;
       return savedOptions;
     }
+    if(sheet.chart_id === 14){
+      let savedOptions = sheet.sheet_data.savedChartOptions;
+      return savedOptions;
+    }
   }
 
   getChartData(results: any, chartType: string): any[] | undefined{
@@ -6298,7 +6302,7 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
   updateNumberFormat(sheet : any, numberFormat : any, chartId : any, isEcharts : any){
     if(numberFormat?.decimalPlaces || numberFormat?.displayUnits || numberFormat?.prefix || numberFormat?.suffix){
       if(isEcharts){
-        if([2,3].includes(chartId)){
+        if([2,3,14].includes(chartId)){
           if (sheet.echartOptions?.xAxis?.axisLabel) {
             sheet.echartOptions.xAxis.axisLabel.formatter = (val: any) => {
               return this.formatNumber(val, numberFormat?.decimalPlaces, numberFormat?.displayUnits, numberFormat?.prefix, numberFormat?.suffix);
@@ -6363,7 +6367,7 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
           }
         }
       } else {
-        if([2,3].includes(chartId)){
+        if([2,3,14].includes(chartId)){
           if (sheet.chartOptions?.xaxis?.labels && sheet.chartOptions?.dataLabels) {
             sheet.chartOptions.xaxis.labels.formatter = (val: number) => {
               return this.formatNumber(val, numberFormat?.decimalPlaces, numberFormat?.displayUnits, numberFormat?.prefix, numberFormat?.suffix);
