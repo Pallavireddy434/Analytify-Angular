@@ -28,7 +28,6 @@ import _ from 'lodash';
 
 import { TemplateDashboardService } from '../../../services/template-dashboard.service';
 import { NgSelectModule } from '@ng-select/ng-select';
-import { TallyIntegrationService } from '../../../services/tally-integration.service';
 
 
 @Component({
@@ -197,7 +196,7 @@ export class WorkbenchComponent implements OnInit{
   subDomainError: boolean = false;
 
   constructor(private modalService: NgbModal, private workbechService:WorkbenchService,private router:Router,private toasterservice:ToastrService,private route:ActivatedRoute,
-    private viewTemplateService:ViewTemplateDrivenService,@Inject(DOCUMENT) private document: Document,private loaderService:LoaderService,private cd:ChangeDetectorRef,private templateDashboardService: TemplateDashboardService,private toasterService:ToastrService,private tallyService:TallyIntegrationService){
+    private viewTemplateService:ViewTemplateDrivenService,@Inject(DOCUMENT) private document: Document,private loaderService:LoaderService,private cd:ChangeDetectorRef,private templateDashboardService: TemplateDashboardService,private toasterService:ToastrService){
     localStorage.setItem('QuerySetId', '0');
     localStorage.setItem('customQuerySetId', '0');
 
@@ -872,7 +871,7 @@ export class WorkbenchComponent implements OnInit{
         "hierarchy_id": this.databaseId
       }
 
-      this.tallyService.update(obj).subscribe({next: (res)=>{
+      this.workbechService.updateTally(obj).subscribe({next: (res)=>{
             this.modalService.dismissAll('close');
             if(res){
               this.toasterservice.success('Updated Successfully','success',{ positionClass: 'toast-top-right'});
@@ -1430,7 +1429,7 @@ export class WorkbenchComponent implements OnInit{
         "token_key": this.tallyToken,
         "display_name": this.displayName
       }
-      this.tallyService.create(obj).subscribe({next: (res)=>{
+      this.workbechService.createTally(obj).subscribe({next: (res)=>{
         if(res){
           this.toasterservice.success('Connected','success',{ positionClass: 'toast-top-right'});
           this.databaseId = res?.hierarchy_id;
@@ -1451,6 +1450,8 @@ export class WorkbenchComponent implements OnInit{
       }, error: (error)=>{
         this.toasterservice.error(error.error.message,'error',{ positionClass: 'toast-center-center'})
       }});
+    }
+
     hubspotSignIn(){
       const obj = {
         "client_id": this.hubspotClientId,

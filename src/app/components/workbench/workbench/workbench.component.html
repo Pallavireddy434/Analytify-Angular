@@ -390,7 +390,7 @@
                         <img alt="product" src="./assets/images/icons/Halopsa-icon.png" class="w-5 h-5 border me-2">{{database.server_type}}
                       </td>
                       <td *ngIf="database.server_type === 'TALLY'">
-                        <img alt="product" src="./assets/images/icons/Halopsa-icon.png" class="w-5 h-5 border me-2">{{database.server_type}}
+                        <img alt="product" src="./assets/images/icons/TallyLogo.png" class="w-5 h-5 border me-2">{{database.server_type}}
                       </td>
                       <td *ngIf="database.server_type === 'IMMYBOT'">
                         <img alt="product" src="./assets/images/icons/immybot.png" class="w-5 h-5 border me-2">{{database.server_type}}
@@ -502,7 +502,7 @@
                                               <span *ngIf="database.server_type === 'HALOPS'" class="avatar avatar rounded-circle">
                                                 <img src="./assets/images/icons/Halopsa-icon.png" alt="" class="rounded-circle"></span>
                                               <span *ngIf="database.server_type === 'TALLY'" class="avatar avatar rounded-circle">
-                                                <img src="./assets/images/icons/Halopsa-icon.png" alt="" class="rounded-circle"></span>
+                                                <img src="./assets/images/icons/TallyLogo.png" alt="" class="rounded-circle"></span>
                                               <span *ngIf="database.server_type === 'IMMYBOT'" class="avatar avatar rounded-circle">
                                                 <img src="./assets/images/icons/immybot.png" alt="" class="rounded-circle"></span>
                                                 <span *ngIf="database.server_type === 'SHOPIFY'" class="avatar avatar rounded-circle">
@@ -1246,6 +1246,51 @@
                         <button type="button" class="btn btn-primary" (click)="tallySignIn()" [disabled]="(tallyTokenError || displayNameError) || !(tallyToken && displayName)">{{ iscrossDbSelect ? 'Connect & Move' : 'Connect' }}</button>
                       </div>
                     </form>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-12 col-xl-6 p-1 mb-0">
+                <div class="card user-card border Relational-database-height">
+                  <div class="user-image">
+                    <span class="avatar w-20 h-20 rounded-circle mb-2 user-image-outline">
+                      <img src="./assets/images/Db_server_images/TallyLogo.png" alt="" class="rounded-circle bg-white user-image-border-color">
+                    </span>
+                  </div>
+                  <div class="card-body server-content-card">
+                    <ul>
+                      <li>
+                        <span class="mt-1">
+                          Tally integration allows you to connect your accounting data with our platform, enabling seamless synchronization of financial information for reporting and automation.
+                        </span>
+                      </li>
+                  
+                      <li>
+                        <h6 class="mt-3"><strong>Features</strong></h6>
+                      </li>
+                      <li>
+                        <span class="mb-0"><strong>Automated Data Sync:</strong> Import transactions, ledgers, and balances directly from Tally into your system.</span>
+                      </li>
+                      <li>
+                        <span class="mb-0"><strong>Real-Time Accounting Visibility:</strong> Stay up to date with financial insights pulled from Tally.</span>
+                      </li>
+                      <li>
+                        <span class="mb-0"><strong>Error Reduction:</strong> Minimize manual entry and reconciliation tasks with direct integration.</span>
+                      </li>
+                      <li>
+                        <span class="mb-0"><strong>Secure Integration:</strong> Use token-based authentication to keep your data safe.</span>
+                      </li>
+                  
+                      <li>
+                        <h6 class="mt-3"><strong>Input to Connect</strong></h6>
+                      </li>
+                      <li>
+                        <span class="mb-0">
+                          <strong>Tally Token:</strong> This token is used to authenticate and authorize your connection with the Tally server. You can obtain it from your Tally application administrator or system integrator.
+                        </span>
+                      </li>
+                      <li><span class="mb-0"><strong>Display Name:</strong>
+                        The Display Name is a user-friendly name for your store that will be shown on our platform.</span></li>
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -2227,7 +2272,7 @@
       </div>
       <div class="database-logo">
         <div class="imgcard p-4" (click)="connectTally()">
-          <img src="/assets/images/Db_server_images/Halopsa-big.png" alt="Image" class="card-img"> <!-- placeholder icon -->
+          <img src="/assets/images/Db_server_images/TallyLogo.png" alt="Image" class="card-img"> <!-- placeholder icon -->
         </div>
         <div class="logo-txt mt-2 text-center fw-600">
           <span>Tally</span>
