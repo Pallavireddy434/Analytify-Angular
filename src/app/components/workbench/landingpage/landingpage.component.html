@@ -527,6 +527,10 @@
                                         <img alt="product" src="./assets/images/icons/postSQL-icon.jpg"
                                             class="w-5 h-5 border me-2">{{database.server_type | lowercase}}
                                     </td>
+                                    <td *ngIf="database.server_type === 'TALLY'">
+                                        <img alt="product" src="./assets/images/icons/TallyLogo.jpg"
+                                            class="w-5 h-5 border me-2">{{database.server_type | lowercase}}
+                                    </td>
                                     <td *ngIf="database.server_type === 'ORACLE'">
                                         <img alt="product" src="./assets/images/icons/oracle-icon.jpg"
                                             class="w-5 h-5 border me-2">{{database.server_type | lowercase}}
