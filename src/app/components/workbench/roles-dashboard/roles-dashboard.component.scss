@@ -19,6 +19,8 @@ a { cursor: pointer; }
 .Available-Permission-card{ max-width: 48%; }
 .arrows-card{ max-width: 49px; }
 .Chosen-Permission-card{ flex: 0 0 46.666667%;  max-width: 58.666667%; }
+.modal-header-radius { border-radius: 10px 10px 0px 0px !important;}
+.row.m-1.nowraprow { display: flex; flex-wrap: nowrap; justify-content: space-evenly; }
 
 // for 90% Resolution //
 @media ( 1420px <= width <= 1560px) {
@@ -39,7 +41,6 @@ h1#inputModalLabel { font-size: 16px !important; }
 .form-label{ font-size: 13px; }
 .h6, h6 { font-size: 12px; }
 option { font-size: 12px; }
-.col-md-6.p-0.border { max-width: 46% !important;}
 }
 
 // for 100% Resolution //

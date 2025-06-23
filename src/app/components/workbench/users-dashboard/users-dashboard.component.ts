@@ -213,7 +213,8 @@ toggleClass1 = "off-line";
       }
   }
   closeAddUserForm(){
-    this.router.navigate(['/analytify/users/users-list'])
+    // this.router.navigate(['/analytify/users/users-list'])
+    this.addUserDivForm = false;
   }
 
   setRoles() {
@@ -281,11 +282,12 @@ getAddedRolesList(){
   }) 
 }
 addUserRoute(){
-  this.router.navigate(['/analytify/users/add-user'])
-  
+  // this.router.navigate(['/analytify/users/add-user'])
+  this.addUserDivForm = true;
 }
 viewUsers(){
-  this.router.navigate(['/analytify/users/users-list'])
+  // this.router.navigate(['/analytify/users/users-list'])
+  this.addUserDivForm = false;
 }
 addUser(){
   if (!this.addUserForm.value.is_active) {
@@ -383,8 +385,9 @@ deleteUser(id:any){
     }})
 }
 editUserRoute(id:any){
-  const userId = btoa(id.toString());
-  this.router.navigate(['/analytify/users/edit-user/'+userId])
+  // const userId = btoa(id.toString());
+  // this.router.navigate(['/analytify/users/edit-user/'+userId])
+  this.addUserDivForm = true;
 }
 
 getUserIdDetails(id:any){

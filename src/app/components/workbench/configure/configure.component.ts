@@ -10,11 +10,13 @@ import Swal from 'sweetalert2';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { ToastrService } from 'ngx-toastr';
-
+import { UsersDashboardComponent } from '../users-dashboard/users-dashboard.component';
+import { RolesDashboardComponent } from '../roles-dashboard/roles-dashboard.component';
+import { EmbedSdkComponent } from '../embed-sdk/embed-sdk.component';
 @Component({
   selector: 'app-configure',
   standalone: true,
-  imports: [FormsModule, CommonModule, SharedModule,NgSelectModule,NgbModule],
+  imports: [FormsModule, CommonModule, SharedModule,NgSelectModule,NgbModule,UsersDashboardComponent,RolesDashboardComponent,EmbedSdkComponent],
   templateUrl: './configure.component.html',
   styleUrl: './configure.component.scss',
 })
