@@ -114,13 +114,13 @@ export class WorkbenchService {
   createTally(config: any) {
     const currentUser = localStorage.getItem( 'currentUser' );
     this.accessToken = JSON.parse( currentUser! )['Token'];
-    return this.http.post<any>(`${environment.apiUrl}/halops/`+this.accessToken, config);
+    return this.http.post<any>(`${environment.apiUrl}/tally_authentication/`+this.accessToken, config);
   }
 
   updateTally(config: any) {
     const currentUser = localStorage.getItem( 'currentUser' );
     this.accessToken = JSON.parse( currentUser! )['Token'];
-    return this.http.put<any>(`${environment.apiUrl}/halops/`+this.accessToken, config);
+    return this.http.put<any>(`${environment.apiUrl}/tally_authentication/`+this.accessToken, config);
   }
 
   ninjaRMMConnectionUpdate(obj:any){
