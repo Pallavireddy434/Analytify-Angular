@@ -584,6 +584,10 @@
                                         <img alt="product" src="./assets/images/icons/Halopsa-icon.png"
                                             class="w-5 h-5 border me-2">{{database.server_type | lowercase}}
                                     </td>
+                                    <td *ngIf="database.server_type === 'TALLY'">
+                                        <img alt="product" src="./assets/images/icons/TallyLogo.png"
+                                            class="w-5 h-5 border me-2">{{database.server_type | lowercase}}
+                                    </td>
                                     <td *ngIf="database.server_type === 'IMMYBOT'">
                                         <img alt="product" src="./assets/images/icons/immybot.png"
                                             class="w-5 h-5 border me-2">{{database.server_type | lowercase}}

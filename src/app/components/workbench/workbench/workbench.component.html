@@ -146,7 +146,18 @@
                     <div class="mb-2">
                       <label [ngClass]="{'error-label': displayNameError}" class="col-form-label">Display Name <span class="text-danger ms-1" >*</span></label>
                             <input [ngClass]="{'error-input': displayNameError}" type="text" class="form-control" [(ngModel)]="displayName" [ngModelOptions]="{standalone: true}" autocomplete="new-myname" placeholder="e.g. InsignApps" (input)="displayNameIntegrationConditionError()">
-                        </div>
+                </div>
+              </form>
+            } @else if(databaseType == 'tally') {
+              <form>
+                <div class="mb-2">
+                  <label [ngClass]="{'error-label': tallyTokenError}" class="col-form-label">Token Key <span class="text-danger ms-1">*</span></label>
+                  <input [ngClass]="{'error-input': tallyTokenError}" type="text" class="form-control" [(ngModel)]="tallyToken" [ngModelOptions]="{standalone: true}" (input)="tallyTokenInputError()">
+                </div>
+                <div class="mb-2">
+                  <label [ngClass]="{'error-label': displayNameError}" class="col-form-label">Display Name <span class="text-danger ms-1" >*</span></label>
+                  <input [ngClass]="{'error-input': displayNameError}" type="text" class="form-control" [(ngModel)]="displayName" [ngModelOptions]="{standalone: true}" autocomplete="new-myname" placeholder="e.g. Tally" (input)="displayNameIntegrationConditionError()">
+                </div>
               </form>
             }@else if(databaseType == 'google_analytics') {
               <form>
@@ -248,12 +259,14 @@
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="modal.close('cross click')">Close</button>
               <button type="button" class="btn btn-primary" (click)="ninjaRMMUpdate()"  [disabled]="(ninjaRMMScopeError || ninjaRMMClientSecretError || displayNameError || ninjaRMMClientIdError) || !(selectedNinjaRMMScopes.length > 0 && ninjaRMMClientSecret && ninjaRMMClientid && displayName) ">Update</button>
       
-            }
+            } 
              @else if(databaseType == 'shopify') {
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="modal.close('cross click')">Close</button>
               <button type="button" class="btn btn-primary" (click)="shopifyConnectionUpdate()" [disabled]="(shopifyApiTokenError || shopifyNameError || displayNameError) || !(shopifyToken && shopifyName && displayName)">Update</button>
-            }
-            @else if(databaseType == 'google_analytics') {
+            } @else if(databaseType == 'tally') {
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="modal.close('cross click')">Close</button>
+              <button type="button" class="btn btn-primary" (click)="tallyUpdate()" [disabled]="(tallyTokenError || displayNameError) || !(tallyToken && displayName)">Update</button>
+            } @else if(databaseType == 'google_analytics') {
               <button type="button" class="btn btn-secondary" (click)="modal.close('cross click')">Close</button>
               <button type="button" class="btn btn-primary"
                       (click)="googleAnalyticsUpdate()"
@@ -376,6 +389,9 @@
                       <td *ngIf="database.server_type === 'HALOPS'">
                         <img alt="product" src="./assets/images/icons/Halopsa-icon.png" class="w-5 h-5 border me-2">{{database.server_type}}
                       </td>
+                      <td *ngIf="database.server_type === 'TALLY'">
+                        <img alt="product" src="./assets/images/icons/TallyLogo.png" class="w-5 h-5 border me-2">{{database.server_type}}
+                      </td>
                       <td *ngIf="database.server_type === 'IMMYBOT'">
                         <img alt="product" src="./assets/images/icons/immybot.png" class="w-5 h-5 border me-2">{{database.server_type}}
                       </td>
@@ -491,8 +507,10 @@
                                               <img src="./assets/images/icons/connectwise-icon.png" alt="" class="rounded-circle"></span>
                                               <span *ngIf="database.server_type === 'HALOPS'" class="avatar avatar rounded-circle">
                                                 <img src="./assets/images/icons/Halopsa-icon.png" alt="" class="rounded-circle"></span>
-                                                <span *ngIf="database.server_type === 'IMMYBOT'" class="avatar avatar rounded-circle">
-                                                  <img src="./assets/images/icons/immybot.png" alt="" class="rounded-circle"></span>
+                                              <span *ngIf="database.server_type === 'TALLY'" class="avatar avatar rounded-circle">
+                                                <img src="./assets/images/icons/TallyLogo.png" alt="" class="rounded-circle"></span>
+                                              <span *ngIf="database.server_type === 'IMMYBOT'" class="avatar avatar rounded-circle">
+                                                <img src="./assets/images/icons/immybot.png" alt="" class="rounded-circle"></span>
                                                 <span *ngIf="database.server_type === 'SHOPIFY'" class="avatar avatar rounded-circle">
                                                   <img src="./assets/images/icons/shopify-large-1.jpg" alt="" class="rounded-circle"></span>
                                                   <span *ngIf="database.server_type === 'GOOGLE_SHEETS'" class="avatar avatar rounded-circle">
@@ -1206,6 +1224,80 @@
                         Your Shop Name is the unique identifier for your Shopify store.</span></li>
                         <li><span class="mb-0"><strong>Display Name:</strong>
                           The Display Name is a user-friendly name for your store that will be shown on our platform.</span></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+          @if(openTallyForm){
+          <div class="main-container container-fluid px-4 TopHeader">
+            <div class="row">
+              <div class="col-md-12 col-xl-6 p-1 mb-0">
+                <div class="card Relational-database-height">
+                  <div class="card-header">
+                    <h4 class="card-title">Connect To Tally</h4>
+                  </div>
+                  <div class="card-body">
+                    <form>
+                      <div class="form-group">
+                        <label [ngClass]="{'error-label': tallyTokenError}" class="col-form-label">Token Key <span class="text-danger ms-1">*</span></label>
+                        <input [ngClass]="{'error-input': tallyTokenError}" type="text" class="form-control" [(ngModel)]="tallyToken" [ngModelOptions]="{standalone: true}" (input)="tallyTokenInputError()">
+                      </div>
+                      <div class="form-group">
+                        <label [ngClass]="{'error-label': displayNameError}" class="col-form-label">Display Name <span class="text-danger ms-1" >*</span></label>
+                        <input [ngClass]="{'error-input': displayNameError}" type="text" class="form-control" [(ngModel)]="displayName" [ngModelOptions]="{standalone: true}" autocomplete="new-myname" placeholder="e.g. Tally" (input)="displayNameIntegrationConditionError()">
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" (click)="datasourceSwitchUI ? gotoDashboardWithoutSwitch() : gotoNewConnections()">Close</button>
+                        <button type="button" class="btn btn-primary" (click)="tallySignIn()" [disabled]="(tallyTokenError || displayNameError) || !(tallyToken && displayName)">{{ iscrossDbSelect ? 'Connect & Move' : 'Connect' }}</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-12 col-xl-6 p-1 mb-0">
+                <div class="card user-card border Relational-database-height">
+                  <div class="user-image">
+                    <span class="avatar w-20 h-20 rounded-circle mb-2 user-image-outline">
+                      <img src="./assets/images/Db_server_images/TallyLogo.png" alt="" class="rounded-circle bg-white user-image-border-color">
+                    </span>
+                  </div>
+                  <div class="card-body server-content-card">
+                    <ul>
+                      <li>
+                        <span class="mt-1">
+                          Tally integration allows you to connect your accounting data with our platform, enabling seamless synchronization of financial information for reporting and automation.
+                        </span>
+                      </li>
+                  
+                      <li>
+                        <h6 class="mt-3"><strong>Features</strong></h6>
+                      </li>
+                      <li>
+                        <span class="mb-0"><strong>Automated Data Sync:</strong> Import transactions, ledgers, and balances directly from Tally into your system.</span>
+                      </li>
+                      <li>
+                        <span class="mb-0"><strong>Real-Time Accounting Visibility:</strong> Stay up to date with financial insights pulled from Tally.</span>
+                      </li>
+                      <li>
+                        <span class="mb-0"><strong>Error Reduction:</strong> Minimize manual entry and reconciliation tasks with direct integration.</span>
+                      </li>
+                      <li>
+                        <span class="mb-0"><strong>Secure Integration:</strong> Use token-based authentication to keep your data safe.</span>
+                      </li>
+                  
+                      <li>
+                        <h6 class="mt-3"><strong>Input to Connect</strong></h6>
+                      </li>
+                      <li>
+                        <span class="mb-0">
+                          <strong>Tally Token:</strong> This token is used to authenticate and authorize your connection with the Tally server. You can obtain it from your Tally application administrator or system integrator.
+                        </span>
+                      </li>
+                      <li><span class="mb-0"><strong>Display Name:</strong>
+                        The Display Name is a user-friendly name for your store that will be shown on our platform.</span></li>
                     </ul>
                   </div>
                 </div>
@@ -2183,18 +2275,26 @@
                           <img src="/assets/images/Db_server_images/shopify-small-1.jpg"alt="Image" class="card-img">
                         </div>
                         <div class="logo-txt mt-2 text-center fw-600">
-                          <span>Shopify</span>
-                        </div>
-                      </div>
-                      <div class="database-logo">
+          <span>Shopify</span>
+        </div>
+      </div>
+      <div class="database-logo">
+        <div class="imgcard p-4" (click)="connectTally()">
+          <img src="/assets/images/Db_server_images/TallyLogo.png" alt="Image" class="card-img"> <!-- placeholder icon -->
+        </div>
+        <div class="logo-txt mt-2 text-center fw-600">
+          <span>Tally</span>
+        </div>
+      </div>
+      <div class="database-logo">
                         <div class="imgcard p-4" [ngClass]="{'op-4': iscrossDbSelect}"  (click)="!iscrossDbSelect && connectGoogleSheets()">
                           <img src="/assets/images/Db_server_images/googlesheets-icon.png"alt="Image" class="card-img">
                         </div>
                         <div class="logo-txt mt-2 text-center fw-600">
                           <span>Google Sheets</span>
                         </div>
-                      </div>    
-                      <div class="database-logo">
+      </div>
+      <div class="database-logo">
                         <div class="imgcard p-4" [ngClass]="{'op-4': iscrossDbSelect}"  (click)="!iscrossDbSelect && connectNinjaRMM()">
                           <img src="/assets/images/Db_server_images/ninjaRMM.png"alt="Image" class="card-img">
                         </div>
