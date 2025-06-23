@@ -1229,8 +1229,27 @@ export class WorkbenchComponent implements OnInit{
               }else if(this.datasourceSwitchUI){
                   this.switchDatabase();
               }else{
+            // --- Smart Dashboard Prompt for NinjaRMM ---
+            Swal.fire({
+              position: "center",
+              iconHtml: '<img src="./assets/images/copilot.gif">',
+              title: "Create smart dashboard from your data with just one click?",
+              showConfirmButton: true,
+              showCancelButton: true,
+              confirmButtonText: 'Yes',
+              cancelButtonText: 'Skip',
+              customClass: {
+                icon: 'no-icon-bg',
+              }
+            }).then((result) => {
+              if (result.isConfirmed) {
+                this.templateDashboardService.buildSampleNinjaRMMDashboard(this.container, this.databaseId);
+              } else {
                 this.router.navigate(['/analytify/database-connection/tables/'+encodedId]);
               }
+            });
+            // --- End Smart Dashboard Prompt ---
+          }
             }
           },
           error: (error) => {
@@ -1266,8 +1285,27 @@ export class WorkbenchComponent implements OnInit{
               }else if(this.datasourceSwitchUI){
                   this.switchDatabase();
               } else {
+            // --- Smart Dashboard Prompt for Immybot ---
+            Swal.fire({
+              position: "center",
+              iconHtml: '<img src="./assets/images/copilot.gif">',
+              title: "Create smart dashboard from your data with just one click?",
+              showConfirmButton: true,
+              showCancelButton: true,
+              confirmButtonText: 'Yes',
+              cancelButtonText: 'Skip',
+              customClass: {
+                icon: 'no-icon-bg',
+              }
+            }).then((result) => {
+              if (result.isConfirmed) {
+                this.templateDashboardService.buildSampleImmybotDashboard(this.container, this.databaseId);
+              } else {
                 this.router.navigate(['/analytify/database-connection/tables/'+encodedId]);
               }
+            });
+            // --- End Smart Dashboard Prompt ---
+          }
             }
           },
           error: (error) => {
