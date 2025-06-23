@@ -1363,6 +1363,15 @@
                         [legend]="item.chartOptions.legend!" (chartInit)="onChartInit($event, item)">
                       </apx-chart>
                     </div>
+                     <div *ngIf="item['chartId'] === 14">
+            
+                      <apx-chart #test344 id="test344" [series]="item.chartOptions.series!" [chart]="item.chartOptions.chart!"
+                        [dataLabels]="item.chartOptions.dataLabels!" [plotOptions]="item.chartOptions.plotOptions!"
+                        [xaxis]="{ categories: item?.chartOptions?.xaxis?.categories, labels: item?.chartOptions?.xaxis?.labels }"
+                        [colors]="item.chartOptions.colors!" [grid]="item.chartOptions.grid!" [yaxis]="item.chartOptions.yaxis!"
+                        [legend]="item.chartOptions.legend!" (chartInit)="onChartInit($event, item)">
+                      </apx-chart>
+                    </div>
                     <!-- <app-charts-store [chartData]="item.chartOptions"></app-charts-store> -->
                   </div>
                   <div *ngIf="item.chartOptions && item['chartId'] === 17">
@@ -1780,6 +1789,15 @@
                               </div> -->
                   <div *ngIf="item.chartOptions">
                     <div *ngIf="item['chartId'] === 6">
+            
+                      <apx-chart #test344 id="test344" [series]="item.chartOptions.series!" [chart]="item.chartOptions.chart!"
+                        [dataLabels]="item.chartOptions.dataLabels!" [plotOptions]="item.chartOptions.plotOptions!"
+                        [xaxis]="{ categories: item?.chartOptions?.xaxis?.categories, labels: item?.chartOptions?.xaxis?.labels }"
+                        [colors]="item.chartOptions.colors!" [grid]="item.chartOptions.grid!" [yaxis]="item.chartOptions.yaxis!"
+                        [legend]="item.chartOptions.legend!" (chartInit)="onChartInit($event, item)">
+                      </apx-chart>
+                    </div>
+                     <div *ngIf="item['chartId'] === 14">
             
                       <apx-chart #test344 id="test344" [series]="item.chartOptions.series!" [chart]="item.chartOptions.chart!"
                         [dataLabels]="item.chartOptions.dataLabels!" [plotOptions]="item.chartOptions.plotOptions!"

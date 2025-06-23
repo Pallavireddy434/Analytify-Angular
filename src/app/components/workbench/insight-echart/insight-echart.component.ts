@@ -390,7 +390,7 @@ horizontalBarChart(chartsColumnData?: any, chartsRowData?: any) {
         data: this.chartsRowData,
         label: {
           show: true,
-          position: this.dataLabelsFontPosition ? 'top' : 'right',
+          position: this.getLabelPosition(),
           fontFamily: this.dataLabelsFontFamily,
           verticalAlign: 'middle',
           distance:5,
@@ -404,7 +404,7 @@ horizontalBarChart(chartsColumnData?: any, chartsRowData?: any) {
     ],
     color: this.isDistributed ? this.selectedColorScheme : this.color
   };
-
+console.log('Horizontal Bar Chart Options:', this.chartOptions);
   return this.chartOptions;
 }
 flattenDimensions(dimensions: Dimension[]): string[] {
@@ -457,6 +457,18 @@ funnelchart(dualAxisColumnData? : any ,dualAxisRowData?: any){
     ],
   };
   return this.chartOptions;
+}
+getLabelPosition(){
+  switch (this.dataLabelsFontPosition) {
+    case 'top':
+      return 'right';
+    case 'bottom':
+      return 'insideLeft';
+    case 'center':
+      return 'inside';
+    default:
+      return 'inside'; // Default position if none matches
+  }
 }
 stackedChart(){
   const dimensions: Dimension[] = this.dualAxisColumnData;
