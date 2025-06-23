@@ -993,7 +993,16 @@ deleteUser(id:any){
       this.accessToken = JSON.parse( currentUser! )['Token'];
       return this.http.get<any>(`${environment.apiUrl}/quickbooks_dashboard/`+id+'/'+this.accessToken);
     }
-
+    buildSampleImmybotDashboard(id : number){
+      const currentUser = localStorage.getItem( 'currentUser' );
+      this.accessToken = JSON.parse( currentUser! )['Token'];
+      return this.http.get<any>(`${environment.apiUrl}/immybot_dashbaord/`+id+'/'+this.accessToken);
+    }
+    buildSampleNinjaRMMDashboard(id: number) {
+      const currentUser = localStorage.getItem('currentUser');
+      this.accessToken = JSON.parse(currentUser!)['Token'];
+      return this.http.get<any>(`${environment.apiUrl}/ninja_dashbaord/` + id + '/' + this.accessToken);
+    }
     buildSampleSalesforceDashbaord(id : number){
       const currentUser = localStorage.getItem( 'currentUser' );
       this.accessToken = JSON.parse( currentUser! )['Token'];
