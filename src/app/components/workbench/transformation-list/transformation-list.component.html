@@ -107,6 +107,10 @@
                                     <img alt="product" src="./assets/images/icons/Halopsa-icon.png"
                                         class="w-5 h-5 border me-2">{{transformation.server_type}}
                                 </td>
+                                <td *ngIf="transformation.server_type === 'TALLY'">
+                                    <img alt="product" src="./assets/images/icons/Halopsa-icon.png"
+                                        class="w-5 h-5 border me-2">{{transformation.server_type}}
+                                </td>
                                 <td *ngIf="transformation.server_type === 'SHOPIFY'">
                                     <img alt="product" src="./assets/images/icons/shopify-large-1.jpg"
                                         class="w-5 h-5 border me-2">{{transformation.server_type}}
@@ -189,6 +193,10 @@
                                     <span *ngIf="transformation.server_type === 'HALOPS'"
                                         class="avatar rounded-circle">
                                         <img src="./assets/images/icons/Halopsa-icon.png" alt="HALOPS"
+                                            class="rounded-circle"></span>
+                                    <span *ngIf="transformation.server_type === 'TALLY'"
+                                        class="avatar rounded-circle">
+                                        <img src="./assets/images/icons/Halopsa-icon.png" alt="TALLY"
                                             class="rounded-circle"></span>
                                     <span *ngIf="transformation.server_type === 'SHOPIFY'"
                                         class="avatar rounded-circle">
