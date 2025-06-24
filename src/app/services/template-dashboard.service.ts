@@ -286,7 +286,12 @@ export class TemplateDashboardService {
     true,
     ylabelFontWeight
     : 
-    400}
+    400,
+    toggleTablePagination
+    :true,
+    toggleTableSearch
+    : true,
+  }
   echartInstance!: InsightEchartComponent;
   sheetsInstance!: SheetsComponent;
   dashboardInstance! : SheetsdashboardComponent;
