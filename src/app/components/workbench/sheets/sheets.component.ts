@@ -773,7 +773,6 @@ try {
             this.pivotRowData = responce?.data?.row;
             this.pivotMeasureData = responce?.data?.pivot_measure;
             if(isSyncData){
-              this.sheetUpdateRefreshMail('sync')
             }
             if (this.chartsRowData.length > 0) {
               // this.enableDisableCharts();
@@ -2185,6 +2184,7 @@ try {
   donutOptions : any = undefined;
   eMapChartOptions : any;
 
+  isMailRefresh=false;
 sheetSave(isDashboardTransfer?: boolean){
   let savedChartOptions ;
   let kpiData;
@@ -2421,7 +2421,7 @@ sheetSave(isDashboardTransfer?: boolean){
   } else {
     draggedColumnsObj = this.draggedColumnsData
   }
-const obj={
+let obj={
   "chart_id": this.chartId,
   "queryset_id":this.qrySetId,
   "server_id": this.databaseId,
@@ -2524,9 +2524,17 @@ const obj={
     "suffix" : this.suffix
   }
 }
-}
+} as any
 console.log(this.retriveDataSheet_id)
 if(this.retriveDataSheet_id){
+  if(this.isMailRefresh){
+    obj.is_mail_refresh = true;
+    if(this.isSyncForEmail){
+    obj.action_type = 'sheet_refresh';
+    }else{
+      obj.action_type = 'sheet_update';
+    }
+  }
   console.log("Sheet Update")
   this.workbechService.sheetUpdate(obj,this.retriveDataSheet_id).subscribe({next: (responce:any) => {
     if(this.tabs[this.SheetIndex]){
@@ -2543,7 +2551,6 @@ if(this.retriveDataSheet_id){
       }
     })
   }
-  this.sheetUpdateRefreshMail('update');
   },
   error: (error) => {
     console.log(error);
@@ -7274,9 +7281,11 @@ getCaretCoordinates(textarea: HTMLTextAreaElement, position: number) {
 
   return { top, left };
 }
+isSyncForEmail = false;
   refreshSheetData(){
     this.columnsData();
     this.dataExtraction(true);
+    this.isSyncForEmail = true;
   }
   downloadAsCSV() {
     if (!this.retriveDataSheet_id) return;
@@ -7583,28 +7592,5 @@ qoqOptions = [
   'QOQ Option 7', 'QOQ Option 8'
 ];
 
-
-sheetUpdateRefreshMail(value:any) {
-  let obj;
-if(value === 'sync'){
-   obj={
-   "sheet_id":this.retriveDataSheet_id,
-    "action_type":"sheet_refresh"
-  }
-}else{
-   obj={
-    "sheet_id":this.retriveDataSheet_id,
-    "action_type":"sheet_update"
-  }
-}
-this.workbechService.sheetUpdateRefreshMail(obj).subscribe({
-  next: (response: any) => {
-    console.log(response);
-  },
-error: (error:any) => {
-    console.log(error);
-  }
-});
-}
 }
 
