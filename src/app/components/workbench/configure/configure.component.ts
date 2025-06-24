@@ -377,7 +377,9 @@ updateDatasourceTogglesFromApi(mailAction: any) {
     mail_action: this.getSelectedMailActions(),
     dashboard_id: this.dashboardId,
     id:this.userId,
-    is_enabled:this.enabledEmail
+    is_enabled:this.enabledEmail,
+    alert_level: 'dashbaord'
+
     }
      this.workbechService.updateEmailAlerts(obj).subscribe({
       next: (data: any) => {
