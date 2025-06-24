@@ -78,7 +78,7 @@
                                                     [previledgeId]="43" [isBtn]="false" [buttonName]="' Properties'"
                                                     (btnClickEvent)="viewPropertiesTab(dashboardList.dashboard_name,dashboardList.dashboard_id)"
                                                     [faIconList]="'fa fa-sliders me-2 d-inline-flex'" [isIcon]="true"></app-insights-button>           
-            
+                                                <a (click)="gotoConfigureEmailAlertsDashbaord(dashboardList.dashboard_id)" tabindex="0" class="dropdown-item btn btn-orange-light" style="cursor: pointer;"><i class="fa fa-bell me-2 d-inline-flex" data-bs-toggle="tooltip" ></i>Set Alerts</a>
                                                 <app-insights-button [classesList]="'dropdown-item  btn btn-secondary-light'"
                                                     [previledgeId]="35" [isBtn]="false" [buttonName]="' Delete'"
                                                     (btnClickEvent)="deleteDashboard(dashboardList.dashboard_id)"
@@ -113,6 +113,8 @@
                                                     [previledgeId]="43" [isBtn]="false"  [buttonName]="' Properties'"
                                                     (btnClickEvent)="viewPropertiesTab(dashboardList.dashboard_name,dashboardList.dashboard_id)"
                                                     [faIconList]="'fa fa-sliders me-2 d-inline-flex'" [isIcon]="true"></app-insights-button>
+                                                <a (click)="gotoConfigureEmailAlertsDashbaord(dashboardList.dashboard_id)" tabindex="0" class="dropdown-item btn btn-orange-light" style="cursor: pointer;"><i class="fa fa-bell me-2 d-inline-flex" data-bs-toggle="tooltip" ></i>Set Alerts</a>
+
                                                 <app-insights-button [classesList]="'dropdown-item  btn btn-secondary-light'"
                                                     [previledgeId]="35" [isBtn]="false" [buttonName]="' Delete'"
                                                     (btnClickEvent)="deleteDashboard(dashboardList.dashboard_id)"
@@ -239,6 +241,8 @@
                                                     [isBtn]="false" [buttonName]="' View Sheet'"
                                                     (btnClickEvent)="viewSheet(sheetlist.hierarchy_id,sheetlist.queryset_id,sheetlist.sheet_id)"
                                                     [faIconList]="'fe fe-upload'" [isIcon]="true"></app-insights-button>
+                                                 <a (click)="gotoConfigureEmailAlerts(sheetlist.sheet_id)" tabindex="0" class="dropdown-item btn btn-orange-light" style="cursor: pointer;"><i class="fa fa-bell me-2 d-inline-flex" data-bs-toggle="tooltip" ></i>Set Alerts</a>
+
                                                 <app-insights-button [classesList]="'dropdown-item  btn btn-secondary-light'"
                                                     [previledgeId]="19" [isBtn]="false" [buttonName]="' Delete'"
                                                     (btnClickEvent)="deleteSheet(sheetlist.hierarchy_id,sheetlist.queryset_id,sheetlist.sheet_id)"
@@ -326,7 +330,9 @@
                                                     [isBtn]="false" [buttonName]="' View Sheet'"
                                                     (btnClickEvent)="viewSheet(sheetlist.hierarchy_id,sheetlist.queryset_id,sheetlist.sheet_id)"
                                                     [faIconList]="'fe fe-upload'" [isIcon]="true"></app-insights-button>
-                                                <app-insights-button [classesList]="'dropdown-item  btn btn-secondary-light'"
+                                                 <a (click)="gotoConfigureEmailAlerts(sheetlist.sheet_id)" tabindex="0" class="dropdown-item btn btn-orange-light" style="cursor: pointer;"><i class="fa fa-bell me-2 d-inline-flex" data-bs-toggle="tooltip" ></i>Set Alerts</a>
+
+                                                    <app-insights-button [classesList]="'dropdown-item  btn btn-secondary-light'"
                                                     [previledgeId]="19" [isBtn]="false" [buttonName]="' Delete'"
                                                     (btnClickEvent)="deleteSheet(sheetlist.hierarchy_id,sheetlist.queryset_id,sheetlist.sheet_id)"
                                                     [faIconList]="'fe fe-trash'" [isIcon]="true"></app-insights-button>

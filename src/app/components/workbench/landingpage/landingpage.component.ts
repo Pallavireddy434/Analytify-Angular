@@ -718,4 +718,13 @@ publishDashboard(){
     }
   })
 }
+gotoConfigureEmailAlerts(id:any){
+const encodedDatabaseId = btoa(id.toString());
+this.router.navigate(['/analytify/configure-page/email/sheet/'+encodedDatabaseId])
+}
+gotoConfigureEmailAlertsDashbaord(id:any){
+    const encodedDatabaseId = btoa(id.toString());
+
+this.router.navigate(['/analytify/configure-page/email/dashboard/'+encodedDatabaseId])
+}
 }
