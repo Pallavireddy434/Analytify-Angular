@@ -2116,7 +2116,7 @@ export class SheetsdashboardComponent implements OnDestroy {
   //  })
   // }
   flattenDimensions(dimensions: Dimension[]): string[] {
-    const numCategories = Math.max(...dimensions.map(dim => dim.values.length));
+    const numCategories = Math.max(...dimensions?.map(dim => dim.values.length));
     return Array.from({ length: numCategories }, (_, index) => {
       return dimensions.map(dim => dim.values[index] || '').join(',');
     });
@@ -3246,7 +3246,7 @@ lineChartOptions(xaxis:any,yaxis:any,savedOptions:any, isEchart : boolean){
 }
 pieChartOptions(xaxis:any,yaxis:any,savedOptions:any, isEchart : boolean){
   if (isEchart) {
-    let combinedArray = yaxis.map((value : any, index :number) => ({
+    let combinedArray = yaxis?.map((value : any, index :number) => ({
       value: value,
       name: xaxis[index]
     }));
@@ -4028,7 +4028,7 @@ getFilteredData(){
   });
 }
 }
-clearAllFilters(): void {
+clearAllFilters(isSwitchDb?:boolean): void {
   this.DahboardListFilters.forEach((values:any) => {
     values.searchText =''
   });
@@ -4047,11 +4047,13 @@ clearAllFilters(): void {
       this.excludeFilterIdArray = [];
       localStorage.removeItem('storeSelectedColData'); 
       console.log('All filters cleared');
-      if(this.isPublicUrl){
-        this.getFilteredDataPublic()
-      }else{
-        this.assignSDKFiltertoDashboard();
-        this.getFilteredData();
+      if (!isSwitchDb) {
+        if (this.isPublicUrl) {
+          this.getFilteredDataPublic()
+        } else {
+          this.assignSDKFiltertoDashboard();
+          this.getFilteredData();
+        }
       }
   } else {
       console.warn('DahboardListFilters is not defined or not an array');
@@ -4152,6 +4154,18 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
     item1.columnKeys = columnKeys;
     item1.rowKeys = rowKeys;
     item1.valueKeys = valueKeys;
+    if(switchDb){
+      item1.pivotData.pivotColData = item?.columns.map((data:any)=>{
+        return {column: data.column, result_data: data.result};
+      });
+      item1.pivotData.pivotDataTransformed = transformedData;
+      item1.pivotData.pivotMeasureData = item?.pivot.map((data:any)=>{
+        return {col: data.column, result_data: data.result};
+      });
+      item1.pivotData.pivotRowData = item?.rows.map((data:any)=>{
+        return {col: data.column, result_data: data.result};
+      });
+    }
     setTimeout(() => {
       const pivotTables = dashboard.filter(item => item.chartType === 'PIVOT' && item['chartId'] === 9);
 
@@ -4228,6 +4242,11 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
             }
       }      
     });  
+    if (switchDb && isLastIndex) {
+      this.updateDashboard(false, false, false);
+    } else if (isLiveReloadData && isLastIndex) {
+      this.updateDashboard(isLiveReloadData, false, isDashboardTransfer ? isDashboardTransfer : false);
+    }
     }, 1000);
     }
       if((item.chart_id == '6' || item.chartId == '6' && (isFilter || isDrillDown)) || (item1.chartId == '6' && isDrillThrough)){//bar
@@ -4828,10 +4847,11 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
     
   }
 })
-if (switchDb && isLastIndex) {
+if (switchDb && isLastIndex && item.chart_id != '9') {
   this.updateDashboard(false, false, false);
-} else if( isLiveReloadData && isLastIndex){
-  this.updateDashboard(isLiveReloadData, false,isDashboardTransfer ? isDashboardTransfer : false);}
+} else if( isLiveReloadData && isLastIndex && item.chart_id != '9'){
+  this.updateDashboard(isLiveReloadData, false,isDashboardTransfer ? isDashboardTransfer : false);
+}
 }
 
 formatKPINumber(value : number, KPIDisplayUnits: string, KPIDecimalPlaces : number,KPIPrefix: string,KPISuffix: string  ) {
@@ -6716,8 +6736,8 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
       }
     });
   }
-  clearActionForm(){
-    if(this.actionId && this.actionId != 0){
+  clearActionForm(isSwitchDb?: boolean){
+    if(this.actionId && this.actionId != 0 && !isSwitchDb){
       this.setDrillThrough('',[]);
     }
     this.actionName = '';
@@ -8363,6 +8383,14 @@ switchDatabase(isDuplicate: boolean = false) {
   this.workbechService.datbaseSwitch(obj).subscribe({
     next:(data)=>{
       console.log(data);
+      if(this.dataArray.length > 0){
+        this.clearAllFilters(true);
+        this.dataArray = [];
+        this.sheetFilters = [];
+      }
+      if(this.actionId){
+        this.clearActionForm(true);
+      }
       if(data.message ==='Datasource switched successfully'){
         if(!isDuplicate){
         this.refreshDashboard(true);
