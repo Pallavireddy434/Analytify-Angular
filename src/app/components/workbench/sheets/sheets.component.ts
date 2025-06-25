@@ -2579,6 +2579,7 @@ if(this.retriveDataSheet_id){
       }
     })
   }
+  this.isSyncForEmail = false
   },
   error: (error) => {
     console.log(error);
@@ -2587,6 +2588,7 @@ if(this.retriveDataSheet_id){
       text: error.error.message,
       width: '200px',
     })
+    this.isSyncForEmail = false
   }
 }
 )
