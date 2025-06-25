@@ -389,6 +389,7 @@ editUserRoute(id:any){
   // const userId = btoa(id.toString());
   // this.router.navigate(['/analytify/users/edit-user/'+userId])
   this.addUserDivForm = true;
+  this.getUserIdDetails(id);
 }
 
 getUserIdDetails(id:any){
@@ -459,7 +460,7 @@ editUserApiCall(){
       console.log(data);
       this.addUserDivForm = false;
       this.toasterservice.success(data.message,'success',{ positionClass: 'toast-top-right'});
-      this.router.navigate(['/analytify/users/users-list'])    
+      // this.router.navigate(['/analytify/users/users-list'])    
      },
     error:(error)=>{
       console.log(error);
