@@ -392,7 +392,7 @@ updateDatasourceTogglesFromApi(mailAction: any) {
           }
           console.log(data);
           this.dashboardName = data.data?.dashboard_name;
-          this.updateTogglesFromApi(data.data?.mail_action);
+          // this.updateTogglesFromApi(data.data?.mail_action);
         }
       },
       error: (error: any) => {
@@ -420,7 +420,7 @@ updateDatasourceTogglesFromApi(mailAction: any) {
           this.getdashboardDetails(this.dashboardId);
           }
           this.dashboardName = data.data?.dashboard_name;
-          this.updateTogglesFromApi(data.data?.mail_action);
+          // this.updateTogglesFromApi(data.data?.mail_action);
         }
       },
       error: (error: any) => {
@@ -473,7 +473,7 @@ saveDatasourceEmailAlert() {
           this.getDatasourceDetails(this.dbId);
           }
           this.dashboardName = res.data?.dashboard_name;
-          this.updateTogglesFromApi(res.data?.mail_action);
+          // this.updateTogglesFromApi(res.data?.mail_action);
         } 
       },
       error: () => this.toasterService.error('Failed to save datasource email alert')
