@@ -378,7 +378,9 @@ export class TemplateDashboardService {
         let transformData = this.transformDashboardTransferData(sheet.sheet_query_data, chart_id)
         let chartTransformaedData = this.transformTableAndChartData(transformData);
         let chartOptions = sheet.sheet_data.savedChartOptions;
-        chartOptions = this.updateChartOptions(chartOptions,sheet.chart_type,sheet.sheet_data.isApexChart,chartTransformaedData.xAxisCategories,chartTransformaedData.multiSeriesChartData);
+        if(![1, 9, 25].includes(chart_id)){ 
+          chartOptions = this.updateChartOptions(chartOptions,sheet.chart_type,sheet.sheet_data.isApexChart,chartTransformaedData.xAxisCategories,chartTransformaedData.multiSeriesChartData);
+        }
         const transformed = {
           chart_id,
           ...rest,
@@ -395,6 +397,7 @@ export class TemplateDashboardService {
         };
         if(chart_id == 25 ){
           transformed.sheet_data.results.kpiNumber = sheet_query_data.rows_data[0]?.data[0];
+          transformed.sheet_data.results.kpiData[0].result_data = transformed.sheet_data.row[0].result_data;
           sheet['rows'] = KPIRows;
           sheet['dashboardKPIRows'] = dashboardKPIRows;
         } else if(chart_id != 1 && chart_id != 9){
@@ -738,6 +741,7 @@ export class TemplateDashboardService {
     }  else if(data.chart_id == 3) {
       chartData = this.echartInstance.hgroupedChart(dualAxisColumnData, dualAxisRowData);
     } else if(data.chart_id == 10) {
+      this.echartInstance.donutSize = this.customizeOptions.donutSize;
       chartData = this.echartInstance.donutChart(chartsColumnData, chartsRowData);
     } else if(data.chart_id == 7) {
       chartData = this.echartInstance.sidebySide(dualAxisColumnData, dualAxisRowData);
