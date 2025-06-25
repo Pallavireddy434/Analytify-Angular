@@ -284,6 +284,7 @@ getAddedRolesList(){
 addUserRoute(){
   // this.router.navigate(['/analytify/users/add-user'])
   this.addUserDivForm = true;
+  this.addUserDiv();
 }
 viewUsers(){
   // this.router.navigate(['/analytify/users/users-list'])
