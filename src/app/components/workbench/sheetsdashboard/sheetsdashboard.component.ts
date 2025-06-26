@@ -1691,12 +1691,13 @@ export class SheetsdashboardComponent implements OnDestroy {
           if(!isLiveReloadData){
             this.takeScreenshot();
           }
+        const targetIds = this.switchConditions.map(c => c.targetHierarchyId).filter(id => id);
         obj ={
           grid : this.gridType,
           height: this.heightGrid,
           width: this.widthGrid,
           queryset_id:this.qrySetId,
-          server_id:this.databaseId,
+          server_id: isSwitchDb? targetIds : this.databaseId,
           sheet_ids:this.sheetsIdArray,
           dashboard_name:this.dashboardName,
           dashboard_tag_name:this.dashboardTagName,
