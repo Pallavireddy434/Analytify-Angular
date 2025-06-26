@@ -1065,14 +1065,14 @@ try {
           });
           this.tablePreviewRow.forEach((res: any) => {
             let obj = {
-              name: res.col,
+              name: res.col ?? res.column,
               data: res.result_data
             }
             this.dualAxisRowData.push(obj);
           });
           this.tablePreviewRow.forEach((res: any) => {
             let obj = {
-              name: res.col,
+              name: res.col ?? res.column,
               value: res.result_data
             }
             this.radarRowData.push(obj);

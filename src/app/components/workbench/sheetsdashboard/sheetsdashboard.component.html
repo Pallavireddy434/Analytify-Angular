@@ -1557,7 +1557,7 @@
                   <div *ngIf="item.chartOptions && item['chartId'] === 26">
                     <apx-chart [series]="item.chartOptions.series!" [chart]="item.chartOptions.chart!"
                       [xaxis]="{ categories: item?.chartOptions?.xaxis?.categories, labels: item?.chartOptions?.xaxis?.labels }"
-                      [dataLabels]="item.chartOptions.dataLabels!" [legend]="item.chartOptions.legend!"
+                      [dataLabels]="item.chartOptions.dataLabels!" [legend]="item.chartOptions.legend!" [plotOptions]="item.chartOptions.plotOptions!"
                       [grid]="item.chartOptions.grid!" [yaxis]="item.chartOptions.yaxis!" [colors]="item.chartOptions.colors!"
                       (chartInit)="onChartInit($event, item)"></apx-chart>
                   </div>
@@ -1991,7 +1991,7 @@
                   <div *ngIf="item.chartOptions && item['chartId'] === 26">
                     <apx-chart [series]="item.chartOptions.series!" [chart]="item.chartOptions.chart!"
                       [xaxis]="{ categories: item?.chartOptions?.xaxis?.categories, labels: item?.chartOptions?.xaxis?.labels }"
-                      [dataLabels]="item.chartOptions.dataLabels!" [legend]="item.chartOptions.legend!"
+                      [dataLabels]="item.chartOptions.dataLabels!" [legend]="item.chartOptions.legend!" [plotOptions]="item.chartOptions.plotOptions!"
                       [grid]="item.chartOptions.grid!" [yaxis]="item.chartOptions.yaxis!" [colors]="item.chartOptions.colors!"
                       (chartInit)="onChartInit($event, item)"></apx-chart>
                   </div>

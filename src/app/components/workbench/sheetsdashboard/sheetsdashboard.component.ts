@@ -1601,7 +1601,7 @@ export class SheetsdashboardComponent implements OnDestroy {
   saveDashboardimageUpdate(){
     var formData: any = new FormData();
     formData.append("dashboard_id", this.dashboardId);
-    formData.append("imagepath", this.imageFile, this.imagename.name);
+    formData.append("imagepath", this.imageFile, this.imagename?.name);
   
      this.workbechService.saveDAshboardimage(formData).subscribe({
       next:(data)=>{
@@ -1761,7 +1761,7 @@ export class SheetsdashboardComponent implements OnDestroy {
         else if(isShowpopup){
         this.toasterService.success('Dashboard Updated Successfully','success',{ positionClass: 'toast-top-right'});
         }
-        if(!isLiveReloadData){
+        if(!isLiveReloadData && !isDashboardTransfer){
           this.saveDashboardimageUpdate();
         }
         this.endMethod(); 
