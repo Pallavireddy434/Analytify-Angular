@@ -60,7 +60,7 @@ import { saveAs } from 'file-saver';
 import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
 import { i } from 'mathjs';
-import { SanitizeHtmlPipe } from '../../../shared/pipes/sanitize-html.pipe';
+import { SafeUrlPipe, SanitizeHtmlPipe } from '../../../shared/pipes/sanitize-html.pipe';
 
 interface TableRow {
   [key: string]: any;
@@ -123,7 +123,7 @@ export class CustomVirtualScrollStrategy extends FixedSizeVirtualScrollStrategy 
   imports: [NgxEchartsModule,SharedModule,NgbModule,CommonModule,ResizableModule,GridsterModule,
     CommonModule,GridsterItemComponent,GridsterComponent,NgApexchartsModule,CdkDropListGroup, NgSelectModule,
     CdkDropList, CdkDrag,ChartsStoreComponent,FormsModule, MatTabsModule , CKEditorModule , InsightsButtonComponent,
-    NgxPaginationModule,NgSelectModule, InsightEchartComponent,SharedModule,FilterIconsPipe,FormatMeasurePipe,ScrollingModule,TestPipe,SanitizeHtmlPipe],
+    NgxPaginationModule,NgSelectModule, InsightEchartComponent,SharedModule,FilterIconsPipe,FormatMeasurePipe,ScrollingModule,TestPipe,SanitizeHtmlPipe,SafeUrlPipe],
   templateUrl: './sheetsdashboard.component.html',
   styleUrl: './sheetsdashboard.component.scss'
 })
@@ -8556,8 +8556,8 @@ excelUpload(fileInput: any){
       }
     )
   }
-  summary:any;
   report_url:any;
+  iframeLoading = false;
   analyzeAndDownload(){
       const obj ={
     dashboard_id:this.dashboardId,
@@ -8565,15 +8565,14 @@ excelUpload(fileInput: any){
      this.workbechService.analyzeAndDownloadDashboard(obj).subscribe({
         next:(data)=>{
           if(data){
+          this.iframeLoading = true; // Reset loader state
           this.modalService.open(this.analyzeDashbaordModal, {
               centered: true,
               size: 'lg',
               windowClass: 'animate__animated animate__zoomIn',
             });
           }
-
-          this.summary=data.summary
-          this.report_url = data.report_url;
+          this.report_url = data.ui_page_url;
         },
         error:(error)=>{
           console.log(error);
@@ -8586,146 +8585,160 @@ excelUpload(fileInput: any){
             }
       }) 
   }
-  getSummaryKeys(): string[] {
-  return this.summary ? Object.keys(this.summary) : [];
+downloadReport() {
+  if (!this.report_url) return;
+  this.http.get(this.report_url, { responseType: 'blob' }).subscribe(blob => {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'dashboard-analysis-report.html';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  });
 }
 
-getSummaryLines(text: string): string[] {
-  if (!text) return [];
-  // Split by \n, remove empty lines, trim, and remove leading bullets/arrows
-  return text.split('\n')
-    .map(line => line.replace(/^(\s*[-*>]+\s*)/, '').trim())
-    .filter(line => line.length > 0);
-}
-downloadAnalyzeReport() {
-  if (!this.summary) {
-    this.toasterService.error('No summary available to download.', 'Error');
-    return;
-  }
-  const doc = new jsPDF('p', 'mm', 'a4');
-  const margin = 15;
-  let y = margin;
-  const lineHeight = 8;
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const maxWidth = pageWidth - margin * 2;
+//   getSummaryKeys(): string[] {
+//   return this.summary ? Object.keys(this.summary) : [];
+// }
 
-  // Title
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Dashboard Analysis Report', margin, y);
-  y += lineHeight * 2;
+// getSummaryLines(text: string): string[] {
+//   if (!text) return [];
+//   // Split by \n, remove empty lines, trim, and remove leading bullets/arrows
+//   return text.split('\n')
+//     .map(line => line.replace(/^(\s*[-*>]+\s*)/, '').trim())
+//     .filter(line => line.length > 0);
+// }
+// downloadAnalyzeReport() {
+//   if (!this.summary) {
+//     this.toasterService.error('No summary available to download.', 'Error');
+//     return;
+//   }
+//   const doc = new jsPDF('p', 'mm', 'a4');
+//   const margin = 15;
+//   let y = margin;
+//   const lineHeight = 8;
+//   const pageWidth = doc.internal.pageSize.getWidth();
+//   const pageHeight = doc.internal.pageSize.getHeight();
+//   const maxWidth = pageWidth - margin * 2;
 
-  doc.setFontSize(12);
+//   // Title
+//   doc.setFontSize(16);
+//   doc.setFont('helvetica', 'bold');
+//   doc.text('Dashboard Analysis Report', margin, y);
+//   y += lineHeight * 2;
 
-  // GenieAIQ Analysis Section
-  if (this.summary['GenieAIQ Analysis']) {
-    if (y > pageHeight - margin - lineHeight * 2) {
-      doc.addPage();
-      y = margin;
-    }
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(40, 40, 40);
-    doc.text('GenieAIQ Analysis', margin, y);
-    y += lineHeight;
+//   doc.setFontSize(12);
 
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(60, 60, 60);
-    const lines = this.getSummaryLines(this.summary['GenieAIQ Analysis']);
-    lines.forEach((line) => {
-      const wrapped = doc.splitTextToSize(line, maxWidth - 8);
-      wrapped.forEach((wline: string) => {
-        if (y > pageHeight - margin - lineHeight) {
-          doc.addPage();
-          y = margin;
-        }
-        doc.text('\u2022 ' + wline, margin + 5, y);
-        y += lineHeight;
-      });
-    });
-    y += lineHeight;
-  }
+//   // GenieAIQ Analysis Section
+//   if (this.summary['GenieAIQ Analysis']) {
+//     if (y > pageHeight - margin - lineHeight * 2) {
+//       doc.addPage();
+//       y = margin;
+//     }
+//     doc.setFont('helvetica', 'bold');
+//     doc.setTextColor(40, 40, 40);
+//     doc.text('GenieAIQ Analysis', margin, y);
+//     y += lineHeight;
 
-  // Widgets Analysis Section
-  if (this.summary.Widgets && Array.isArray(this.summary.Widgets)) {
-    this.summary.Widgets.forEach((widget: any, index: number) => {
-      if (y > pageHeight - margin - lineHeight * 4) {
-        doc.addPage();
-        y = margin;
-      }
+//     doc.setFont('helvetica', 'normal');
+//     doc.setTextColor(60, 60, 60);
+//     const lines = this.getSummaryLines(this.summary['GenieAIQ Analysis']);
+//     lines.forEach((line) => {
+//       const wrapped = doc.splitTextToSize(line, maxWidth - 8);
+//       wrapped.forEach((wline: string) => {
+//         if (y > pageHeight - margin - lineHeight) {
+//           doc.addPage();
+//           y = margin;
+//         }
+//         doc.text('\u2022 ' + wline, margin + 5, y);
+//         y += lineHeight;
+//       });
+//     });
+//     y += lineHeight;
+//   }
 
-      // Widget Title
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(40, 40, 40);
-      doc.text(widget['Widget Title'] || 'Unnamed Widget', margin, y);
-      y += lineHeight;
+//   // Widgets Analysis Section
+//   if (this.summary.Widgets && Array.isArray(this.summary.Widgets)) {
+//     this.summary.Widgets.forEach((widget: any, index: number) => {
+//       if (y > pageHeight - margin - lineHeight * 4) {
+//         doc.addPage();
+//         y = margin;
+//       }
 
-      // Description
-      if (widget.Description) {
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(60, 60, 60);
-        const descWrapped = doc.splitTextToSize(widget.Description, maxWidth - 8);
-        descWrapped.forEach((line: string) => {
-          if (y > pageHeight - margin - lineHeight) {
-            doc.addPage();
-            y = margin;
-          }
-          doc.text(line, margin + 5, y);
-          y += lineHeight;
-        });
-        y += lineHeight / 2;
-      }
+//       // Widget Title
+//       doc.setFont('helvetica', 'bold');
+//       doc.setTextColor(40, 40, 40);
+//       doc.text(widget['Widget Title'] || 'Unnamed Widget', margin, y);
+//       y += lineHeight;
 
-      // Observations
-      if (widget.Observations) {
-        doc.setFont('helvetica', 'bold');
-        doc.text('Observations:', margin + 5, y);
-        y += lineHeight;
+//       // Description
+//       if (widget.Description) {
+//         doc.setFont('helvetica', 'normal');
+//         doc.setTextColor(60, 60, 60);
+//         const descWrapped = doc.splitTextToSize(widget.Description, maxWidth - 8);
+//         descWrapped.forEach((line: string) => {
+//           if (y > pageHeight - margin - lineHeight) {
+//             doc.addPage();
+//             y = margin;
+//           }
+//           doc.text(line, margin + 5, y);
+//           y += lineHeight;
+//         });
+//         y += lineHeight / 2;
+//       }
+
+//       // Observations
+//       if (widget.Observations) {
+//         doc.setFont('helvetica', 'bold');
+//         doc.text('Observations:', margin + 5, y);
+//         y += lineHeight;
         
-        doc.setFont('helvetica', 'normal');
-        const obsLines = this.getSummaryLines(widget.Observations);
-        obsLines.forEach((line) => {
-          const wrapped = doc.splitTextToSize(line, maxWidth - 13);
-          wrapped.forEach((wline: string) => {
-            if (y > pageHeight - margin - lineHeight) {
-              doc.addPage();
-              y = margin;
-            }
-            doc.text('\u2022 ' + wline, margin + 10, y);
-            y += lineHeight;
-          });
-        });
-        y += lineHeight / 2;
-      }
+//         doc.setFont('helvetica', 'normal');
+//         const obsLines = this.getSummaryLines(widget.Observations);
+//         obsLines.forEach((line) => {
+//           const wrapped = doc.splitTextToSize(line, maxWidth - 13);
+//           wrapped.forEach((wline: string) => {
+//             if (y > pageHeight - margin - lineHeight) {
+//               doc.addPage();
+//               y = margin;
+//             }
+//             doc.text('\u2022 ' + wline, margin + 10, y);
+//             y += lineHeight;
+//           });
+//         });
+//         y += lineHeight / 2;
+//       }
 
-      // Insights
-      if (widget.Insights) {
-        doc.setFont('helvetica', 'bold');
-        doc.text('Insights:', margin + 5, y);
-        y += lineHeight;
+//       // Insights
+//       if (widget.Insights) {
+//         doc.setFont('helvetica', 'bold');
+//         doc.text('Insights:', margin + 5, y);
+//         y += lineHeight;
         
-        doc.setFont('helvetica', 'normal');
-        const insightLines = this.getSummaryLines(widget.Insights);
-        insightLines.forEach((line) => {
-          const wrapped = doc.splitTextToSize(line, maxWidth - 13);
-          wrapped.forEach((wline: string) => {
-            if (y > pageHeight - margin - lineHeight) {
-              doc.addPage();
-              y = margin;
-            }
-            doc.text('\u2022 ' + wline, margin + 10, y);
-            y += lineHeight;
-          });
-        });
-      }
+//         doc.setFont('helvetica', 'normal');
+//         const insightLines = this.getSummaryLines(widget.Insights);
+//         insightLines.forEach((line) => {
+//           const wrapped = doc.splitTextToSize(line, maxWidth - 13);
+//           wrapped.forEach((wline: string) => {
+//             if (y > pageHeight - margin - lineHeight) {
+//               doc.addPage();
+//               y = margin;
+//             }
+//             doc.text('\u2022 ' + wline, margin + 10, y);
+//             y += lineHeight;
+//           });
+//         });
+//       }
 
-      // Add space between widgets
-      y += lineHeight * 2;
-    });
-  }
+//       // Add space between widgets
+//       y += lineHeight * 2;
+//     });
+//   }
 
-  doc.save((this.dashboardName || 'dashboard') + '-analysis-report.pdf');
-}
+//   doc.save((this.dashboardName || 'dashboard') + '-analysis-report.pdf');
+// }
 playAnalyzeModalAnimation() {
   const watermark = document.querySelector('.sticky-watermark');
   if (watermark) {

@@ -2321,87 +2321,45 @@
     </div>
   </ng-template>
   
- <!-- <ng-template #analyzeDashbaordModal let-modal>
- <div class="modal-header analyze-dashboard-modal">
-    <h5 class="modal-title">Dashboard Analysis Report</h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
-  </div>
-  <div class="modal-body analyze-dashboard-modal" style="max-height: 60vh; overflow-y: auto;">
-    <div id="analyze-dashboard-capture">
-    <ng-container *ngFor="let key of getSummaryKeys()">
-      <h6 class="mt-3 mb-2">{{ key }}</h6>
-      <ul class="ps-3">
-        <ng-container *ngFor="let line of getSummaryLines(summary[key])">
-          <li *ngIf="line.trim()">{{ line }}</li>
-        </ng-container>
-      </ul>
-    </ng-container>
-    </div>
-    <div class="modal-footer">
-      <a (click)="downloadAnalyzeReport()" target="_blank" class="btn btn-outline-primary">Download Full Report (PDF)</a>
-    </div>
-  </div>
 
-  </ng-template> -->
 <ng-template #analyzeDashbaordModal let-modal>
   <div class="modal-header analyze-dashboard-modal">
     <h5 class="modal-title">Dashboard Analysis Report</h5>
     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
-  <div class="modal-body analyze-dashboard-modal" style="max-height: 60vh; overflow-y: auto;">
-    <div id="analyze-dashboard-capture">
-      <!-- GenieAIQ Analysis Section -->
-      <div *ngIf="summary['GenieAIQ Analysis']" class="mb-4">
-        <h6 class="mt-3 mb-2">GenieAIQ Analysis</h6>
-        <ul class="ps-3">
-          <li *ngFor="let line of getSummaryLines(summary['GenieAIQ Analysis'])">
-            {{ line }}
-          </li>
-        </ul>
-      </div>
-
-      <!-- Widgets Analysis Section -->
-      <div *ngIf="summary.Widgets" class="mb-4">
-        <h6 class="mt-3 mb-2">Widget Analysis</h6>
-        <div *ngFor="let widget of summary.Widgets" class="widget-analysis mb-3">
-          <h6 class="widget-title">{{ widget['Widget Title'] }}</h6>
-          
-          <!-- Description -->
-          <div *ngIf="widget.Description" class="mt-2">
-            <strong>Description:</strong>
-            <p>{{ widget.Description }}</p>
-          </div>
-          
-          <!-- Observations -->
-          <div *ngIf="widget.Observations" class="mt-2">
-            <strong>Observations:</strong>
-            <ul class="ps-3">
-              <li *ngFor="let line of getSummaryLines(widget.Observations)">
-                {{ line }}
-              </li>
-            </ul>
-          </div>
-          
-          <!-- Insights -->
-          <div *ngIf="widget.Insights" class="mt-2">
-            <strong>Insights:</strong>
-            <ul class="ps-3">
-              <li *ngFor="let line of getSummaryLines(widget.Insights)">
-                {{ line }}
-              </li>
-            </ul>
-          </div>
-          <hr *ngIf="!widget.isLast">
+    <div class="modal-body analyze-dashboard-modal p-0" style="overflow-y: auto;">
+    <ng-container *ngIf="report_url; else noReport">
+      <div *ngIf="iframeLoading" class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
         </div>
       </div>
-    </div>
-    
-    <div class="modal-footer">
-      <a (click)="downloadAnalyzeReport()" class="btn btn-outline-primary">Download Full Report (PDF)</a>
-    </div>
+      <iframe 
+        [src]="report_url | safeUrl" 
+        width="100%" 
+        height="500px" 
+        frameborder="0"
+        style="border: none; min-height: 60vh;display: block;"
+        (load)="iframeLoading = false"
+        [style.visibility]="iframeLoading ? 'hidden' : 'visible'">
+      </iframe>
+    </ng-container>
+    <ng-template #noReport>
+      <div class="text-center text-muted">No analysis report available.</div>
+    </ng-template>
+  </div>
+ <div class="modal-footer">
+    <button 
+      type="button" 
+      class="btn btn-primary"
+      [disabled]="!report_url"
+      (click)="downloadReport()">
+      Download Report
+    </button>
   </div>
 </ng-template>
-<!-- Add this template at the bottom of your sheetsdashboard.component.html -->
+
+
 <ng-template #textEditorModal let-modal>
   <div class="modal-header">
     <h4 class="modal-title">Add Text Content</h4>
