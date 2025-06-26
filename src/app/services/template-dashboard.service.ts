@@ -623,6 +623,7 @@ export class TemplateDashboardService {
         let dualAxisRowData:any=[];
         let chartsColumnData:any=[];
         let chartsRowData:any = [];
+        let totalCount: any;
           if (tablePreviewColumn && tablePreviewRow) {
             tablePreviewColumn.forEach((res: any) => {
               let obj1 = {
@@ -657,6 +658,7 @@ export class TemplateDashboardService {
             } else {
               rowCountStore = transformData?.rows_data[0]?.result_data?.length;
             }
+            totalCount = _.cloneDeep(rowCountStore);
             rowCountStore = rowCountStore > 10 ? 10:rowCountStore;
             for (let i = 0; i < rowCountStore; i++) {
               const row: TableRow = {};
@@ -678,7 +680,7 @@ export class TemplateDashboardService {
           }
           let displayedColumns = tablePreviewColumn.map((col: any) => col.column).concat(tablePreviewRow.map((row: any) => row.column));
           this.dashboardQuerySetIds.push(data.queryset_id);
-          return this.sheetUpdate(chartsColumnData, chartsRowData, dualAxisRowData, dualAxisColumnData,data.sheet_query_data.columns_data,data.sheet_query_data.rows_data,data,dashboardData,index,formType,transformData,tableDataStore,displayedColumns);
+          return this.sheetUpdate(chartsColumnData, chartsRowData, dualAxisRowData, dualAxisColumnData,data.sheet_query_data.columns_data,data.sheet_query_data.rows_data,data,dashboardData,index,formType,transformData,tableDataStore,displayedColumns,totalCount);
         
       });
       
@@ -730,7 +732,7 @@ export class TemplateDashboardService {
     return transformed;
   }
 
-  sheetUpdate(chartsColumnData: [], chartsRowData: [], dualAxisRowData: [], dualAxisColumnData: [],tableColumnData:[],tableRowData:[],data: any,dashboardData: any[],index : number, formType : string,tranformedData:any,tableDataStore: any[],displayedColumns : string[]) {
+  sheetUpdate(chartsColumnData: [], chartsRowData: [], dualAxisRowData: [], dualAxisColumnData: [],tableColumnData:[],tableRowData:[],data: any,dashboardData: any[],index : number, formType : string,tranformedData:any,tableDataStore: any[],displayedColumns : string[],totalCount:number) {
     let chartData;
     if(data.chart_id == 8){
       chartData = this.echartInstance.multiLineChart(dualAxisColumnData, dualAxisRowData);
@@ -877,15 +879,15 @@ export class TemplateDashboardService {
 
       }
     }
-    let dashbaordObj = this.updateDashboardJSONData(chartData,data,index, {"kpiNumber": tranformedData.rows_data[0]?.result_data[0],"kpiFontSize": 16,"kpiPrefix": "","kpiSuffix": "",kpiDecimalUnit: "none",rows:tranformedData.rows_data},formType,tableDataStore,displayedColumns);
+    let dashbaordObj = this.updateDashboardJSONData(chartData,data,index, {"kpiNumber": tranformedData.rows_data[0]?.result_data[0],"kpiFontSize": 16,"kpiPrefix": "","kpiSuffix": "",kpiDecimalUnit: "none",rows:tranformedData.rows_data},formType,tableDataStore,displayedColumns,totalCount);
     dashboardData.push(dashbaordObj);
    return this.workbechService.sheetUpdate(obj, data.sheet_id);
 
   }
 
-  updateDashboardJSONData(chartData: any, data: any, index : number,kpiData : any,formType : string, tableDataStore : any[],displayedColumns : string[]){
+  updateDashboardJSONData(chartData: any, data: any, index : number,kpiData : any,formType : string, tableDataStore : any[],displayedColumns : string[],totalCount: any){
     let tableData;
-    let totalRecordCount;
+    let totalRecordCount = totalCount;
     const sheet_rows_data = data.row_data.map((item:any) => {
       return [
         item.orginal_column,
@@ -923,16 +925,16 @@ export class TemplateDashboardService {
         "tableTotalItems": totalRecordCount,
         "tablePage": 1
       };
-      this.workbechService.tablePaginationSearch(obj).subscribe(
-        {
-          next: (data: any) => {
-             totalRecordCount = data.total_items;
-          },
-          error: (error) => {
-            console.log(error);
-          }
-        }
-      )
+      // this.workbechService.tablePaginationSearch(obj).subscribe(
+      //   {
+      //     next: (data: any) => {
+      //        totalRecordCount = data.total_items;
+      //     },
+      //     error: (error) => {
+      //       console.log(error);
+      //     }
+      //   }
+      // )
     }
       let obj = {
         id : uuidv4(),
