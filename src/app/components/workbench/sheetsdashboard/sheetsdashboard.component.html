@@ -296,6 +296,13 @@
                                                </div>
                                            </div>
                                       </div>
+                                          <div class=" mb-0  br-0 p-0 mt-2 ">
+                                            <button type="button" 
+                                                class="btn btn-primary w-100" 
+                                                (click)="addTextItem()">
+                                                <i class="fa fa-font"></i>   Add Text
+                                            </button>
+                                            </div>
                                           </div>
                                     </div>
                                   </div>
@@ -1167,7 +1174,47 @@
                           : ''" [style.background-position]="(item['chartType'] === 'KPI' && item['chartId'] === 25) 
                           ? 'center' 
                           : ''">
-                <div class="card-header d-flex justify-content-between p-1">
+                  <div *ngIf="!isPublicUrl && item['type'] === 'text' && !item.data?.title" class="hover-menu">
+                  <div class="menu-buttons">
+                    <!-- Edit Text Button -->
+                    <button *ngIf="!isPublicUrl && item['type'] === 'text'"  
+                            (click)="editTextItem(item)" 
+                            ngbTooltip="Edit Text">
+                      <i class="fa fa-edit"></i>
+                    </button>
+
+                    <!-- Add Background Button -->
+                    <button *ngIf="!isPublicUrl && item['type'] === 'text' && !item['textImage']" 
+                            (click)="uploadTextImage(item)" 
+                            ngbTooltip="Add Background Image">
+                      <i class="fa fa-image"></i>
+                    </button>
+                    <button *ngIf="!isPublicUrl && item['type'] === 'text' && item['textImage']"  
+                              (click)="uploadTextImage(item)" 
+                              ngbTooltip="Edit Background Image">
+                        <i class="fa fa-image"></i>
+                      </button>
+                    <!-- Remove Background Button -->
+                    <button *ngIf="!isPublicUrl && item['type'] === 'text' && item['textImage']" 
+                            (click)="removeTextImage(item)" 
+                            ngbTooltip="Remove Background Image">
+                      <i class="fa fa-trash"></i>
+                    </button>
+
+                    <!-- Remove Item Button -->
+                    <button (click)="removeItem($event, item, false)" 
+                            ngbTooltip="Remove">
+                      <i class="fa fa-times"></i>
+                    </button>
+                     <input 
+                            #ImageUploadText 
+                            type="file" 
+                            (change)="imageFileSelectForText($event)" 
+                            style="display: none;" 
+                            accept="image/*">
+                  </div>
+                </div>
+                <div class="card-header d-flex justify-content-between p-1" [attr.style]="((item.data?.title || item['type'] === 'image') ? 'display: flex !important;' : 'display: none !important;')">
                   @if((item['chartId'] === 6|| item['chartId'] === 24 || item['chartId'] === 10 || item['chartId'] === 29) &&
                   item['drillDownHierarchy'] && item['drillDownHierarchy'].length > 0){
                   <!-- <div class="col-lg-3 col-md-3"> -->
@@ -1186,6 +1233,11 @@
                   @if(item['type'] === 'image'){
                   <div style="width: 100%;">
                     <h6>{{item['imageTitle']}}</h6>
+                  </div>
+                  }
+                   @if(item['type'] === 'text'){
+                  <div *ngIf="item.data?.title" style="width: 100%;">
+                    <h6>{{item.data?.title}}</h6>
                   </div>
                   }
                   <div *ngIf="item['chartType'] === 'Table'" class="sheet-search">
@@ -1212,11 +1264,14 @@
                         aria-expanded="false" class=""><i class="fe fe-more-vertical fs-18 text-body-secondary"></i>
                       </a>
                       <div class="dropdown-menu DropdownObOverflow" ngbDropdownMenu [ngClass]="item['type'] !== 'image' ? 'dropdown-height-80' : 'dropdown-height-40'">
-                        <app-insights-button *ngIf="item['type'] !== 'image'" [classesList]="'dropdown-item'"
+                        <app-insights-button *ngIf="item['type'] !== 'image' && item['type'] !== 'text'" [classesList]="'dropdown-item'"
                           [buttonName]="'Goto Sheet'" [previledgeIdsList]="[20,18]" [isBtn]="false"
                           (btnClickEvent)="viewSheet(item)" [isIcon]="false"></app-insights-button>
                         <app-insights-button *ngIf="!isPublicUrl" [classesList]="'dropdown-item'" [buttonName]="'Remove'"
                           [previledgeId]="37" [isBtn]="false" (btnClickEvent)="removeItem($event, item, false)" [isIcon]="false">
+                        </app-insights-button>
+                        <app-insights-button *ngIf="!isPublicUrl && item['type'] === 'text'" [classesList]="'dropdown-item'" [buttonName]="'Edit Text'"
+                          [previledgeId]="37" [isBtn]="false" (btnClickEvent)="editTextItem(item)" [isIcon]="false">
                         </app-insights-button>
                         <!-- <app-insights-button [classesList]="'dropdown-item'" 
                           [buttonName]="'PDF'" 
@@ -1225,7 +1280,7 @@
                           (btnClickEvent)="downloadSheet(item, 'pdf')" 
                           [isIcon]="false">
                         </app-insights-button> -->
-                        <app-insights-button  *ngIf="item['type'] !== 'image'" [classesList]="'dropdown-item'" 
+                        <app-insights-button  *ngIf="item['type'] !== 'image' && item['type'] !== 'text'" [classesList]="'dropdown-item'" 
                           [buttonName]="'Download CSV'" 
                           [previledgeIdsList]="[20,18]" 
                           [isBtn]="false"
@@ -1260,14 +1315,56 @@
                         <app-insights-button *ngIf="!isPublicUrl && item['chartId'] === 25 && item['kpiImage']"
                           [classesList]="'dropdown-item'" [buttonName]="'Remove Image'" [previledgeId]="37" [isBtn]="false"
                           (btnClickEvent)="removeKpiImage(item)" [isIcon]="false"></app-insights-button>
+                          <app-insights-button 
+                            *ngIf="!isPublicUrl && item['type'] === 'text' && !item['textImage']" 
+                            [classesList]="'dropdown-item'" 
+                            [buttonName]="'Add Background Image'"
+                            [previledgeId]="37" 
+                            [isBtn]="false" 
+                            (btnClickEvent)="uploadTextImage(item)" 
+                            [isIcon]="false">
+                          </app-insights-button>
+                          <app-insights-button 
+                            *ngIf="!isPublicUrl && item['type'] === 'text' && item['textImage']" 
+                            [classesList]="'dropdown-item'" 
+                            [buttonName]="'Edit Background Image'"
+                            [previledgeId]="37" 
+                            [isBtn]="false" 
+                            (btnClickEvent)="uploadTextImage(item)" 
+                            [isIcon]="false">
+                          </app-insights-button>
+                          <app-insights-button 
+                            *ngIf="!isPublicUrl && item['type'] === 'text' && item['textImage']" 
+                            [classesList]="'dropdown-item'" 
+                            [buttonName]="'Remove Background Image'"
+                            [previledgeId]="37" 
+                            [isBtn]="false" 
+                            (btnClickEvent)="removeTextImage(item)" 
+                            [isIcon]="false">
+                          </app-insights-button>
                         <input type="file" #ImageUploadKPI (change)="imageFileSelectEvent($event)" accept="image/*"
                           style="display: none;" />
+                          <input 
+                            #ImageUploadText 
+                            type="file" 
+                            (change)="imageFileSelectForText($event)" 
+                            style="display: none;" 
+                            accept="image/*">
                       </div>
                     </div>
                   </div>
                 </div>
                 @if(item['type'] === 'image'){
                 <img [src]="item['imageData']" />
+                }
+                @if(item['type'] === 'text'){
+                <div class="text-content-container h-100"  [style.background-image]="item['textImage'] ? 'url(' + item['textImage'] + ')' : ''"
+                [style.background-size]="item['textImage'] ? 'cover' : ''"
+                [style.background-position]="item['textImage'] ? 'center' : ''">
+                <div class="text-content-scroll">
+                  <div class="text-content-wrapper" [innerHTML]="item.data?.content | sanitizeHtml"></div>
+                </div>
+              </div>
                 }
                 @if(item['isEChart'] && !(item['chartId']=== 29 || item['chartId']=== 25 || item['chartId']=== 1 ||
                 item['chartId']=== 9) ){
@@ -1355,6 +1452,15 @@
                               </div> -->
                   <div *ngIf="item.chartOptions">
                     <div *ngIf="item['chartId'] === 6">
+            
+                      <apx-chart #test344 id="test344" [series]="item.chartOptions.series!" [chart]="item.chartOptions.chart!"
+                        [dataLabels]="item.chartOptions.dataLabels!" [plotOptions]="item.chartOptions.plotOptions!"
+                        [xaxis]="{ categories: item?.chartOptions?.xaxis?.categories, labels: item?.chartOptions?.xaxis?.labels }"
+                        [colors]="item.chartOptions.colors!" [grid]="item.chartOptions.grid!" [yaxis]="item.chartOptions.yaxis!"
+                        [legend]="item.chartOptions.legend!" (chartInit)="onChartInit($event, item)">
+                      </apx-chart>
+                    </div>
+                     <div *ngIf="item['chartId'] === 14">
             
                       <apx-chart #test344 id="test344" [series]="item.chartOptions.series!" [chart]="item.chartOptions.chart!"
                         [dataLabels]="item.chartOptions.dataLabels!" [plotOptions]="item.chartOptions.plotOptions!"
@@ -1451,7 +1557,7 @@
                   <div *ngIf="item.chartOptions && item['chartId'] === 26">
                     <apx-chart [series]="item.chartOptions.series!" [chart]="item.chartOptions.chart!"
                       [xaxis]="{ categories: item?.chartOptions?.xaxis?.categories, labels: item?.chartOptions?.xaxis?.labels }"
-                      [dataLabels]="item.chartOptions.dataLabels!" [legend]="item.chartOptions.legend!"
+                      [dataLabels]="item.chartOptions.dataLabels!" [legend]="item.chartOptions.legend!" [plotOptions]="item.chartOptions.plotOptions!"
                       [grid]="item.chartOptions.grid!" [yaxis]="item.chartOptions.yaxis!" [colors]="item.chartOptions.colors!"
                       (chartInit)="onChartInit($event, item)"></apx-chart>
                   </div>
@@ -1788,6 +1894,15 @@
                         [legend]="item.chartOptions.legend!" (chartInit)="onChartInit($event, item)">
                       </apx-chart>
                     </div>
+                     <div *ngIf="item['chartId'] === 14">
+            
+                      <apx-chart #test344 id="test344" [series]="item.chartOptions.series!" [chart]="item.chartOptions.chart!"
+                        [dataLabels]="item.chartOptions.dataLabels!" [plotOptions]="item.chartOptions.plotOptions!"
+                        [xaxis]="{ categories: item?.chartOptions?.xaxis?.categories, labels: item?.chartOptions?.xaxis?.labels }"
+                        [colors]="item.chartOptions.colors!" [grid]="item.chartOptions.grid!" [yaxis]="item.chartOptions.yaxis!"
+                        [legend]="item.chartOptions.legend!" (chartInit)="onChartInit($event, item)">
+                      </apx-chart>
+                    </div>
                     <!-- <app-charts-store [chartData]="item.chartOptions"></app-charts-store> -->
                   </div>
                   <div *ngIf="item.chartOptions && item['chartId'] === 17">
@@ -1876,7 +1991,7 @@
                   <div *ngIf="item.chartOptions && item['chartId'] === 26">
                     <apx-chart [series]="item.chartOptions.series!" [chart]="item.chartOptions.chart!"
                       [xaxis]="{ categories: item?.chartOptions?.xaxis?.categories, labels: item?.chartOptions?.xaxis?.labels }"
-                      [dataLabels]="item.chartOptions.dataLabels!" [legend]="item.chartOptions.legend!"
+                      [dataLabels]="item.chartOptions.dataLabels!" [legend]="item.chartOptions.legend!" [plotOptions]="item.chartOptions.plotOptions!"
                       [grid]="item.chartOptions.grid!" [yaxis]="item.chartOptions.yaxis!" [colors]="item.chartOptions.colors!"
                       (chartInit)="onChartInit($event, item)"></apx-chart>
                   </div>
@@ -2206,84 +2321,80 @@
     </div>
   </ng-template>
   
- <!-- <ng-template #analyzeDashbaordModal let-modal>
- <div class="modal-header analyze-dashboard-modal">
-    <h5 class="modal-title">Dashboard Analysis Report</h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
-  </div>
-  <div class="modal-body analyze-dashboard-modal" style="max-height: 60vh; overflow-y: auto;">
-    <div id="analyze-dashboard-capture">
-    <ng-container *ngFor="let key of getSummaryKeys()">
-      <h6 class="mt-3 mb-2">{{ key }}</h6>
-      <ul class="ps-3">
-        <ng-container *ngFor="let line of getSummaryLines(summary[key])">
-          <li *ngIf="line.trim()">{{ line }}</li>
-        </ng-container>
-      </ul>
-    </ng-container>
-    </div>
-    <div class="modal-footer">
-      <a (click)="downloadAnalyzeReport()" target="_blank" class="btn btn-outline-primary">Download Full Report (PDF)</a>
-    </div>
-  </div>
 
-  </ng-template> -->
 <ng-template #analyzeDashbaordModal let-modal>
   <div class="modal-header analyze-dashboard-modal">
     <h5 class="modal-title">Dashboard Analysis Report</h5>
     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
-  <div class="modal-body analyze-dashboard-modal" style="max-height: 60vh; overflow-y: auto;">
-    <div id="analyze-dashboard-capture">
-      <!-- GenieAIQ Analysis Section -->
-      <div *ngIf="summary['GenieAIQ Analysis']" class="mb-4">
-        <h6 class="mt-3 mb-2">GenieAIQ Analysis</h6>
-        <ul class="ps-3">
-          <li *ngFor="let line of getSummaryLines(summary['GenieAIQ Analysis'])">
-            {{ line }}
-          </li>
-        </ul>
+    <div class="modal-body analyze-dashboard-modal p-0" style="overflow-y: auto;">
+    <ng-container *ngIf="report_url; else noReport">
+      <div *ngIf="iframeLoading" class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
       </div>
+      <iframe 
+        [src]="report_url | safeUrl" 
+        width="100%" 
+        height="500px" 
+        frameborder="0"
+        style="border: none; min-height: 60vh;display: block;"
+        (load)="iframeLoading = false"
+        [style.visibility]="iframeLoading ? 'hidden' : 'visible'">
+      </iframe>
+    </ng-container>
+    <ng-template #noReport>
+      <div class="text-center text-muted">No analysis report available.</div>
+    </ng-template>
+  </div>
+ <div class="modal-footer">
+    <button 
+      type="button" 
+      class="btn btn-primary"
+      [disabled]="!report_url"
+      (click)="downloadReport()">
+      Download Report
+    </button>
+  </div>
+</ng-template>
 
-      <!-- Widgets Analysis Section -->
-      <div *ngIf="summary.Widgets" class="mb-4">
-        <h6 class="mt-3 mb-2">Widget Analysis</h6>
-        <div *ngFor="let widget of summary.Widgets" class="widget-analysis mb-3">
-          <h6 class="widget-title">{{ widget['Widget Title'] }}</h6>
-          
-          <!-- Description -->
-          <div *ngIf="widget.Description" class="mt-2">
-            <strong>Description:</strong>
-            <p>{{ widget.Description }}</p>
-          </div>
-          
-          <!-- Observations -->
-          <div *ngIf="widget.Observations" class="mt-2">
-            <strong>Observations:</strong>
-            <ul class="ps-3">
-              <li *ngFor="let line of getSummaryLines(widget.Observations)">
-                {{ line }}
-              </li>
-            </ul>
-          </div>
-          
-          <!-- Insights -->
-          <div *ngIf="widget.Insights" class="mt-2">
-            <strong>Insights:</strong>
-            <ul class="ps-3">
-              <li *ngFor="let line of getSummaryLines(widget.Insights)">
-                {{ line }}
-              </li>
-            </ul>
-          </div>
-          <hr *ngIf="!widget.isLast">
+
+<ng-template #textEditorModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">Add Text Content</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+       <div class="form-group mb-3">
+      <div class="d-flex align-items-center">
+        <label class="me-2 mb-0">Show Title</label>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" 
+                 [(ngModel)]="showTextTitle" 
+                 id="titleToggle">
         </div>
       </div>
     </div>
-    
-    <div class="modal-footer">
-      <a (click)="downloadAnalyzeReport()" class="btn btn-outline-primary">Download Full Report (PDF)</a>
+
+    <!-- Title input shown only when toggle is on -->
+    <div class="form-group" *ngIf="showTextTitle">
+      <input type="text" class="form-control mb-2" 
+             [(ngModel)]="textEditorTitle" 
+             placeholder="Enter title">
     </div>
+    <ckeditor
+      [(ngModel)]="textEditorContent"
+      [editor]="Editor"
+      [config]="editorConfig"
+    >
+    </ckeditor>
+  </div>
+  <div class="modal-footer">
+     <button type="button" class="btn btn-secondary" (click)="modal.dismiss('Cancel click')">
+      Close
+    </button>
+    <button type="button" class="btn btn-primary" [disabled]="!validateTextEditor()" (click)="saveTextContent()">  {{editingItemId ? 'Update Text' : 'Add to Dashboard'}}</button>
   </div>
 </ng-template>
   <!-- Overlay Genie AIQ Icon -->

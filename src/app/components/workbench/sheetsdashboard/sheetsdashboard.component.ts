@@ -60,6 +60,7 @@ import { saveAs } from 'file-saver';
 import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
 import { i } from 'mathjs';
+import { SafeUrlPipe, SanitizeHtmlPipe } from '../../../shared/pipes/sanitize-html.pipe';
 
 interface TableRow {
   [key: string]: any;
@@ -122,7 +123,7 @@ export class CustomVirtualScrollStrategy extends FixedSizeVirtualScrollStrategy 
   imports: [NgxEchartsModule,SharedModule,NgbModule,CommonModule,ResizableModule,GridsterModule,
     CommonModule,GridsterItemComponent,GridsterComponent,NgApexchartsModule,CdkDropListGroup, NgSelectModule,
     CdkDropList, CdkDrag,ChartsStoreComponent,FormsModule, MatTabsModule , CKEditorModule , InsightsButtonComponent,
-    NgxPaginationModule,NgSelectModule, InsightEchartComponent,SharedModule,FilterIconsPipe,FormatMeasurePipe,ScrollingModule,TestPipe],
+    NgxPaginationModule,NgSelectModule, InsightEchartComponent,SharedModule,FilterIconsPipe,FormatMeasurePipe,ScrollingModule,TestPipe,SanitizeHtmlPipe,SafeUrlPipe],
   templateUrl: './sheetsdashboard.component.html',
   styleUrl: './sheetsdashboard.component.scss'
 })
@@ -229,7 +230,11 @@ export class SheetsdashboardComponent implements OnDestroy {
   @ViewChild('fileInput') fileInput:any;
   @ViewChild('fileInput1') fileInput1:any;
   @ViewChild('analyzeDashbaordModal') analyzeDashbaordModal:any;
-
+  @ViewChild('textEditorModal') textEditorModal!: any;
+  @ViewChild('ImageUploadText') ImageUploadText!: ElementRef;
+  textItem: any;
+  textEditorContent: string = '';
+  textEditorTitle: string = '';
   lastRefresh: any;
   nextRefresh: any;
   tabData: any;
@@ -289,8 +294,10 @@ export class SheetsdashboardComponent implements OnDestroy {
 
         const navigation = this.router.getCurrentNavigation();
         const dbSwitched = navigation?.extras?.state?.['dbSwitched'] ?? history.state?.['dbSwitched'];
-      
-        if (dbSwitched) {
+        const dbcopy = navigation?.extras?.state?.['dbCopy'] ?? history.state?.['dbCopy'];
+        if(dbcopy){
+          this.toasterService.success('Dashboard Copied Successfully.','success',{ positionClass: 'toast-top-right'})
+        }else if (dbSwitched) {
           this.getSavedDashboardData();
            setTimeout(() => {
             this.refreshDashboard(true);  // might run before API completes!
@@ -1594,7 +1601,7 @@ export class SheetsdashboardComponent implements OnDestroy {
   saveDashboardimageUpdate(){
     var formData: any = new FormData();
     formData.append("dashboard_id", this.dashboardId);
-    formData.append("imagepath", this.imageFile, this.imagename.name);
+    formData.append("imagepath", this.imageFile, this.imagename?.name);
   
      this.workbechService.saveDAshboardimage(formData).subscribe({
       next:(data)=>{
@@ -1606,7 +1613,7 @@ export class SheetsdashboardComponent implements OnDestroy {
      })
    
   }
-  updateDashboard(isLiveReloadData : boolean,isShowpopup:boolean, isDashboardTransfer: boolean){
+  updateDashboard(isLiveReloadData : boolean,isShowpopup:boolean, isDashboardTransfer: boolean, isSwitchDb?: boolean){
     this.sheetsIdArray = [
       ...this.dashboard.map(item => item.sheetId).filter(id => id !== undefined),
       ...this.sheetTabs
@@ -1627,11 +1634,11 @@ export class SheetsdashboardComponent implements OnDestroy {
         this.sheetTabs[0].tabHeight = this.tabHeightGrid;
         this.sheetTabs[0].tabWidth = this.tabWidthGrid;
       }
-      let dashboardData = this.assignOriginalDataToDashboard(this.dashboard);
+      let dashboardData = isSwitchDb ? this.dashboard : this.assignOriginalDataToDashboard(this.dashboard);
       let sheetTabsData = _.cloneDeep(this.sheetTabs);
       if(this.sheetTabs && this.sheetTabs.length > 0){
         sheetTabsData.forEach((sheetData) => {
-          sheetData.dashboard  = this.assignOriginalDataToDashboard(sheetData.dashboard);
+          sheetData.dashboard  = isSwitchDb ? sheetData.dashboard : this.assignOriginalDataToDashboard(sheetData.dashboard);
         })
       }  
       this.setQuerySetIds();
@@ -1684,12 +1691,13 @@ export class SheetsdashboardComponent implements OnDestroy {
           if(!isLiveReloadData){
             this.takeScreenshot();
           }
+        const targetIds = this.switchConditions.map(c => c.targetHierarchyId).filter(id => id);
         obj ={
           grid : this.gridType,
           height: this.heightGrid,
           width: this.widthGrid,
           queryset_id:this.qrySetId,
-          server_id:this.databaseId,
+          server_id: isSwitchDb? targetIds : this.databaseId,
           sheet_ids:this.sheetsIdArray,
           dashboard_name:this.dashboardName,
           dashboard_tag_name:this.dashboardTagName,
@@ -1754,7 +1762,7 @@ export class SheetsdashboardComponent implements OnDestroy {
         else if(isShowpopup){
         this.toasterService.success('Dashboard Updated Successfully','success',{ positionClass: 'toast-top-right'});
         }
-        if(!isLiveReloadData){
+        if(!isLiveReloadData && !isDashboardTransfer){
           this.saveDashboardimageUpdate();
         }
         this.endMethod(); 
@@ -2109,7 +2117,7 @@ export class SheetsdashboardComponent implements OnDestroy {
   //  })
   // }
   flattenDimensions(dimensions: Dimension[]): string[] {
-    const numCategories = Math.max(...dimensions.map(dim => dim.values.length));
+    const numCategories = Math.max(...dimensions?.map(dim => dim.values.length));
     return Array.from({ length: numCategories }, (_, index) => {
       return dimensions.map(dim => dim.values[index] || '').join(',');
     });
@@ -2244,6 +2252,10 @@ export class SheetsdashboardComponent implements OnDestroy {
       return savedOptions;
     }
     if(sheet.chart_id === 11){
+      let savedOptions = sheet.sheet_data.savedChartOptions;
+      return savedOptions;
+    }
+    if(sheet.chart_id === 14){
       let savedOptions = sheet.sheet_data.savedChartOptions;
       return savedOptions;
     }
@@ -2789,7 +2801,7 @@ arraysHaveSameData(arr1: number[], arr2: number[]): boolean {
       this.dashboardTest.splice(this.dashboardTest.indexOf(item), 1);
       this.sheetTabs[this.selectedTabIndex].dashboard = this.dashboardTest;
     } else {
-      if(item['type'] ==='image'){
+      if(item['type'] ==='image' || item['type'] === 'text'){
         let removeIndex = this.dashboard.findIndex((sheet:any) => item.id == sheet.id);
         this.dashboard.splice(removeIndex, 1);
       }else{
@@ -2807,7 +2819,7 @@ arraysHaveSameData(arr1: number[], arr2: number[]): boolean {
     }
     }
     this.canNavigateToAnotherPage = true;
-    if(this.dashboardId && item['type'] !=='image'){
+    if(this.dashboardId && item['type'] !=='image' && item['type'] !== 'text'){
         this.deleteSheetFilter(item.sheetId);
       this.actionUpdateOnSheetRemove(item.sheetId);
     }
@@ -3235,7 +3247,7 @@ lineChartOptions(xaxis:any,yaxis:any,savedOptions:any, isEchart : boolean){
 }
 pieChartOptions(xaxis:any,yaxis:any,savedOptions:any, isEchart : boolean){
   if (isEchart) {
-    let combinedArray = yaxis.map((value : any, index :number) => ({
+    let combinedArray = yaxis?.map((value : any, index :number) => ({
       value: value,
       name: xaxis[index]
     }));
@@ -4017,7 +4029,7 @@ getFilteredData(){
   });
 }
 }
-clearAllFilters(): void {
+clearAllFilters(isSwitchDb?:boolean): void {
   this.DahboardListFilters.forEach((values:any) => {
     values.searchText =''
   });
@@ -4036,11 +4048,13 @@ clearAllFilters(): void {
       this.excludeFilterIdArray = [];
       localStorage.removeItem('storeSelectedColData'); 
       console.log('All filters cleared');
-      if(this.isPublicUrl){
-        this.getFilteredDataPublic()
-      }else{
-        this.assignSDKFiltertoDashboard();
-        this.getFilteredData();
+      if (!isSwitchDb) {
+        if (this.isPublicUrl) {
+          this.getFilteredDataPublic()
+        } else {
+          this.assignSDKFiltertoDashboard();
+          this.getFilteredData();
+        }
       }
   } else {
       console.warn('DahboardListFilters is not defined or not an array');
@@ -4053,7 +4067,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
     if(item1.sheetId){
     if((((item1.sheetId == item.sheet_id || item1.sheetId == item.sheetId) && (isFilter || isDrillDown)) || (isDrillThrough && item1.sheetId == drillThroughSheetId))){
       if(item.chart_id == '1'){//table
-        if(!item1.originalData && !isLiveReloadData){
+        if(!item1.originalData && !isLiveReloadData && !switchDb){
           item1['originalData'] = _.cloneDeep({tableData: item1.tableData});
         }
         if(switchDb){
@@ -4090,7 +4104,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
       }
     }
     if(item.chart_id == '9'){
-      if(!item1.originalData && !isLiveReloadData){
+      if(!item1.originalData && !isLiveReloadData && !switchDb){
         item1['originalData'] = _.cloneDeep({pivotData: item1.pivotData});
       }
       if(switchDb){
@@ -4141,6 +4155,18 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
     item1.columnKeys = columnKeys;
     item1.rowKeys = rowKeys;
     item1.valueKeys = valueKeys;
+    if(switchDb){
+      item1.pivotData.pivotColData = item?.columns.map((data:any)=>{
+        return {column: data.column, result_data: data.result};
+      });
+      item1.pivotData.pivotDataTransformed = transformedData;
+      item1.pivotData.pivotMeasureData = item?.pivot.map((data:any)=>{
+        return {col: data.column, result_data: data.result};
+      });
+      item1.pivotData.pivotRowData = item?.rows.map((data:any)=>{
+        return {col: data.column, result_data: data.result};
+      });
+    }
     setTimeout(() => {
       const pivotTables = dashboard.filter(item => item.chartType === 'PIVOT' && item['chartId'] === 9);
 
@@ -4217,11 +4243,16 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
             }
       }      
     });  
+    if (switchDb && isLastIndex) {
+      this.updateDashboard(false, false, false, switchDb);
+    } else if (isLiveReloadData && isLastIndex) {
+      this.updateDashboard(isLiveReloadData, false, isDashboardTransfer ? isDashboardTransfer : false);
+    }
     }, 1000);
     }
       if((item.chart_id == '6' || item.chartId == '6' && (isFilter || isDrillDown)) || (item1.chartId == '6' && isDrillThrough)){//bar
         if(item1.isEChart){ 
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
           if(switchDb){
@@ -4238,7 +4269,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
 
         };
         } else {
-        if(!item1.originalData && !isLiveReloadData){
+        if(!item1.originalData && !isLiveReloadData && !switchDb){
           item1['originalData'] = _.cloneDeep({chartOptions: item1.chartOptions});
         }
         if(onApplyFilterClick && ((item1.drillDownHierarchy && item1.drillDownHierarchy.length > 0) || item1.drillDownIndex)){
@@ -4250,7 +4281,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
       }
     }
       if((item.chart_id == '25' || item.chartId == '25' && (isFilter || isDrillDown)) || (item1.chartId == '25' && isDrillThrough)){//KPI
-        if(!item1.originalData && !isLiveReloadData){
+        if(!item1.originalData && !isLiveReloadData && !switchDb){
           item1['originalData'] = _.cloneDeep(item1['kpiData']);
         }
         if(switchDb){
@@ -4265,7 +4296,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
            item1.databaseId = item.databaseId;
         }
         if(item1.isEChart){ 
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
           if(onApplyFilterClick && ((item1.drillDownHierarchy && item1.drillDownHierarchy.length > 0) || item1.drillDownIndex)){
@@ -4281,7 +4312,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           ...item1.echartOptions,
         };
         } else {
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.chartOptions});
           }
         if(onApplyFilterClick && ((item1.drillDownHierarchy && item1.drillDownHierarchy.length > 0) || item1.drillDownIndex)){
@@ -4297,7 +4328,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           item1.databaseId = item.databaseId;
        }
         if(item1.isEChart){ 
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
           if(onApplyFilterClick && ((item1.drillDownHierarchy && item1.drillDownHierarchy.length > 0) || item1.drillDownIndex)){
@@ -4313,7 +4344,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           ...item1.echartOptions
         };
         } else {
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.chartOptions});
           }
         if(onApplyFilterClick && ((item1.drillDownHierarchy && item1.drillDownHierarchy.length > 0) || item1.drillDownIndex)){
@@ -4329,7 +4360,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           item1.databaseId = item.databaseId;
        }
         if(item1.isEChart){ 
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
           if(onApplyFilterClick && ((item1.drillDownHierarchy && item1.drillDownHierarchy.length > 0) || item1.drillDownIndex)){
@@ -4343,7 +4374,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
 
         };
         } else {
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.chartOptions});
           }
         item1.chartOptions.xaxis.categories = this.filteredColumnData[0].values;
@@ -4355,7 +4386,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           item1.databaseId = item.databaseId;
        }
         if(item1.isEChart){ 
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
           if(onApplyFilterClick && ((item1.drillDownHierarchy && item1.drillDownHierarchy.length > 0) || item1.drillDownIndex)){
@@ -4369,7 +4400,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
 
         };
         } else {
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.chartOptions});
           }
         item1.chartOptions.labels = this.filteredColumnData[0].values;
@@ -4383,7 +4414,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
         const dimensions: Dimension[] = this.filteredColumnData
         const categories = this.flattenDimensions(dimensions)
         if(item1.isEChart){ 
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
           this.filteredRowData.forEach((bar : any)=>{
@@ -4399,7 +4430,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
         };
         } else {
        
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.chartOptions});
           }
         item1.chartOptions.xaxis.categories = categories;
@@ -4413,7 +4444,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
         const dimensions: Dimension[] = this.filteredColumnData
         const categories = this.flattenDimensions(dimensions)
         if(item1.isEChart){ 
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
           this.filteredRowData.forEach((bar : any)=>{
@@ -4429,7 +4460,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           ...item1.echartOptions,
         };
         } else {
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.chartOptions});
           }
         item1.chartOptions.xaxis.categories = categories;
@@ -4443,7 +4474,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
         const dimensions: Dimension[] = this.filteredColumnData
         const categories = this.flattenDimensions(dimensions)
         if(item1.isEChart){ 
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
           this.filteredRowData.forEach((bar : any)=>{
@@ -4459,7 +4490,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           ...item1.echartOptions,
         };
         } else {
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.chartOptions});
           }
         item1.chartOptions.xaxis.categories = categories;
@@ -4473,7 +4504,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
         const dimensions: Dimension[] = this.filteredColumnData
         const categories = this.flattenDimensions(dimensions)
         if(item1.isEChart){ 
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
           item1.echartOptions.xAxis[0].data = categories;
@@ -4483,7 +4514,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           ...item1.echartOptions,
         };
         } else {
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.chartOptions});
           }
         item1.chartOptions.labels = categories;
@@ -4499,7 +4530,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
         const dimensions: Dimension[] = this.filteredColumnData
         const categories = this.flattenDimensions(dimensions)
         if(item1.isEChart){ 
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
             this.filteredRowData.forEach((bar : any)=>{
@@ -4514,7 +4545,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
             ...item1.echartOptions,
           };
         } else {
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.chartOptions});
           }
         item1.chartOptions.xaxis.categories = categories;
@@ -4528,7 +4559,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
         const dimensions: Dimension[] = this.filteredColumnData
         const categories = this.flattenDimensions(dimensions)
         if(item1.isEChart){ 
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
           this.filteredRowData.forEach((bar : any)=>{
@@ -4544,7 +4575,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           ...item1.echartOptions,
         };
         } else {
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.chartOptions});
           }
         item1.chartOptions.xaxis.categories = categories;
@@ -4558,7 +4589,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
         if(switchDb){
           item1.databaseId = item.databaseId;
        }
-        if(!item1.originalData && !isLiveReloadData){
+        if(!item1.originalData && !isLiveReloadData && !switchDb){
           item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
         }
         let seriesval =[Math.round(( this.filteredRowData[0]?.data[0]/ (item1.chartOptions.plotOptions.radialBar.max-item1.chartOptions.plotOptions.radialBar.min))*100)]
@@ -4581,7 +4612,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           value: obj.data   
         }));
         if(item1.isEChart){ 
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
         item1.echartOptions.radar.indicator = radarArray;
@@ -4600,7 +4631,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
         if(switchDb){
           item1.databaseId = item.databaseId;
        }
-        if(!item1.originalData && !isLiveReloadData){
+        if(!item1.originalData && !isLiveReloadData && !switchDb){
           item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
         }
         let minData = 0;
@@ -4658,7 +4689,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           item1.databaseId = item.databaseId;
        }
         if(item1.isEChart){
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
             const combinedArray: any[] = [];
@@ -4679,7 +4710,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
         } else {
         const dimensions: Dimension[] = this.filteredColumnData
         const categories = this.flattenDimensions(dimensions)
-        if(!item1.originalData && !isLiveReloadData){
+        if(!item1.originalData && !isLiveReloadData && !switchDb){
           item1['originalData'] = {categories: item1.chartOptions.xaxis.categories , data:item1.chartOptions.series };
         }
         // if(isDrillThrough){
@@ -4705,7 +4736,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
         const dimensions: Dimension[] = this.filteredColumnData
         const categories = this.flattenDimensions(dimensions)
         if(item1.isEChart){
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
           item1.echartOptions.xAxis.data = _.cloneDeep(categories);
@@ -4722,7 +4753,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
             ...item1.echartOptions,     
           };
          }
-        else{ if(!item1.originalData && !isLiveReloadData){
+        else{ if(!item1.originalData && !isLiveReloadData && !switchDb){
           item1['originalData'] = {categories: item1.chartOptions.xaxis.categories , data:item1.chartOptions.series };
         }
         item1.chartOptions.xaxis.categories = categories;
@@ -4734,7 +4765,7 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           item1.databaseId = item.databaseId;
        }
         if(item1.isEChart){
-          if(!item1.originalData && !isLiveReloadData){
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
             item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
           }
           let calendarData : any[]= [];
@@ -4807,6 +4838,36 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
           }
         }
       }
+       if((item.chart_id == '14' || item.chartId == '14' && (isFilter || isDrillDown)) || (item1.chartId == '14' && isDrillThrough)){//bar
+        if(item1.isEChart){ 
+          if(!item1.originalData && !isLiveReloadData && !switchDb){
+            item1['originalData'] = _.cloneDeep({chartOptions: item1.echartOptions});
+          }
+          if(switchDb){
+            item1.databaseId = item.databaseId;
+         }
+          if(onApplyFilterClick && ((item1.drillDownHierarchy && item1.drillDownHierarchy.length > 0) || item1.drillDownIndex)){
+            item1.drillDownIndex = 0;
+            item1.drillDownObject = [];
+          }
+          item1.echartOptions.yAxis.data = this.filteredColumnData[0]?.values;
+        item1.echartOptions.series[0].data = this.filteredRowData[0]?.data;
+        item1.echartOptions = {
+          ...item1.echartOptions,
+
+        };
+        } else {
+        if(!item1.originalData && !isLiveReloadData && !switchDb){
+          item1['originalData'] = _.cloneDeep({chartOptions: item1.chartOptions});
+        }
+        if(onApplyFilterClick && ((item1.drillDownHierarchy && item1.drillDownHierarchy.length > 0) || item1.drillDownIndex)){
+          item1.drillDownIndex = 0;
+          item1.drillDownObject = [];
+        }
+      item1.chartOptions.xaxis.categories = this.filteredColumnData[0]?.values.map((category : any)  => category === null ? 'null' : category);
+      item1.chartOptions.series = this.filteredRowData;
+      }
+    }
 
           // this.initializeChart(item1);
           this.filteredColumnData =[]
@@ -4817,10 +4878,11 @@ setDashboardSheetData(item:any , isFilter : boolean , onApplyFilterClick : boole
     
   }
 })
-if (switchDb && isLastIndex) {
-  this.updateDashboard(false, false, false);
-} else if( isLiveReloadData && isLastIndex){
-  this.updateDashboard(isLiveReloadData, false,isDashboardTransfer ? isDashboardTransfer : false);}
+if (switchDb && isLastIndex && item.chart_id != '9') {
+  this.updateDashboard(false, false, false, switchDb);
+} else if( isLiveReloadData && isLastIndex && item.chart_id != '9'){
+  this.updateDashboard(isLiveReloadData, false,isDashboardTransfer ? isDashboardTransfer : false);
+}
 }
 
 formatKPINumber(value : number, KPIDisplayUnits: string, KPIDecimalPlaces : number,KPIPrefix: string,KPISuffix: string  ) {
@@ -6298,7 +6360,7 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
   updateNumberFormat(sheet : any, numberFormat : any, chartId : any, isEcharts : any){
     if(numberFormat?.decimalPlaces || numberFormat?.displayUnits || numberFormat?.prefix || numberFormat?.suffix){
       if(isEcharts){
-        if([2,3].includes(chartId)){
+        if([2,3,14].includes(chartId)){
           if (sheet.echartOptions?.xAxis?.axisLabel) {
             sheet.echartOptions.xAxis.axisLabel.formatter = (val: any) => {
               return this.formatNumber(val, numberFormat?.decimalPlaces, numberFormat?.displayUnits, numberFormat?.prefix, numberFormat?.suffix);
@@ -6363,7 +6425,7 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
           }
         }
       } else {
-        if([2,3].includes(chartId)){
+        if([2,3,14].includes(chartId)){
           if (sheet.chartOptions?.xaxis?.labels && sheet.chartOptions?.dataLabels) {
             sheet.chartOptions.xaxis.labels.formatter = (val: number) => {
               return this.formatNumber(val, numberFormat?.decimalPlaces, numberFormat?.displayUnits, numberFormat?.prefix, numberFormat?.suffix);
@@ -6450,21 +6512,27 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
   //   })).filter(sheet => sheet.id != this.sourceSheetId);
   //   console.log('source:',this.sourceSheetList, 'target: ',this.targetSheetList);
   // }
-  getTargetSheetsList() {
+  getTargetSheetsList(event?: any) {
     this.targetSheetList = [];
     this.isAllTargetSheetsSelected = false;
-    const sourceCategory = Object.keys(this.sourceSheetList);
-    Object.keys(this.sourceSheetList).forEach((category: any) => {
-      this.targetSheetList.push(
-        ...this.sourceSheetList[category]
-          .filter((sheet: any) => sheet.sheet_id !== this.sourceSheetId && sheet.chart_id !== 25)
-          .map((sheet: any) => ({
-            ...sheet,
-            selected: false,
-          }))
-      );
-    });
-    console.log("Target Sheets:", this.targetSheetList);
+
+    const selectedId = Number(this.sourceSheetId);
+
+    // Determine which category (tab) the selected source sheet belongs to
+    const sourceCategory = Object.keys(this.sourceSheetList).find((category: any) =>
+      this.sourceSheetList[category].some((sheet: any) => Number(sheet.sheet_id) === selectedId)
+    );
+
+    if (sourceCategory) {
+      this.targetSheetList = this.sourceSheetList[sourceCategory]
+        .filter((sheet: any) => Number(sheet.sheet_id) !== selectedId && sheet.chart_id !== 25)
+        .map((sheet: any) => ({
+          ...sheet,
+          selected: false,
+        }));
+    }
+
+    console.log('Target Sheets:', this.targetSheetList);
   }
   
   updateSelectedSheets() {
@@ -6588,7 +6656,7 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
         this.sourceSheetList = updatedSourceSheetList;
 
         data.target_sheet_data[selectedSourceCategory].forEach((sheet:any)=>{
-          if(sheet.sheet_id != this.sourceSheetId && sheet.sheet_name?.toLowerCase() !== "kpi"){
+          if(sheet.sheet_id != this.sourceSheetId && (sheet.chart_id !== 25)){
             this.targetSheetList.push(sheet);
           }
         })
@@ -6699,8 +6767,8 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
       }
     });
   }
-  clearActionForm(){
-    if(this.actionId && this.actionId != 0){
+  clearActionForm(isSwitchDb?: boolean){
+    if(this.actionId && this.actionId != 0 && !isSwitchDb){
       this.setDrillThrough('',[]);
     }
     this.actionName = '';
@@ -7032,6 +7100,159 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
       }
       }
      }
+  addTextItem() {
+    this.textEditorContent = '';
+    this.textEditorTitle = '';
+
+    this.modalService.open(this.textEditorModal, {
+      backdrop: 'static',
+      keyboard: false,
+      size: 'lg',
+      windowClass: 'text-editor-modal'
+    });
+  }
+
+  showTextTitle: boolean = true; // Controls title visibility
+  saveTextContent() {
+      const formattedContent = `<div class="text-content-wrapper">${this.textEditorContent}</div>`;
+
+      if (this.editingItemId) {
+    // Update existing item
+    const itemIndex = this.dashboard.findIndex(item => item['id'] === this.editingItemId);
+    if (itemIndex !== -1) {
+      this.dashboard[itemIndex].data.content = formattedContent;
+      if (this.showTextTitle) {
+        this.dashboard[itemIndex].data.title = this.textEditorTitle || 'Text';
+      } else {
+        this.dashboard[itemIndex].data.title = '';
+      }
+      this.dashboard[itemIndex]['editorContent'] = formattedContent;
+    }
+    this.editingItemId = null; // Reset editing state
+  } else {
+  const newItem: any = {
+    id: uuidv4(),
+    cols: 2,
+    rows: 2,
+    y: 20,
+    x: 10,
+    type: 'text',
+    data: {
+      content: formattedContent,
+      title: this.showTextTitle ? (this.textEditorTitle || 'Text') : ''
+    },
+    dragEnabled: true,
+    resizeEnabled: true,
+    editorContent: formattedContent
+      };
+
+      // if (this.displayTabs && this.selectedTabIndex >= 0) {
+      //   this.dashboardTest.push(newItem);
+      //   this.sheetTabs[this.selectedTabIndex].dashboard = this.dashboardTest;
+      // } else {
+        this.dashboard.push(newItem);
+      // }
+    }
+      this.modalService.dismissAll();
+      this.canNavigateToAnotherPage = true;
+    }
+    editingItemId: string | null = null;
+    editTextItem(item: any) {
+      this.textEditorContent = item.data.content;
+      this.textEditorTitle = item.data.title;
+        this.showTextTitle = !!item.data.title; // Set toggle based on existing title
+      this.editingItemId = item.id; // Store the ID of item being edited
+
+      this.modalService.open(this.textEditorModal, {
+        backdrop: 'static',
+        keyboard: false,
+        size: 'lg',
+        windowClass: 'text-editor-modal'
+      });
+    }
+    uploadTextImage(item: any) {
+  this.ImageUploadText.nativeElement.click();
+  this.textItem = item;
+}
+
+imageFileSelectForText(event: any) {
+  const file = event.target.files[0];
+  if (file) {
+    if (!file.type.startsWith('image/')) {
+      this.toasterService.error('Not a supported file format. Please select an image file.','info',{ positionClass: 'toast-top-center'})
+      event.target.value = '';
+      return;
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const uploadedImage = e.target.result;
+        if(uploadedImage) {
+          this.updateTextImage(this.textItem, uploadedImage);
+        }
+        event.target.value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+}
+
+updateTextImage(item: any, textImage: any) {
+  const itemIndex = this.dashboard.findIndex((d) => d['id'] === item.id);
+  let tabItemIndex = -1;
+  if(this.displayTabs && this.sheetTabs && this.selectedTabIndex >= 0 && this.sheetTabs[this.selectedTabIndex] && this.sheetTabs[this.selectedTabIndex].dashboard && this.sheetTabs[this.selectedTabIndex].dashboard.length > 0) {
+    tabItemIndex = this.sheetTabs[this.selectedTabIndex].dashboard.findIndex((d:any) => d['id'] === item.id);
+  }
+
+  if (itemIndex !== -1) {
+    this.dashboard[itemIndex] = {
+      ...item,
+      textImage: textImage,
+    };
+    this.canNavigateToAnotherPage = true;
+  } else if(tabItemIndex !== -1) {
+    this.sheetTabs[this.selectedTabIndex].dashboard[tabItemIndex] = {
+      ...item,
+      textImage: textImage,
+    };
+    this.canNavigateToAnotherPage = true;
+  }
+}
+
+removeTextImage(item: any): void {
+  const itemIndex = this.dashboard.findIndex((d) => d['id'] === item.id);
+  let tabItemIndex = -1;
+  if(this.displayTabs && this.sheetTabs && this.selectedTabIndex >= 0 && this.sheetTabs[this.selectedTabIndex] && this.sheetTabs[this.selectedTabIndex].dashboard && this.sheetTabs[this.selectedTabIndex].dashboard.length > 0) {
+    tabItemIndex = this.sheetTabs[this.selectedTabIndex].dashboard.findIndex((d:any) => d['id'] === item.id);
+  }
+
+  if (itemIndex !== -1) {
+    const updatedItem = {
+      ...this.dashboard[itemIndex]
+    };
+    delete updatedItem['textImage'];
+    this.dashboard[itemIndex] = updatedItem;
+    this.canNavigateToAnotherPage = true;
+  } else if(tabItemIndex !== -1) {
+    const updatedItem = {
+      ...this.sheetTabs[this.selectedTabIndex].dashboard[tabItemIndex]
+    };
+    delete updatedItem.textImage;
+    this.sheetTabs[this.selectedTabIndex].dashboard[tabItemIndex] = updatedItem;
+    this.canNavigateToAnotherPage = true;
+  }
+}
+validateTextEditor(): boolean {
+  // If title is enabled but empty, return false
+  if (this.showTextTitle && (!this.textEditorTitle || this.textEditorTitle.trim() === '')) {
+    return false;
+  }
+  // Check if content is not empty
+  if (!this.textEditorContent || this.textEditorContent.trim() === '') {
+    return false;
+  }
+  return true;
+}
+
      kpiItem:any;
      uploadedKpiImage:any;
      uploadKpiImage(item:any){
@@ -8193,6 +8414,16 @@ switchDatabase(isDuplicate: boolean = false) {
   this.workbechService.datbaseSwitch(obj).subscribe({
     next:(data)=>{
       console.log(data);
+      if(this.dataArray.length > 0){
+        this.clearAllFilters(true);
+        this.sheetFilters = [];
+        this.dataArray.forEach((data: any, index:any) => {
+          this.dataArray[index] = [];
+        });
+      }
+      if(this.actionId){
+        this.clearActionForm(true);
+      }
       if(data.message ==='Datasource switched successfully'){
         if(!isDuplicate){
         this.refreshDashboard(true);
@@ -8212,8 +8443,19 @@ switchDatabase(isDuplicate: boolean = false) {
       this.modalService.dismissAll();
     },
     error:(error)=>{
-      console.log(error);
-      this.toasterService.error(error.error.message, 'error', { positionClass: 'toast-top-right' })
+      const errorMessage = error.error.message;
+      const missingColumns = error.error.missing_columns;
+      let formattedMessage = errorMessage;
+
+      if (missingColumns) {
+        formattedMessage += "\nMissing Columns:";
+        for (const [table, columns] of Object.entries(missingColumns)) {
+          formattedMessage += `\n- Table: ${table}, Columns: ${columns}`;
+        }
+      }
+
+      // Show the formatted error message using the toaster service
+      this.toasterService.error(formattedMessage, 'Error', { positionClass: 'toast-top-right' });
     }
   })
 }
@@ -8314,8 +8556,8 @@ excelUpload(fileInput: any){
       }
     )
   }
-  summary:any;
   report_url:any;
+  iframeLoading = false;
   analyzeAndDownload(){
       const obj ={
     dashboard_id:this.dashboardId,
@@ -8323,15 +8565,14 @@ excelUpload(fileInput: any){
      this.workbechService.analyzeAndDownloadDashboard(obj).subscribe({
         next:(data)=>{
           if(data){
+          this.iframeLoading = true; // Reset loader state
           this.modalService.open(this.analyzeDashbaordModal, {
               centered: true,
               size: 'lg',
               windowClass: 'animate__animated animate__zoomIn',
             });
           }
-
-          this.summary=data.summary
-          this.report_url = data.report_url;
+          this.report_url = data.ui_page_url;
         },
         error:(error)=>{
           console.log(error);
@@ -8344,146 +8585,160 @@ excelUpload(fileInput: any){
             }
       }) 
   }
-  getSummaryKeys(): string[] {
-  return this.summary ? Object.keys(this.summary) : [];
+downloadReport() {
+  if (!this.report_url) return;
+  this.http.get(this.report_url, { responseType: 'blob' }).subscribe(blob => {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'dashboard-analysis-report.html';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  });
 }
 
-getSummaryLines(text: string): string[] {
-  if (!text) return [];
-  // Split by \n, remove empty lines, trim, and remove leading bullets/arrows
-  return text.split('\n')
-    .map(line => line.replace(/^(\s*[-*>]+\s*)/, '').trim())
-    .filter(line => line.length > 0);
-}
-downloadAnalyzeReport() {
-  if (!this.summary) {
-    this.toasterService.error('No summary available to download.', 'Error');
-    return;
-  }
-  const doc = new jsPDF('p', 'mm', 'a4');
-  const margin = 15;
-  let y = margin;
-  const lineHeight = 8;
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const maxWidth = pageWidth - margin * 2;
+//   getSummaryKeys(): string[] {
+//   return this.summary ? Object.keys(this.summary) : [];
+// }
 
-  // Title
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Dashboard Analysis Report', margin, y);
-  y += lineHeight * 2;
+// getSummaryLines(text: string): string[] {
+//   if (!text) return [];
+//   // Split by \n, remove empty lines, trim, and remove leading bullets/arrows
+//   return text.split('\n')
+//     .map(line => line.replace(/^(\s*[-*>]+\s*)/, '').trim())
+//     .filter(line => line.length > 0);
+// }
+// downloadAnalyzeReport() {
+//   if (!this.summary) {
+//     this.toasterService.error('No summary available to download.', 'Error');
+//     return;
+//   }
+//   const doc = new jsPDF('p', 'mm', 'a4');
+//   const margin = 15;
+//   let y = margin;
+//   const lineHeight = 8;
+//   const pageWidth = doc.internal.pageSize.getWidth();
+//   const pageHeight = doc.internal.pageSize.getHeight();
+//   const maxWidth = pageWidth - margin * 2;
 
-  doc.setFontSize(12);
+//   // Title
+//   doc.setFontSize(16);
+//   doc.setFont('helvetica', 'bold');
+//   doc.text('Dashboard Analysis Report', margin, y);
+//   y += lineHeight * 2;
 
-  // GenieAIQ Analysis Section
-  if (this.summary['GenieAIQ Analysis']) {
-    if (y > pageHeight - margin - lineHeight * 2) {
-      doc.addPage();
-      y = margin;
-    }
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(40, 40, 40);
-    doc.text('GenieAIQ Analysis', margin, y);
-    y += lineHeight;
+//   doc.setFontSize(12);
 
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(60, 60, 60);
-    const lines = this.getSummaryLines(this.summary['GenieAIQ Analysis']);
-    lines.forEach((line) => {
-      const wrapped = doc.splitTextToSize(line, maxWidth - 8);
-      wrapped.forEach((wline: string) => {
-        if (y > pageHeight - margin - lineHeight) {
-          doc.addPage();
-          y = margin;
-        }
-        doc.text('\u2022 ' + wline, margin + 5, y);
-        y += lineHeight;
-      });
-    });
-    y += lineHeight;
-  }
+//   // GenieAIQ Analysis Section
+//   if (this.summary['GenieAIQ Analysis']) {
+//     if (y > pageHeight - margin - lineHeight * 2) {
+//       doc.addPage();
+//       y = margin;
+//     }
+//     doc.setFont('helvetica', 'bold');
+//     doc.setTextColor(40, 40, 40);
+//     doc.text('GenieAIQ Analysis', margin, y);
+//     y += lineHeight;
 
-  // Widgets Analysis Section
-  if (this.summary.Widgets && Array.isArray(this.summary.Widgets)) {
-    this.summary.Widgets.forEach((widget: any, index: number) => {
-      if (y > pageHeight - margin - lineHeight * 4) {
-        doc.addPage();
-        y = margin;
-      }
+//     doc.setFont('helvetica', 'normal');
+//     doc.setTextColor(60, 60, 60);
+//     const lines = this.getSummaryLines(this.summary['GenieAIQ Analysis']);
+//     lines.forEach((line) => {
+//       const wrapped = doc.splitTextToSize(line, maxWidth - 8);
+//       wrapped.forEach((wline: string) => {
+//         if (y > pageHeight - margin - lineHeight) {
+//           doc.addPage();
+//           y = margin;
+//         }
+//         doc.text('\u2022 ' + wline, margin + 5, y);
+//         y += lineHeight;
+//       });
+//     });
+//     y += lineHeight;
+//   }
 
-      // Widget Title
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(40, 40, 40);
-      doc.text(widget['Widget Title'] || 'Unnamed Widget', margin, y);
-      y += lineHeight;
+//   // Widgets Analysis Section
+//   if (this.summary.Widgets && Array.isArray(this.summary.Widgets)) {
+//     this.summary.Widgets.forEach((widget: any, index: number) => {
+//       if (y > pageHeight - margin - lineHeight * 4) {
+//         doc.addPage();
+//         y = margin;
+//       }
 
-      // Description
-      if (widget.Description) {
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(60, 60, 60);
-        const descWrapped = doc.splitTextToSize(widget.Description, maxWidth - 8);
-        descWrapped.forEach((line: string) => {
-          if (y > pageHeight - margin - lineHeight) {
-            doc.addPage();
-            y = margin;
-          }
-          doc.text(line, margin + 5, y);
-          y += lineHeight;
-        });
-        y += lineHeight / 2;
-      }
+//       // Widget Title
+//       doc.setFont('helvetica', 'bold');
+//       doc.setTextColor(40, 40, 40);
+//       doc.text(widget['Widget Title'] || 'Unnamed Widget', margin, y);
+//       y += lineHeight;
 
-      // Observations
-      if (widget.Observations) {
-        doc.setFont('helvetica', 'bold');
-        doc.text('Observations:', margin + 5, y);
-        y += lineHeight;
+//       // Description
+//       if (widget.Description) {
+//         doc.setFont('helvetica', 'normal');
+//         doc.setTextColor(60, 60, 60);
+//         const descWrapped = doc.splitTextToSize(widget.Description, maxWidth - 8);
+//         descWrapped.forEach((line: string) => {
+//           if (y > pageHeight - margin - lineHeight) {
+//             doc.addPage();
+//             y = margin;
+//           }
+//           doc.text(line, margin + 5, y);
+//           y += lineHeight;
+//         });
+//         y += lineHeight / 2;
+//       }
+
+//       // Observations
+//       if (widget.Observations) {
+//         doc.setFont('helvetica', 'bold');
+//         doc.text('Observations:', margin + 5, y);
+//         y += lineHeight;
         
-        doc.setFont('helvetica', 'normal');
-        const obsLines = this.getSummaryLines(widget.Observations);
-        obsLines.forEach((line) => {
-          const wrapped = doc.splitTextToSize(line, maxWidth - 13);
-          wrapped.forEach((wline: string) => {
-            if (y > pageHeight - margin - lineHeight) {
-              doc.addPage();
-              y = margin;
-            }
-            doc.text('\u2022 ' + wline, margin + 10, y);
-            y += lineHeight;
-          });
-        });
-        y += lineHeight / 2;
-      }
+//         doc.setFont('helvetica', 'normal');
+//         const obsLines = this.getSummaryLines(widget.Observations);
+//         obsLines.forEach((line) => {
+//           const wrapped = doc.splitTextToSize(line, maxWidth - 13);
+//           wrapped.forEach((wline: string) => {
+//             if (y > pageHeight - margin - lineHeight) {
+//               doc.addPage();
+//               y = margin;
+//             }
+//             doc.text('\u2022 ' + wline, margin + 10, y);
+//             y += lineHeight;
+//           });
+//         });
+//         y += lineHeight / 2;
+//       }
 
-      // Insights
-      if (widget.Insights) {
-        doc.setFont('helvetica', 'bold');
-        doc.text('Insights:', margin + 5, y);
-        y += lineHeight;
+//       // Insights
+//       if (widget.Insights) {
+//         doc.setFont('helvetica', 'bold');
+//         doc.text('Insights:', margin + 5, y);
+//         y += lineHeight;
         
-        doc.setFont('helvetica', 'normal');
-        const insightLines = this.getSummaryLines(widget.Insights);
-        insightLines.forEach((line) => {
-          const wrapped = doc.splitTextToSize(line, maxWidth - 13);
-          wrapped.forEach((wline: string) => {
-            if (y > pageHeight - margin - lineHeight) {
-              doc.addPage();
-              y = margin;
-            }
-            doc.text('\u2022 ' + wline, margin + 10, y);
-            y += lineHeight;
-          });
-        });
-      }
+//         doc.setFont('helvetica', 'normal');
+//         const insightLines = this.getSummaryLines(widget.Insights);
+//         insightLines.forEach((line) => {
+//           const wrapped = doc.splitTextToSize(line, maxWidth - 13);
+//           wrapped.forEach((wline: string) => {
+//             if (y > pageHeight - margin - lineHeight) {
+//               doc.addPage();
+//               y = margin;
+//             }
+//             doc.text('\u2022 ' + wline, margin + 10, y);
+//             y += lineHeight;
+//           });
+//         });
+//       }
 
-      // Add space between widgets
-      y += lineHeight * 2;
-    });
-  }
+//       // Add space between widgets
+//       y += lineHeight * 2;
+//     });
+//   }
 
-  doc.save((this.dashboardName || 'dashboard') + '-analysis-report.pdf');
-}
+//   doc.save((this.dashboardName || 'dashboard') + '-analysis-report.pdf');
+// }
 playAnalyzeModalAnimation() {
   const watermark = document.querySelector('.sticky-watermark');
   if (watermark) {

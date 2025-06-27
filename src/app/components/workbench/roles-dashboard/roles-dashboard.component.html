@@ -1,10 +1,10 @@
-<app-page-header title="Roles List" moduleId="previlages" title1="Home" activeitem="Roles List"></app-page-header>
+<!-- <app-page-header title="Roles List" moduleId="previlages" title1="Home" activeitem="Roles List"></app-page-header> -->
 
-<div *ngIf="!addRoleDiv" class="main-container container-fluid TopHeader">
+<div *ngIf="!addRoleDiv" class="main-container container-fluid TopHeader p-0">
 
-    <div class="row" class="card card-padding-top">
+    <div class="row" class=" card-padding-top">
     <div class="col-sm-12 col-lg-12 col-xl-12 p-0">
-      <div class="d-flex justify-content-between px-5">
+      <div class="d-flex justify-content-between pb-2 border-bottom mb-2">
         <div class="connect-txt">
           <h4 class="card-title mt-2">Roles</h4>
         </div>
@@ -20,7 +20,7 @@
             <input type="text" class="form-control border-end-0 " placeholder="Search" [(ngModel)]="roleName" (keyup.enter)="searchRoleList()" aria-describedby="button-addon2" >
             <button class="btn btn-primary border me-2 search-icon-border-radius" (click)="searchRoleList()" type="button" id="button-addon2"><i class="fe fe-search "></i></button>
             <app-insights-button [classesList]="'btn btn-primary'" [buttonName]="' Add Role'" [previledgeId]="56" [isBtn]="true"
-              (btnClickEvent)="addRolesDivOpen();" [faIconList]="'fa fa-plus'" [isIcon]="true">
+              (btnClickEvent)="addRolesDivOpen();getPrevilagesList();" [faIconList]="'fa fa-plus'" [isIcon]="true">
             </app-insights-button>
           </div>
         </div>
@@ -28,7 +28,7 @@
     <!-- <div *ngIf="savedUsersList.length === 0">
       No User, Please Create One!
     </div> -->
-        <div class="card-body">
+        <div class="card-body p-0">
           @if(!gridView){
             <div class="table-responsive table-responsive-height">
                 <table class="table border text-nowrap text-md-nowrap mb-0">
@@ -83,7 +83,7 @@
                   itemsPerPage: itemsPerPage,
                   currentPage: page,
                   totalItems: totalItems
-                }" class="col-md-12 col-xl-3">
+                }" class="col-md-12 col-xl-4">
                 <div class="card card-box-shadow ">
                   <div class="card-header tiled-header-bg bg-primary tiled-card-header-padding">
                     <div class="d-sm-flex align-items-center">
@@ -168,11 +168,11 @@
     </div>
   </div>
 
-  <div *ngIf="addRoleDiv" class="main-container container-fluid TopHeader">
+  <div *ngIf="addRoleDiv" class="main-container container-fluid TopHeader p-0">
   
-    <div class="row" class="card p-4" >
+    <div class="row" class="card p-0" style="border: none !important;">
       <div class="col-sm-12 col-lg-12 col-xl-12 p-0" >
-          <div class="modal-header justify-conent-between align-items-center rounded-0 p-2">
+          <div class="modal-header modal-header-radius justify-conent-between align-items-center rounded-0 p-2">
             <h6 *ngIf="!updateRole" class="modal-title ms-1" id="inputModalLabel">Add Role</h6>
             <h6 *ngIf="updateRole" class="modal-title ms-1" id="inputModalLabel">Update Role</h6>
 
@@ -185,7 +185,7 @@
           </div>
           <div class="modal-body p-0">
            
-            <div class="row  ps-3 pe-3">
+            <div class="row role-card-wrap ps-3 pe-3">
               <div class="col-md-2 border p-0">
                 <div class=" p-1 border-bottom">
                   <div class="card-body p-2">
@@ -200,7 +200,7 @@
                 <div class="flex-grow-1">
                     <input  type="text" [(ngModel)]="roleTitle"  placeholder="Title" aria-label="Sheet" class="form-control">
                 </div>
-                <div class="row m-1">
+                <div class="row m-1 nowraprow">
                 <div class="col-md-6 p-0 border Available-Permission-card">
                   <div class="permission-text bg-light p-3 ">
                     <h6 class="mb-0">Available Permission <i class="fa fa-question-circle" aria-hidden="true"></i></h6>

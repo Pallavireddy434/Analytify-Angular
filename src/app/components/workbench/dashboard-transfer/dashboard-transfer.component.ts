@@ -33,7 +33,7 @@ export class DashboardTransferComponent {
 
   ngOnInit(){
     forkJoin({
-      responseA:  this.workbenchService.getdatabaseConnectionsList({need_pagination : false}),
+      responseA:  this.workbenchService.getdatabaseConnectionsList({need_pagination : false, need_cross_datasources: false}),
       responseB: this.workbenchService.getuserDashboardsList()
     }).subscribe({
       next: ({ responseA, responseB }) => {

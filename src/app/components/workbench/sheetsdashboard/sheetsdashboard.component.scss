@@ -62,7 +62,7 @@
 }
 
 gridster {
-  background: #f8f9fa; margin-top:9px; border: 1px solid #edebeb !important; border-radius: 10px !important;
+  background: var(--background); margin-top:9px; border: 1px solid #edebeb !important; border-radius: 10px !important;
 }
 // gridster-item{
 //   border: 1px solid #ddd;
@@ -217,6 +217,261 @@ p { margin-bottom: 0px !important;}
 }
 .genie-animate.bounce {
   animation: genieBounce 0.7s cubic-bezier(.68,-0.55,.27,1.55);
+}
+.text-content-container {
+  position: relative;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+
+  .text-header {
+    padding: 10px;
+    border-bottom: 1px solid #dee2e6;
+    h6 {
+      margin: 0;
+    }
+  }
+
+  .text-content-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+  }
+
+  .text-content-wrapper {
+    ::ng-deep {
+      // Headings
+      h1, h2, h3, h4, h5, h6 {
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        line-height: 1.2;
+      }
+
+      // Paragraphs
+      p {
+        margin-bottom: 1rem;
+        line-height: 1.5;
+      }
+
+      // Lists
+      ul, ol {
+        margin-bottom: 1rem;
+        padding-left: 2rem;
+      }
+
+      // Links
+      a {
+        color: #007bff;
+        text-decoration: none;
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      // Tables
+      table {
+        width: 100%;
+        margin-bottom: 1rem;
+        border-collapse: collapse;
+
+        th, td {
+          padding: 0.75rem;
+          border: 1px solid #dee2e6;
+        }
+      }
+
+      // Text styles
+      strong, b { font-weight: bold; }
+      em, i { font-style: italic; }
+      u { text-decoration: underline; }
+
+      // Preserve all font properties
+      * {
+        font-family: inherit;
+        font-size: inherit;
+        color: inherit;
+        background-color: inherit;
+        text-align: inherit;
+      }
+
+      // Preserve spacing
+      blockquote {
+        margin: 1rem 0;
+        padding: 0.5rem 1rem;
+        border-left: 0.25rem solid #dee2e6;
+      }
+
+      // Images
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+    }
+  }
+}
+// Add to your sheetsdashboard.component.scss
+
+/* Toggle Switch Styling */
+.form-check.form-switch {
+  padding-left: 0;
+  
+  .form-check-input {
+    width: 45px;
+    height: 24px;
+    margin-left: 0;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(255,255,255,1)'/%3e%3c/svg%3e");
+    background-position: left center;
+    border-radius: 2em;
+    transition: all .3s ease-in-out;
+
+    &:focus {
+      border-color: rgba(0, 0, 0, 0.25);
+      outline: 0;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    &:checked {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+      background-position: right center;
+    }
+
+    &:not(:checked) {
+      background-color: #e9ecef;
+      border-color: #e9ecef;
+    }
+  }
+}
+
+/* Title Toggle Container */
+.form-group.mb-3 {
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+
+  .d-flex {
+    justify-content: space-between;
+    align-items: center;
+
+    label {
+      font-weight: 500;
+      color: #495057;
+      margin-bottom: 0;
+    }
+  }
+}
+// Add to your sheetsdashboard.component.scss
+
+.grid-item-border {
+  position: relative;
+
+  .hover-menu {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: none;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    padding: 4px;
+
+    .menu-buttons {
+      display: flex;
+      gap: 4px;
+
+      button {
+        padding: 4px 8px;
+        font-size: 14px;
+        border: none;
+        background: transparent;
+        color: #666;
+        cursor: pointer;
+        border-radius: 4px;
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.05);
+          color: #333;
+        }
+
+        i {
+          font-size: 16px;
+        }
+      }
+    }
+  }
+
+  &:hover {
+    .hover-menu {
+      display: flex;
+    }
+  }
+}
+/* Title Input Styling */
+.form-control {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 8px 12px;
+  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+
+  &:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+}
+::ng-deep .text-editor-modal {
+  .modal-dialog {
+    max-width: 800px;
+  }
+
+  .modal-content {
+    min-height: 500px;
+  }
+
+  .ck-editor__editable {
+    min-height: 300px;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .ck.ck-editor {
+    width: 100%;
+  }
+}
+
+.text-content {
+  height: 100%;
+  padding: 1rem;
+  overflow-y: auto;
+
+  ::ng-deep {
+    img {
+      max-width: 100%;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      
+      th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      margin-bottom: 1rem;
+    }
+  }
 }
 @keyframes genieBounce {
   0% { transform: scale(1) rotate(0deg);}
