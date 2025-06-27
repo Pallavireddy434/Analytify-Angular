@@ -2059,6 +2059,7 @@ try {
     this.dimetionMeasure = [];
     this.dualAxisColumnData = [];
     this.dualAxisRowData = [];
+    this.radarRowData = [];
     this.sheetfilter_querysets_id = null;
       this.saveTableData = [] ;
       this.savedisplayedColumns = [];

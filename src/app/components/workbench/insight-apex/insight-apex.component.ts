@@ -112,12 +112,12 @@ export class InsightApexComponent {
     }
     if(changes['chartsColumnData']  || changes['dualAxisColumnData'] ){
       // if(changes['chartsColumnData'].currentValue.length>0 || changes['dualAxisColumnData'].currentValue.length>0){
-        this.updateCategories();
+        // this.updateCategories();
       // }
     }
     if(changes['chartsRowData'] || changes['dualAxisRowData'] ){
       // if(changes['chartsRowData'].currentValue.length>0 || changes['dualAxisRowData'].currentValue.length>0){
-        this.updateSeries();
+        // this.updateSeries();
       // }
     }
     if(changes['xLabelFontFamily']){
