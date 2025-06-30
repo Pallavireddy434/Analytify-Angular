@@ -344,6 +344,14 @@ input[type="color"] {
   padding: 0;
   opacity: 0;
 }
+input[type="color"].show-color-swatch {
+  background: transparent !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  /* or any other property that hides the swatch */
+}
 .hidden-color-input {
   position: absolute;
   width: 1px;

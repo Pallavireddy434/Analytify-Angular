@@ -4684,8 +4684,7 @@
                                                                     </div>
                                                                   </div>
                                                                 </div>
-                                                              </div> -->
-
+                                                              </div> -->                                                         
                                                                 <div *ngIf="barLine" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
                                                                     <div class=""> 
                                                                         <p >bar</p>
@@ -4887,6 +4886,29 @@
                                                                             </div>
                                                                         </div>
                                                                     </div>
+                                                                </div>
+
+
+
+                                                                  <div *ngIf="(bar || area || line || pie || donut || funnel)" class="d-flex flex-column gap-2 mt-2">
+                                                                <div class="d-flex align-items-center justify-content-between">
+                                                                    <label class="mb-0">Measure Distribution</label>
+                                                                    <div *ngIf="isMeasureDistribution" class="toggle toggle-sm on mb-0" (click)="isMeasureDistribution = !isMeasureDistribution;">
+                                                                        <span></span>
+                                                                    </div>
+                                                                    <div *ngIf="!isMeasureDistribution" class="toggle toggle-sm off mb-0" (click)="isMeasureDistribution = !isMeasureDistribution;">
+                                                                        <span></span>
+                                                                    </div>
+                                                                    <input type="number" min="2" max="10" [(ngModel)]="measureDivisions" [disabled]="!isMeasureDistribution"
+                                                                    (change)="updateMeasureColorRanges()" class="form-control ms-2" style="width: 50px;"/>
+                                                                    <span class="ms-1">Div</span>
+                                                                </div>
+                                                                <div *ngIf="isMeasureDistribution" class="mt-2">
+                                                                    <div *ngFor="let range of measureColorRanges; let i = index" class="d-flex align-items-center mb-1">
+                                                                    <input type="text" class="form-control me-2" style="width: 110px;" [value]="range.label">
+                                                                    <input type="color" [(ngModel)]="range.color" class="show-color-swatch" style="width: 32px; height: 32px; border: none;">
+                                                                    </div>
+                                                                </div>
                                                                 </div>
                                                             </ng-template>
                                                           </div>
