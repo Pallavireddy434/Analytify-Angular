@@ -4907,7 +4907,7 @@
                                                                 <div *ngIf="isMeasureDistribution" class="mt-2">
                                                                     <div *ngFor="let range of measureColorRanges; let i = index" class="d-flex align-items-center mb-1">
                                                                     <input type="text" class="form-control me-2" style="width: 110px;" (change)="updateMeasureColorRanges()" [value]="range.label">
-                                                                    <input type="color" [(ngModel)]="range.color" (change)="updateMeasureColorRanges()" class="show-color-swatch" style="width: 32px; height: 32px; border: none;">
+                                                                    <input type="color" [(ngModel)]="range.color" (change)="onMeasureColorChange()" class="show-color-swatch" style="width: 32px; height: 32px; border: none;">
                                                                     </div>
                                                                 </div>
                                                                 </div>

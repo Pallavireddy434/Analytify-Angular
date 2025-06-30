@@ -7700,6 +7700,9 @@ isMeasureDistribution: boolean = false;
 measureDivisions: number = 2;
 measureColorRanges: { min: number, max: number, color: string, label: string }[] = [];
 
+onMeasureColorChange() {
+  this.measureColorRanges = [...this.measureColorRanges];
+}
 // Call this whenever measureDivisions or isMeasureDistribution changes
 updateMeasureColorRanges() {
   if (!this.chartsRowData || this.chartsRowData.length === 0) return;
