@@ -27,14 +27,15 @@ import { InsightEchartComponent } from '../insight-echart/insight-echart.compone
 import _ from 'lodash';
 
 import { TemplateDashboardService } from '../../../services/template-dashboard.service';
-import { NgMultiSelectDropDownModule } from 'ngx-multiselect-dropdown';
-import { IDropdownSettings } from 'ngx-multiselect-dropdown';
+import { NgMultiSelectDropDownModule } from 'ng-multiselect-dropdown';
+import { IDropdownSettings } from 'ng-multiselect-dropdown';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 
 @Component({
   selector: 'app-workbench',
   standalone: true,
-  imports: [RouterModule,NgbModule,SharedModule,FormsModule,CdkDropListGroup, CdkDropList, CdkDrag,GalleryModule,LightboxModule,ToastrModule,CommonModule,NgxPaginationModule,InsightsButtonComponent,InsightEchartComponent,NgMultiSelectDropDownModule],
+  imports: [RouterModule,NgbModule,SharedModule,FormsModule,CdkDropListGroup, CdkDropList, CdkDrag,GalleryModule,LightboxModule,ToastrModule,CommonModule,NgxPaginationModule,InsightsButtonComponent,InsightEchartComponent,NgMultiSelectDropDownModule,NgSelectModule],
   templateUrl: './workbench.component.html',
   styleUrl: './workbench.component.scss'
 })
@@ -182,10 +183,9 @@ export class WorkbenchComponent implements OnInit{
   "settings.currencies.read"
   ];
   hubspotDropdownSettings: IDropdownSettings = {
-    enableCheckAll: false,
+    enableCheckAll: true,
     allowSearchFilter: true,
-    selectAllText: 'Select All',
-    unSelectAllText: 'Deselect All',
+    itemsShowLimit: 10,
     closeDropDownOnSelection: false
   };
   selectedHubspotScopes: string[] = [];
@@ -1219,16 +1219,7 @@ export class WorkbenchComponent implements OnInit{
   onHubspotScopeChange(): void {
     this.hubspotScopeError = this.selectedHubspotScopes.length <= 0;
   }
-
-  selectAllHubspotScopes(): void {
-    this.selectedHubspotScopes = [...this.hubspotScopes];
-    this.hubspotScopeError = false;
-  }
-
-  clearAllHubspotScopes(): void {
-    this.selectedHubspotScopes = [];
-    this.hubspotScopeError = false;
-  }
+  
     shopifySignIn(){
       const obj={
         "api_token":this.shopifyToken,
