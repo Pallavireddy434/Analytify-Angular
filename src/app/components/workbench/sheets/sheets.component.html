@@ -2517,7 +2517,7 @@
                 [dimensionAlignment]="dimensionAlignment" [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix"
                 [donutDecimalPlaces]="donutDecimalPlaces" [drillDownIndex]="drillDownIndex" [draggedDrillDownColumns]="draggedDrillDownColumns"
                 [drillDownObject]="drillDownObject" [sortType]="sortType" [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" [dataLabelsBarFontPosition]="dataLabelsBarFontPosition"
-                [dataLabelsLineFontPosition]="dataLabelsLineFontPosition" [selectedColorScheme]="selectedColorScheme"
+                [dataLabelsLineFontPosition]="dataLabelsLineFontPosition" [selectedColorScheme]="selectedColorScheme" [measureColorRanges]="measureColorRanges" [isMeasureDistribution]="isMeasureDistribution"
                 (saveOrUpdateChart)="setChartOptions($event)" (setDrilldowns)="setDrilldowns($event)">
                 </app-insight-apex>
     
@@ -4871,7 +4871,7 @@
                                                                                                             <i class="fa fa-plus px-1"></i> 
                                                                                                         </div>
                                                                                                     </div>
-                                                                                                    <input type="color" #colorInput id="body" name="body" class="w-100" value="#FFFFFF" (input)="newColorScheme[selectedBox] = colorInput.value"/>
+                                                                                                    <input type="color" #colorInput id="body" name="body" class="w-100 color-palette-bar" value="#FFFFFF" (input)="newColorScheme[selectedBox] = colorInput.value"/>
                                                                                                 </div>
                                                                                                 <!-- <div class="py-1">
                                                                                                     <input type="color" #colorInput  id="body" name="body" class="w-100" [(ngModel)]="selectedColor" (ngModelChange)="setColorToBox()"/>
@@ -4905,9 +4905,9 @@
                                                                     <span class="ms-1">Div</span>
                                                                 </div>
                                                                 <div *ngIf="isMeasureDistribution" class="mt-2">
-                                                                    <div *ngFor="let range of measureColorRanges; let i = index" class="d-flex align-items-center mb-1">
+                                                                    <div *ngFor="let range of measureColorRanges; let i = index" class="d-flex align-items-center justify-content-between mb-1">
                                                                     <input type="text" class="form-control me-2" style="width: 110px;" (change)="updateMeasureColorRanges()" [value]="range.label">
-                                                                    <input type="color" [(ngModel)]="range.color" (change)="onMeasureColorChange()" class="show-color-swatch" style="width: 32px; height: 32px; border: none;">
+                                                                    <input type="color" [(ngModel)]="range.color" (change)="onMeasureColorChange()" style="width: 32px; height: 32px; border: none;">
                                                                     </div>
                                                                 </div>
                                                                 </div>

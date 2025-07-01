@@ -74,6 +74,8 @@ export class InsightApexComponent {
   @Input() dataLabelsLineFontPosition:any;
   @Input() selectedColorScheme:any;
   @Input() SDKChartOptions: any;
+  @Input() measureColorRanges: any;
+  @Input() isMeasureDistribution: any;
   @Output() setDrilldowns = new EventEmitter<object>();
   @Output() saveOrUpdateChart = new EventEmitter<object>();
   
@@ -198,9 +200,9 @@ export class InsightApexComponent {
     if(changes['backgroundColor']){
       this.setBackgroundColor();
     }
-    if(changes['barColor'] || changes['lineColor'] || changes['color'] || changes['selectedColorScheme']){
-      this.setChartColor();
-    }
+    // if(changes['barColor'] || changes['lineColor'] || changes['color'] || changes['selectedColorScheme'] ){
+    //   this.setChartColor();
+    // }
     if(changes['gridColor']){
       this.gridLineColor();
     }
@@ -545,7 +547,7 @@ export class InsightApexComponent {
       legend: {
         show: false,
       },
-      colors: this.isDistributed ? this.selectedColorScheme : [this.color]
+      colors: this.isMeasureDistribution ? this.setColorsOnRanges(this.chartsRowData ) : (this.isDistributed ? this.selectedColorScheme : [this.color])
     };
   }
 horizontalBarChart() {
@@ -920,7 +922,7 @@ xaxis: {
           }
         }
       },
-       colors:this.selectedColorScheme,
+      colors:this.isMeasureDistribution ? this.setColorsOnRanges(this.chartsRowData ) : this.selectedColorScheme,
       labels: this.chartsColumnData.map((category: any) => category === null ? 'null' : category),
       legend: {
         show: this.legendSwitch,
@@ -1697,7 +1699,7 @@ xaxis: {
           }
         }
       },
-      colors: this.selectedColorScheme,
+      colors:this.isMeasureDistribution ? this.setColorsOnRanges(this.chartsRowData ) : this.selectedColorScheme,
       labels: this.chartsColumnData.map((category: any) => category === null ? 'null' : category),
       // responsive: [
       //   {
@@ -1875,7 +1877,7 @@ xaxis: {
       legend: {
         show: false
       },
-      colors: this.isDistributed ? this.selectedColorScheme : [this.color]
+      colors: this.isMeasureDistribution ? this.setColorsOnRanges(this.chartsRowData ) : (this.isDistributed ? this.selectedColorScheme : [this.color])
     };
   }
   guageChart() {
@@ -3223,6 +3225,15 @@ xaxis: {
   //     this.barCharts?.updateOptions({ series: this.chartOptions.series, xaxis: this.chartOptions.xaxis });
   //   }
   // }
+
+  setColorsOnRanges(data: any): string[] {
+    return data.map((value:any) => {
+      const matchedRange = this.measureColorRanges.find((range:any) =>
+        value >= range.min && value <= range.max
+      );
+      return matchedRange ? matchedRange.color : '#2392c1';
+    });
+  }
 }
 // }
 
