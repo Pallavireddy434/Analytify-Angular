@@ -27,13 +27,14 @@ import { InsightEchartComponent } from '../insight-echart/insight-echart.compone
 import _ from 'lodash';
 
 import { TemplateDashboardService } from '../../../services/template-dashboard.service';
-import { NgSelectModule } from '@ng-select/ng-select';
+import { NgMultiSelectDropDownModule } from 'ngx-multiselect-dropdown';
+import { IDropdownSettings } from 'ngx-multiselect-dropdown';
 
 
 @Component({
   selector: 'app-workbench',
   standalone: true,
-  imports: [RouterModule,NgbModule,SharedModule,FormsModule,CdkDropListGroup, CdkDropList, CdkDrag,GalleryModule,LightboxModule,ToastrModule,CommonModule,NgxPaginationModule,InsightsButtonComponent,InsightEchartComponent,NgSelectModule],
+  imports: [RouterModule,NgbModule,SharedModule,FormsModule,CdkDropListGroup, CdkDropList, CdkDrag,GalleryModule,LightboxModule,ToastrModule,CommonModule,NgxPaginationModule,InsightsButtonComponent,InsightEchartComponent,NgMultiSelectDropDownModule],
   templateUrl: './workbench.component.html',
   styleUrl: './workbench.component.scss'
 })
@@ -178,8 +179,15 @@ export class WorkbenchComponent implements OnInit{
     "tickets",
     "crm.import",
     "account-info.security.read",
-    "settings.currencies.read"
+  "settings.currencies.read"
   ];
+  hubspotDropdownSettings: IDropdownSettings = {
+    enableCheckAll: false,
+    allowSearchFilter: true,
+    selectAllText: 'Select All',
+    unSelectAllText: 'Deselect All',
+    closeDropDownOnSelection: false
+  };
   selectedHubspotScopes: string[] = [];
   hubspotClientIdError = false;
   hubspotClientSecretError = false;
@@ -1208,15 +1216,19 @@ export class WorkbenchComponent implements OnInit{
     this.hubspotRedirectURLError = !this.hubspotRedirectURL;
   }
 
-    onHubspotScopeChange(event:any){
-      this.selectedHubspotScopes = event;
-      this.hubspotScopeError = this.selectedHubspotScopes.length <= 0;
-    }
+  onHubspotScopeChange(): void {
+    this.hubspotScopeError = this.selectedHubspotScopes.length <= 0;
+  }
 
-    selectAllHubspotScopes(): void {
-      this.selectedHubspotScopes = [...this.hubspotScopes];
-      this.hubspotScopeError = false;
-    }
+  selectAllHubspotScopes(): void {
+    this.selectedHubspotScopes = [...this.hubspotScopes];
+    this.hubspotScopeError = false;
+  }
+
+  clearAllHubspotScopes(): void {
+    this.selectedHubspotScopes = [];
+    this.hubspotScopeError = false;
+  }
     shopifySignIn(){
       const obj={
         "api_token":this.shopifyToken,
