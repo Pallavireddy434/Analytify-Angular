@@ -1059,6 +1059,36 @@ buildSampleTallyDashboard(container: ViewContainerRef, databaseId: any) {
     }
   });
 }
+buildSampleHubspotDashboard(container: ViewContainerRef, databaseId: any) {
+  const componentRef = container.createComponent(InsightEchartComponent);
+  this.echartInstance = componentRef.instance;
+  this.workbechService.buildSampleHubspotDashboard(databaseId).subscribe({
+    next: (responce: any) => {
+      const obj = {
+        query_set_id: responce.datasource_query.queryset_id,
+        hierarchy_id: responce.datasource_query.hierarchy_id,
+        joining_tables: responce.datasource_query.joining_tables,
+        join_type: responce.datasource_query.join_type,
+        joining_conditions: responce.datasource_query.joining_conditions,
+        dragged_array: { dragged_array: responce.datasource_query.dragged_array, dragged_array_indexing: {} },
+      } as any;
+      this.workbechService.joiningTablesTest(obj).subscribe({
+        next: (res) => {
+          this.buildDashboardResponseData(res, 'hubspot');
+        },
+        error: (error) => {
+          this.toasterservice.error(error.error.message, 'error', { positionClass: 'toast-center-center' });
+          console.log(error);
+        }
+      });
+      this.buildDashboardResponseData(responce, 'hubspot');
+    },
+    error: (error: any) => {
+      this.toasterservice.error(error.error.message, 'error', { positionClass: 'toast-center-center' });
+      console.log(error);
+    }
+  });
+}
   private readonly KPI_MAX       = 8;
   private readonly KPI_PER_ROW   = 8;
   private readonly KPI_SIZE      = { cols: 5, rows: 4 };
