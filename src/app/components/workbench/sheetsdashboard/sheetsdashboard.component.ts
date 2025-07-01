@@ -7100,6 +7100,16 @@ formatNumber(value: number,decimalPlaces:number,displayUnits:string,prefix:strin
       }
       }
      }
+
+     onClearClick(dropdown: any): void {
+      dropdown.close();
+      // optionally reset your fields:
+      this.imageTitle = '';
+      this.uploadedImage = null;
+      this.fileName = 'No file chosen'; 
+      this.imageUpload.nativeElement.value = '';
+    }
+
   addTextItem() {
     this.textEditorContent = '';
     this.textEditorTitle = '';
