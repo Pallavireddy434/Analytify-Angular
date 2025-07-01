@@ -1633,7 +1633,9 @@ try {
     this.calendar = calendar;
     if(this.bar){
       this.isHorizontalBar = false;
-      this.updateMeasureColorRanges();
+    }
+    if(this.bar || this.horizontalBar || this.pie || this.donut || this.funnel){
+    this.updateMeasureColorRanges();
     }
     if(!(this.bar|| this.horizontalBar || this.pie || this.donut)){
       this.draggedDrillDownColumns = [];
@@ -2439,6 +2441,8 @@ sheetSave(isDashboardTransfer?: boolean){
     toggleTablePagination:this.toggleTablePagination,
     isRadarDistribution:this.isRadarDistribution,
     isHorizontalBar  : this.isHorizontalBar,
+    isMeasureDistribution : this.isMeasureDistribution,
+    measureColorRanges :this.measureColorRanges
   }
   // this.sheetTagName = this.sheetTitle;
   let draggedColumnsObj;
@@ -4425,6 +4429,8 @@ customizechangeChartPlugin() {
     this.bandingOddColor= data.bandingOddColor ?? '#f5f7fa'
     this.isRadarDistribution = data.isRadarDistribution ?? false; 
     this.isHorizontalBar = data.isHorizontalBar ?? false;
+    this.measureColorRanges = data.measureColorRanges ?? [];
+    this.isMeasureDistribution = data.isMeasureDistribution ?? false;
   }
 
   resetCustomizations(){
@@ -4523,6 +4529,8 @@ customizechangeChartPlugin() {
     this.bandingOddColor= '#f5f7fa'
     this.toggleTableSearch = true;
     this.toggleTablePagination = true;
+    this.measureColorRanges = [];
+    this.isMeasureDistribution = false;
     // this.isHorizontalBar = false;
     // this.KPIDecimalPlaces = 0,
     // this.KPIDisplayUnits = 'none',

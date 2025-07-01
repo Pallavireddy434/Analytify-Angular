@@ -334,7 +334,7 @@ button.FaFaIconProperties { padding: 6px 8px; border-top-left-radius: 0px !impor
 .child-color-height{ height: 150px; overflow: auto;}
 .add-color-popup { position: absolute; inset: 0px 0px auto auto; margin: 0px; transform: translate3d(-291.5px, -155.3333px, 7px) !important; }
 .rgb-text{ width: 75px;}
-input[type="color"] {
+.color-palette-bar{
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -343,14 +343,6 @@ input[type="color"] {
   height: 0;
   padding: 0;
   opacity: 0;
-}
-input[type="color"].show-color-swatch {
-  background: transparent !important;
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  /* or any other property that hides the swatch */
 }
 
 .hidden-color-input {

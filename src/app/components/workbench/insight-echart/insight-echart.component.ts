@@ -2269,7 +2269,7 @@ chartInitialize(){
         changes['measureColorRanges']
       ) {
         if (
-          ['bar', 'area', 'line', 'pie', 'donut', 'funnel'].includes(this.chartType)
+          ['bar','pie', 'donut', 'funnel', 'horizontalBar'].includes(this.chartType)
         ) {
           this.applyMeasureDistribution();
         }
@@ -2296,7 +2296,7 @@ chartInitialize(){
 if (!this.chartOptions || !Array.isArray(this.chartOptions.series) || !this.chartOptions.series[0]) {
     return; // Or handle initialization here
   }
-  if (this.chartType === 'bar' || this.chartType === 'area' || this.chartType === 'line') {
+  if (this.chartType === 'bar' || this.chartType === 'horizontalBar' ) {
     // For bar/area/line, set itemStyle.color for each data point
     const coloredData = this.chartsRowData.map((value: number) => ({
       value,
@@ -2320,7 +2320,9 @@ if (!this.chartOptions || !Array.isArray(this.chartOptions.series) || !this.char
       itemStyle: { color: this.getColorForValue(value) }
     }));
     this.chartOptions.series[0].data = combinedArray;
-    this.chartInstance?.setOption({ series: [{ data: combinedArray }] }, true);
+    this.chartInstance?.setOption(this.chartOptions, true);
+
+    // this.chartInstance?.setOption({ series: [{ data: combinedArray }] }, true);
   } else if (this.chartType === 'funnel') {
     // For funnel, set itemStyle.color for each data point
     const combinedArray: { name: any; value: any; itemStyle: { color: string; }; }[] = [];
@@ -2336,7 +2338,9 @@ if (!this.chartOptions || !Array.isArray(this.chartOptions.series) || !this.char
       });
     });
     this.chartOptions.series[0].data = combinedArray;
-    this.chartInstance?.setOption({ series: [{ data: combinedArray }] }, true);
+    // this.chartInstance?.setOption({ series: [{ data: combinedArray }] }, true);
+        this.chartInstance?.setOption(this.chartOptions, true);
+
   }
 }
 

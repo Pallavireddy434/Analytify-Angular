@@ -2518,7 +2518,7 @@
                 [donutDecimalPlaces]="donutDecimalPlaces" [drillDownIndex]="drillDownIndex" [draggedDrillDownColumns]="draggedDrillDownColumns"
                 [drillDownObject]="drillDownObject" [sortType]="sortType" [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" [dataLabelsBarFontPosition]="dataLabelsBarFontPosition"
                 [dataLabelsLineFontPosition]="dataLabelsLineFontPosition" [selectedColorScheme]="selectedColorScheme"
-                (saveOrUpdateChart)="setChartOptions($event)" (setDrilldowns)="setDrilldowns($event)">
+                (saveOrUpdateChart)="setChartOptions($event)" (setDrilldowns)="setDrilldowns($event)"  [isMeasureDistribution]="isMeasureDistribution" [measureColorRanges]="measureColorRanges">
                 </app-insight-apex>
     
             } @else {
@@ -2536,7 +2536,7 @@
                 [dataLabelsFontFamily]="dataLabelsFontFamily" [dataLabelsColor]="dataLabelsColor" [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix" [sortType]="sortType"
                 [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" [drillDownIndex]="drillDownIndex" [draggedDrillDownColumns]="draggedDrillDownColumns"[drillDownObject]="drillDownObject" [selectedColorScheme]="selectedColorScheme" [isDistributed]="isDistributed"
                 (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)"  [isMeasureDistribution]="isMeasureDistribution"
-  [measureColorRanges]="measureColorRanges"></app-insight-echart>
+                [measureColorRanges]="measureColorRanges"></app-insight-echart>
             </div>          
             } @else if(horizontalBar && chartId ){
             <div class="card-body">
@@ -2547,7 +2547,8 @@
                 [yGridColor]="yGridColor" [yGridSwitch]="yGridSwitch" [color]="color" [measureColor]="measureColor" [dimensionColor]="dimensionColor" [dataLabelsFontSize]="dataLabelsFontSize" 
                 [dataLabelsFontFamily]="dataLabelsFontFamily" [dataLabelsColor]="dataLabelsColor" [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix" [sortType]="sortType"
                 [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" [drillDownIndex]="drillDownIndex" [draggedDrillDownColumns]="draggedDrillDownColumns"[drillDownObject]="drillDownObject" [selectedColorScheme]="selectedColorScheme" [isDistributed]="isDistributed"
-                (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)"></app-insight-echart>
+                (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)" [isMeasureDistribution]="isMeasureDistribution"
+                [measureColorRanges]="measureColorRanges"></app-insight-echart>
             </div>          
             }
 
@@ -2555,7 +2556,8 @@
                 <div class="card-body">
                     <app-insight-echart [isZoom]="isZoom" [isBold]="isBold" [dataLabelsFontPosition]="dataLabelsFontPosition" [chartType]="chartType"  [dimensionAlignment] = "dimensionAlignment" [chartsRowData]="chartsRowData" [chartsColumnData]="chartsColumnData" [dualAxisRowData]="dualAxisRowData" [dualAxisColumnData]="dualAxisColumnData"
                     [color]="color" [backgroundColor]="backgroundColor" [dataLabelsFontSize]="dataLabelsFontSize" [dataLabelsFontSize]="dataLabelsFontSize" [dataLabelsFontFamily]="dataLabelsFontFamily" [dataLabelsColor]="dataLabelsColor" [selectedColorScheme]="selectedColorScheme" [isDistributed]="isDistributed"
-                    [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix" [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" (saveOrUpdateChart)="setChartOptions($event)"></app-insight-echart>
+                    [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix" [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" (saveOrUpdateChart)="setChartOptions($event)" [isMeasureDistribution]="isMeasureDistribution"
+                    [measureColorRanges]="measureColorRanges"></app-insight-echart>
                 </div>
                 }
             @else if(stocked && chartId){         
@@ -2631,7 +2633,8 @@
                 [backgroundColor]="backgroundColor" [legendSwitch]="legendSwitch" [dataLabels]="dataLabels"  [dataLabelsFontFamily]="dataLabelsFontFamily" [selectedColorScheme]="selectedColorScheme"
                 [dataLabelsFontSize]="dataLabelsFontSize" [dataLabelsColor]="dataLabelsColor" [legendsAllignment]="legendsAllignment"  [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix"
                 [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" [drillDownIndex]="drillDownIndex" [draggedDrillDownColumns]="draggedDrillDownColumns"[drillDownObject]="drillDownObject"
-                (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)" [leftLegend]="leftLegend" [topLegend]="topLegend" [rightLegend]="rightLegend" [bottomLegend]="bottomLegend" [legendOrient]="legendOrient"></app-insight-echart>
+                (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)" [leftLegend]="leftLegend" [topLegend]="topLegend" [rightLegend]="rightLegend" [bottomLegend]="bottomLegend" [legendOrient]="legendOrient" [isMeasureDistribution]="isMeasureDistribution"
+                [measureColorRanges]="measureColorRanges"></app-insight-echart>
             </div>
             }
             @else if(donut && chartId){
@@ -2640,8 +2643,8 @@
                     [backgroundColor]="backgroundColor" [legendSwitch]="legendSwitch" [dataLabels]="dataLabels" [dataLabelsFontFamily]="dataLabelsFontFamily" [selectedColorScheme]="selectedColorScheme"
                     [dataLabelsFontSize]="dataLabelsFontSize" [dataLabelsColor]="dataLabelsColor" [legendsAllignment]="legendsAllignment"
                     [donutDecimalPlaces]="donutDecimalPlaces" [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" [drillDownIndex]="drillDownIndex" [draggedDrillDownColumns]="draggedDrillDownColumns"[drillDownObject]="drillDownObject"
-                    (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)" [leftLegend]="leftLegend" [topLegend]="topLegend" [rightLegend]="rightLegend" [bottomLegend]="bottomLegend" [legendOrient]="legendOrient"
-                    ></app-insight-echart>
+                    (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)" [leftLegend]="leftLegend" [topLegend]="topLegend" [rightLegend]="rightLegend" [bottomLegend]="bottomLegend" [legendOrient]="legendOrient" [isMeasureDistribution]="isMeasureDistribution"
+                    [measureColorRanges]="measureColorRanges" ></app-insight-echart>
                 </div>
                 }
             @else if(barLine && chartId){
@@ -4871,7 +4874,7 @@
                                                                                                             <i class="fa fa-plus px-1"></i> 
                                                                                                         </div>
                                                                                                     </div>
-                                                                                                    <input type="color" #colorInput id="body" name="body" class="w-100" value="#FFFFFF" (input)="newColorScheme[selectedBox] = colorInput.value"/>
+                                                                                                    <input type="color" #colorInput id="body" name="body" class="w-100 color-palette-bar" value="#FFFFFF" (input)="newColorScheme[selectedBox] = colorInput.value"/>
                                                                                                 </div>
                                                                                                 <!-- <div class="py-1">
                                                                                                     <input type="color" #colorInput  id="body" name="body" class="w-100" [(ngModel)]="selectedColor" (ngModelChange)="setColorToBox()"/>
@@ -4891,10 +4894,10 @@
 
 
 
-                                                                  <div *ngIf="(bar || area || line || pie || donut || funnel)" class="d-flex flex-column gap-2 mt-2">
+                                                                  <div *ngIf="(bar || horizontalBar || pie || donut || funnel)" class="d-flex flex-column gap-2 mt-2">
                                                                 <div class="d-flex align-items-center justify-content-between">
                                                                     <label class="mb-0">Measure Distribution</label>
-                                                                    <div *ngIf="isMeasureDistribution" class="toggle toggle-sm on mb-0" (click)="isMeasureDistribution = !isMeasureDistribution;">
+                                                                    <div *ngIf="isMeasureDistribution" class="toggle toggle-sm on mb-0" (click)="isMeasureDistribution = !isMeasureDistribution;updateMeasureColorRanges()">
                                                                         <span></span>
                                                                     </div>
                                                                     <div *ngIf="!isMeasureDistribution" class="toggle toggle-sm off mb-0" (click)="isMeasureDistribution = !isMeasureDistribution;">
@@ -4906,8 +4909,8 @@
                                                                 </div>
                                                                 <div *ngIf="isMeasureDistribution" class="mt-2">
                                                                     <div *ngFor="let range of measureColorRanges; let i = index" class="d-flex align-items-center mb-1">
-                                                                    <input type="text" class="form-control me-2" style="width: 110px;" (change)="updateMeasureColorRanges()" [value]="range.label">
-                                                                    <input type="color" [(ngModel)]="range.color" (change)="onMeasureColorChange()" class="show-color-swatch" style="width: 32px; height: 32px; border: none;">
+                                                                    <input type="text" class="form-control me-2" style="width: 110px;" (change)="updateMeasureColorRanges()" [value]="range.label" readonly>
+                                                                    <input type="color" [(ngModel)]="range.color" (change)="onMeasureColorChange()" style="width: 32px; height: 32px; border: none;">
                                                                     </div>
                                                                 </div>
                                                                 </div>
