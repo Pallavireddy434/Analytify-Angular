@@ -1212,6 +1212,11 @@ export class WorkbenchComponent implements OnInit{
       this.selectedHubspotScopes = event;
       this.hubspotScopeError = this.selectedHubspotScopes.length <= 0;
     }
+
+    selectAllHubspotScopes(): void {
+      this.selectedHubspotScopes = [...this.hubspotScopes];
+      this.hubspotScopeError = false;
+    }
     shopifySignIn(){
       const obj={
         "api_token":this.shopifyToken,
