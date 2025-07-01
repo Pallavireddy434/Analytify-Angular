@@ -45,7 +45,7 @@ export class DashboardPageComponent implements OnInit{
   port:any;
   host:any; 
   @ViewChild('propertiesModal') propertiesModal : any;
-  frequency! : number;
+  frequency : number = 0;
   refreshNow: boolean = false;
   lastRefresh: any;
   nextRefresh: any;
@@ -424,7 +424,11 @@ autoFrequencyRefresh(){
   }
   this.workbechService.autoRefreshFrequency(object).subscribe({
     next:(data)=>{
-      this.toasterservice.success('Dashboard refresh scheduled','success',{ positionClass: 'toast-center-center'})
+      if(this.frequency > 0){
+      this.toasterservice.success('Refresh interval updated successfully.','success',{ positionClass: 'toast-top-right'})
+      } else {
+        this.toasterservice.success('Refresh interval cancelled/removed successfully.','success',{ positionClass: 'toast-top-right'})
+      }
       },
     error:(error)=>{
       console.log(error)

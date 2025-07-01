@@ -201,7 +201,7 @@ export class SheetsdashboardComponent implements OnDestroy {
   usersForUpdateDashboard:[] =[];
   tableNameSelectedForFilter:any;
   isPanelHidden: boolean = true;
-  frequency! : number;
+  frequency : number = 0;
 
   tableItemsPerPage:any;
   tablePageNo = 1;
@@ -7829,7 +7829,11 @@ validateTextEditor(): boolean {
       }
       this.workbechService.autoRefreshFrequency(object).subscribe({
         next:(data)=>{
-          this.toasterService.success('Dashboard refresh scheduled.','success',{ positionClass: 'toast-center-center'});
+          if(this.frequency > 0){
+            this.toasterService.success('Refresh interval updated successfully.','success',{ positionClass: 'toast-top-right'})
+            } else {
+              this.toasterService.success('Refresh interval cancelled/removed successfully.','success',{ positionClass: 'toast-top-right'})
+            }
           if(this.refreshNow){
           this.workbechService.fetchRefreshedData(this.dashboardId).subscribe({
             next:(data)=>{
