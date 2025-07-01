@@ -283,6 +283,23 @@ export class DatabaseComponent {
     if(currentUrl.includes('/analytify/database-connection/hubspot/')){
       this.fromDatabasId = true;
       this.databaseId = +atob(route.snapshot.params['id']);
+          Swal.fire({
+        position: "center",
+        // icon: "question",
+        iconHtml: '<img src="./assets/images/copilot.gif">',
+        title: "Create smart dashboard from your data with just one click?",
+        showConfirmButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'No',
+        customClass: {
+          icon: 'no-icon-bg',
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.templateDashboardService.buildSampleHubspotDashboard(this.container, this.databaseId);
+        }
+      });
     }
 }
   ngOnInit(){

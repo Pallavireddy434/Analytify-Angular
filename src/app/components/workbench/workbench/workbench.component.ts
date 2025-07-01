@@ -1482,8 +1482,24 @@ export class WorkbenchComponent implements OnInit{
           }else if(this.datasourceSwitchUI){
             this.switchDatabase();
           }else{
+    Swal.fire({
+          position: "center",
+          iconHtml: '<img src="./assets/images/copilot.gif">',
+          title: "Create smart dashboard from your data with just one click?",
+          showConfirmButton: true,
+          showCancelButton: true,
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Skip',
+          customClass: {
+            icon: 'no-icon-bg',
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.templateDashboardService.buildSampleTallyDashboard(this.container, this.databaseId);
+          } else {
             this.router.navigate(['/analytify/database-connection/tables/'+encodedId]);
           }
+        });          }
         }
       }, error: (error)=>{
         this.toasterservice.error(error.error.message,'error',{ positionClass: 'toast-center-center'})
