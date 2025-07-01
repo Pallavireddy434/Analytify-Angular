@@ -2442,7 +2442,8 @@ sheetSave(isDashboardTransfer?: boolean){
     isRadarDistribution:this.isRadarDistribution,
     isHorizontalBar  : this.isHorizontalBar,
     isMeasureDistribution : this.isMeasureDistribution,
-    measureColorRanges :this.measureColorRanges
+    measureColorRanges : this.measureColorRanges,
+    measureDivisions : this.measureDivisions
   }
   // this.sheetTagName = this.sheetTitle;
   let draggedColumnsObj;
@@ -4431,6 +4432,7 @@ customizechangeChartPlugin() {
     this.isHorizontalBar = data.isHorizontalBar ?? false;
     this.measureColorRanges = data.measureColorRanges ?? [];
     this.isMeasureDistribution = data.isMeasureDistribution ?? false;
+    this.measureDivisions = data.measureDivisions ?? 2;
   }
 
   resetCustomizations(){
@@ -4531,6 +4533,7 @@ customizechangeChartPlugin() {
     this.toggleTablePagination = true;
     this.measureColorRanges = [];
     this.isMeasureDistribution = false;
+    this.measureDivisions = 2;
     // this.isHorizontalBar = false;
     // this.KPIDecimalPlaces = 0,
     // this.KPIDisplayUnits = 'none',

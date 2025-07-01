@@ -194,7 +194,7 @@ export class InsightEchartComponent {
       },
       tooltip: {
         trigger: 'axis',
-        formatter:(params:any) => params[0].name + " : " +  this.formatNumber(params[0].data) 
+        formatter:(params:any) => params[0].name + " : " +  this.formatNumber(typeof params[0].data === 'number' || typeof params[0].data === 'string' ? params[0].data : params[0].data?.value)
       },
       axisPointer: {
         type: 'none'
@@ -320,7 +320,7 @@ horizontalBarChart(chartsColumnData?: any, chartsRowData?: any) {
     },
     tooltip: {
       trigger: 'axis',
-      formatter: (params: any) => params[0].name + " : " + this.formatNumber(params[0].data)
+      formatter: (params: any) => params[0].name + " : " + this.formatNumber(typeof params[0].data === 'number' || typeof params[0].data === 'string' ? params[0].data : params[0].data?.value)
     },
     axisPointer: {
       type: 'none'

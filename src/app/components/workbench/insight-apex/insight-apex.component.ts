@@ -200,9 +200,9 @@ export class InsightApexComponent {
     if(changes['backgroundColor']){
       this.setBackgroundColor();
     }
-    // if(changes['barColor'] || changes['lineColor'] || changes['color'] || changes['selectedColorScheme'] ){
-    //   this.setChartColor();
-    // }
+    if(changes['barColor'] || changes['lineColor'] || changes['color'] || changes['selectedColorScheme'] ){
+      this.setChartColor();
+    }
     if(changes['gridColor']){
       this.gridLineColor();
     }
@@ -215,6 +215,11 @@ export class InsightApexComponent {
     // if(['funnel','bar'].includes(this.chartType) && changes['sortType'] && changes['sortType']?.currentValue !== 0){
     //   this.sortSeries(this.sortType);
     // }
+    if (changes['isMeasureDistribution'] || changes['measureColorRanges']) {
+      if (['bar', 'pie', 'donut', 'funnel', 'horizontalBar'].includes(this.chartType)) {
+        this.setMeasureRangeColors();
+      }
+    }
     if(this.isSheetSaveOrUpdate){
       let object = {
         chartOptions : this.chartOptions
@@ -527,7 +532,7 @@ export class InsightApexComponent {
       },
       plotOptions: {
         bar: {
-          distributed : this.isDistributed,
+          distributed : this.isMeasureDistribution ? true : this.isDistributed,
           dataLabels: {
             position:this.dataLabelsFontPosition,
           },
@@ -547,7 +552,7 @@ export class InsightApexComponent {
       legend: {
         show: false,
       },
-      colors: this.isMeasureDistribution ? this.setColorsOnRanges(this.chartsRowData ) : (this.isDistributed ? this.selectedColorScheme : [this.color])
+      colors: this.isMeasureDistribution ? this.setColorsOnRanges(this.chartsRowData) : (this.isDistributed ? this.selectedColorScheme : [this.color])
     };
   }
 horizontalBarChart() {
@@ -651,7 +656,7 @@ xaxis: {
     plotOptions: {
       bar: {
         horizontal: true,  // 🔁 Make it horizontal
-        distributed: this.isDistributed,
+        distributed: this.isMeasureDistribution ? true : this.isDistributed,
         dataLabels: {
           position: this.dataLabelsFontPosition,
         },
@@ -671,7 +676,7 @@ xaxis: {
     legend: {
       show: false,
     },
-    colors: this.isDistributed ? this.selectedColorScheme : [this.color]
+    colors: this.isMeasureDistribution ? this.setColorsOnRanges(this.chartsRowData ) : (this.isDistributed ? this.selectedColorScheme : [this.color])
   };
 }
 
@@ -1849,7 +1854,7 @@ xaxis: {
           horizontal: true,
           barHeight: "80%",
           isFunnel: true,
-          distributed : this.isDistributed,
+          distributed : this.isMeasureDistribution ? true : this.isDistributed,
           dataLabels: {
             position:  this.dataLabelsFontPosition,
           }
@@ -3227,12 +3232,57 @@ xaxis: {
   // }
 
   setColorsOnRanges(data: any): string[] {
-    return data.map((value:any) => {
+    let colors = data.map((value:any) => {
       const matchedRange = this.measureColorRanges.find((range:any) =>
         value >= range.min && value <= range.max
       );
       return matchedRange ? matchedRange.color : '#2392c1';
     });
+    return colors;
+  }
+
+  setMeasureRangeColors() {
+    if (this.isMeasureDistribution) {
+      let object = {};
+      if (this.chartType === 'bar') {
+        if (this.chartOptions?.colors && this.chartOptions?.series[0]?.data) {
+          this.chartOptions.colors = this.setColorsOnRanges(this.chartOptions.series[0].data);
+        }
+        this.chartOptions.plotOptions.bar.distributed = true;
+        object = { colors: this.chartOptions.colors, plotOptions: this.chartOptions.plotOptions };
+        this.barCharts?.updateOptions(object);
+      }
+      else if (this.chartType === 'horizontalBar') {
+        if (this.chartOptions?.colors && this.chartOptions?.series[0]?.data) {
+        this.chartOptions.colors = this.setColorsOnRanges(this.chartOptions.series[0].data);
+        }
+        this.chartOptions.plotOptions.bar.distributed = true;
+        object = { colors: this.chartOptions.colors, plotOptions: this.chartOptions.plotOptions };
+        this.horizontalBarCharts?.updateOptions(object);
+      }
+      else if (this.chartType === 'funnel') {
+        if (this.chartOptions?.colors && this.chartOptions?.series[0]?.data) {
+        this.chartOptions.colors = this.setColorsOnRanges(this.chartOptions.series[0].data);
+        }
+        this.chartOptions.plotOptions.bar.distributed = true;
+        object = { colors: this.chartOptions.colors, plotOptions: this.chartOptions.plotOptions };
+        this.funnelCharts?.updateOptions(object);
+      }
+      else if (this.chartType === 'pie') {
+        if (this.chartOptions?.colors && this.chartOptions?.series) {
+        this.chartOptions.colors = this.setColorsOnRanges(this.chartOptions.series);
+        }
+        object = { colors: this.chartOptions.colors};
+        this.pieCharts?.updateOptions(object);
+      }
+      else if (this.chartType === 'donut') {
+        if (this.chartOptions?.colors && this.chartOptions?.series) {
+        this.chartOptions.colors = this.setColorsOnRanges(this.chartOptions.series);
+        }
+        object = { colors: this.chartOptions.colors};
+        this.donutCharts?.updateOptions(object);
+      }
+    }
   }
 }
 // }

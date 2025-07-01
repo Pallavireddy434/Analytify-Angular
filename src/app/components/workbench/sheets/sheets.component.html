@@ -4629,7 +4629,7 @@
                                                                      ></ngx-colors>
                                                                 </div>
 
-                                                                <div *ngIf="!((table && chartId) || (pie && chartId)||donut||kpi||barLine||sidebyside||stocked||horizentalStocked||grouped||multiLine||heatMap || calendar) && ((!isDistributed && (bar || horizontalBar || funnel)) || area || line || (radar && !isRadarDistribution))" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
+                                                                <div *ngIf="!((table && chartId) || (pie && chartId)||donut||kpi||barLine||sidebyside||stocked||horizentalStocked||grouped||multiLine||heatMap || calendar) && ((!isDistributed && !isMeasureDistribution && (bar || horizontalBar || funnel)) || area || line || (radar && !isRadarDistribution))" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
                                                                     <div class=""> 
                                                                         <p>Chart</p>
                                                                     </div>
@@ -4791,10 +4791,10 @@
                                                                 </div>
                                                                 <div *ngIf="funnel || bar || horizontalBar" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
                                                                     <label>Distribution</label>
-                                                                    <div *ngIf="isDistributed" class="toggle toggle-sm on mb-0" (click)="toggleSwitch('distributed')">
+                                                                    <div *ngIf="isDistributed" class="toggle toggle-sm on mb-0" (click)="toggleSwitch('distributed'); (isMeasureDistribution = false)">
                                                                         <span></span>
                                                                     </div>
-                                                                    <div *ngIf="!isDistributed" class="toggle toggle-sm off mb-0" (click)="toggleSwitch('distributed')">
+                                                                    <div *ngIf="!isDistributed" class="toggle toggle-sm off mb-0" (click)="toggleSwitch('distributed'); (isMeasureDistribution = false)">
                                                                         <span></span>
                                                                     </div>
                                                                 </div>
@@ -4809,7 +4809,7 @@
                                                                     <ngx-colors *ngIf="funnelColorSwitch" [(ngModel)]="color" ngx-colors-trigger [format]="'hex'">
                                                                     </ngx-colors>
                                                                 </div> -->
-                                                                <div *ngIf="pie || donut || sidebyside || stocked || horizentalStocked || grouped || multiLine || heatMap || ((funnel || bar || horizontalBar) && isDistributed || (radar && isRadarDistribution ))" class="p-2">
+                                                                <div *ngIf="(pie && !isMeasureDistribution) || (donut && !isMeasureDistribution) || sidebyside || stocked || horizentalStocked || grouped || multiLine || heatMap || ((funnel || bar || horizontalBar) && isDistributed || (radar && isRadarDistribution ))" class="p-2">
                                                                     <div class="d-flex justify-content-between p-1 border rounded-3">
                                                                         <div class="colors-card">
                                                                             <ul class="d-flex flex-wrap">
@@ -4894,13 +4894,13 @@
 
 
 
-                                                                  <div *ngIf="(bar || horizontalBar || pie || donut || funnel)" class="d-flex flex-column gap-2 mt-2">
+                                                                  <div *ngIf="pie || donut || ((bar || horizontalBar || funnel) && !isDistributed)" class="d-flex flex-column gap-2 mt-2">
                                                                 <div class="d-flex align-items-center justify-content-between">
                                                                     <label class="mb-0">Measure Distribution</label>
-                                                                    <div *ngIf="isMeasureDistribution" class="toggle toggle-sm on mb-0" (click)="isMeasureDistribution = !isMeasureDistribution;updateMeasureColorRanges()">
+                                                                    <div *ngIf="isMeasureDistribution" class="toggle toggle-sm on mb-0" (click)="isMeasureDistribution = !isMeasureDistribution; (isDistributed = isMeasureDistribution ? false : true); updateMeasureColorRanges()">
                                                                         <span></span>
                                                                     </div>
-                                                                    <div *ngIf="!isMeasureDistribution" class="toggle toggle-sm off mb-0" (click)="isMeasureDistribution = !isMeasureDistribution;">
+                                                                    <div *ngIf="!isMeasureDistribution" class="toggle toggle-sm off mb-0" (click)="isMeasureDistribution = !isMeasureDistribution; (isDistributed = isMeasureDistribution ? false : true); updateMeasureColorRanges()">
                                                                         <span></span>
                                                                     </div>
                                                                     <input type="number" min="2" max="10" [(ngModel)]="measureDivisions" [disabled]="!isMeasureDistribution"
