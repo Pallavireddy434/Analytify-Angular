@@ -91,7 +91,8 @@ export class InsightEchartComponent {
   @Output() saveOrUpdateChart = new EventEmitter<object>();
   @Output() setDrilldowns = new EventEmitter<object>();
   @Output() drillThrough = new EventEmitter<object>();
-
+  @Input() isMeasureDistribution: boolean = false;
+  @Input() measureColorRanges: { min: number, max: number, color: string }[] = [];
   width: string = '100%'; // Width of the chart
   height: string = '400px'; // Height of the chart
   @ViewChild('chartContainer', { static: true }) chartContainer!: ElementRef;
@@ -166,7 +167,13 @@ export class InsightEchartComponent {
       this.chartInstance.dispose(); // Dispose of the chart instance to avoid memory leaks
     }
   }
-
+  getColorForValue(value: number): string {
+    if (this.isMeasureDistribution && Array.isArray(this.measureColorRanges)) {
+      const range = this.measureColorRanges.find(r => value >= r.min && value <= r.max);
+      return range ? range.color : this.color;
+    }
+    return this.color;
+  }
  barChart(chartsColumnData? : any ,chartsRowData?: any ){
     if(chartsColumnData && chartsRowData){
       this.chartsColumnData = chartsColumnData;
@@ -187,7 +194,7 @@ export class InsightEchartComponent {
       },
       tooltip: {
         trigger: 'axis',
-        formatter:(params:any) => params[0].name + " : " +  this.formatNumber(params[0].data) 
+        formatter:(params:any) => params[0].name + " : " +  this.formatNumber(typeof params[0].data === 'number' || typeof params[0].data === 'string' ? params[0].data : params[0].data?.value)
       },
       axisPointer: {
         type: 'none'
@@ -313,7 +320,7 @@ horizontalBarChart(chartsColumnData?: any, chartsRowData?: any) {
     },
     tooltip: {
       trigger: 'axis',
-      formatter: (params: any) => params[0].name + " : " + this.formatNumber(params[0].data)
+      formatter: (params: any) => params[0].name + " : " + this.formatNumber(typeof params[0].data === 'number' || typeof params[0].data === 'string' ? params[0].data : params[0].data?.value)
     },
     axisPointer: {
       type: 'none'
@@ -2256,6 +2263,17 @@ chartInitialize(){
     if(changes['isRadarDistribution'] || changes['selectedColorScheme']){
       this.radarDistributionSetOptions();
     }
+    // Handle measure distribution changes for single axis charts
+    if (
+        changes['isMeasureDistribution'] ||
+        changes['measureColorRanges']
+      ) {
+        if (
+          ['bar','pie', 'donut', 'funnel', 'horizontalBar'].includes(this.chartType)
+        ) {
+          this.applyMeasureDistribution();
+        }
+    }
     // if(this.chartType === 'bar' && changes['sortType'] && changes['sortType']?.currentValue !== 0){
     //   this.sortSeries(this.sortType);
     // }
@@ -2267,6 +2285,65 @@ chartInitialize(){
     }
     console.log(this.chartOptions);
   }
+
+  applyMeasureDistribution() {
+  if (!this.isMeasureDistribution || !this.measureColorRanges?.length) {
+    // Fallback to normal color logic
+    this.chartInitialize();
+    this.chartInstance?.setOption(this.chartOptions, true);
+    return;
+  }
+if (!this.chartOptions || !Array.isArray(this.chartOptions.series) || !this.chartOptions.series[0]) {
+    return; // Or handle initialization here
+  }
+  if (this.chartType === 'bar' || this.chartType === 'horizontalBar' ) {
+    // For bar/area/line, set itemStyle.color for each data point
+    const coloredData = this.chartsRowData.map((value: number) => ({
+      value,
+      itemStyle: { color: this.getColorForValue(value) }
+    }));
+    this.chartOptions.series[0].data = coloredData;
+    // this.chartInstance?.setOption({  series: [{
+    // type: this.chartType, // e.g., 'bar', 'line', etc.
+    // data: coloredData
+    // }] }, true);
+    // this.chartInstance?.setOption(this.chartOptions, true);
+    this.chartInstance?.setOption(
+  { series: this.chartOptions.series },
+  { notMerge: false, replaceMerge: ['series'] }
+);
+  } else if (this.chartType === 'pie' || this.chartType === 'donut') {
+    // For pie/donut, set itemStyle.color for each slice
+    const combinedArray = this.chartsRowData.map((value: number, index: number) => ({
+      value,
+      name: this.chartsColumnData[index],
+      itemStyle: { color: this.getColorForValue(value) }
+    }));
+    this.chartOptions.series[0].data = combinedArray;
+    this.chartInstance?.setOption(this.chartOptions, true);
+
+    // this.chartInstance?.setOption({ series: [{ data: combinedArray }] }, true);
+  } else if (this.chartType === 'funnel') {
+    // For funnel, set itemStyle.color for each data point
+    const combinedArray: { name: any; value: any; itemStyle: { color: string; }; }[] = [];
+    this.dualAxisColumnData.forEach((item: any) => {
+      this.dualAxisRowData.forEach((categoryObj: any) => {
+        item.values.forEach((value: any, index: number) => {
+          combinedArray.push({
+            name: value,
+            value: categoryObj.data[index],
+            itemStyle: { color: this.getColorForValue(categoryObj.data[index]) }
+          });
+        });
+      });
+    });
+    this.chartOptions.series[0].data = combinedArray;
+    // this.chartInstance?.setOption({ series: [{ data: combinedArray }] }, true);
+        this.chartInstance?.setOption(this.chartOptions, true);
+
+  }
+}
+
   xLabelFontFamilySetOptions(){
     if(this.chartType !== 'heatmap'){
     let obj = {

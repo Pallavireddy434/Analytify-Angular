@@ -1634,6 +1634,9 @@ try {
     if(this.bar){
       this.isHorizontalBar = false;
     }
+    if(this.bar || this.horizontalBar || this.pie || this.donut || this.funnel){
+    this.updateMeasureColorRanges();
+    }
     if(!(this.bar|| this.horizontalBar || this.pie || this.donut)){
       this.draggedDrillDownColumns = [];
       this.drillDownObject = [];
@@ -2438,6 +2441,9 @@ sheetSave(isDashboardTransfer?: boolean){
     toggleTablePagination:this.toggleTablePagination,
     isRadarDistribution:this.isRadarDistribution,
     isHorizontalBar  : this.isHorizontalBar,
+    isMeasureDistribution : this.isMeasureDistribution,
+    measureColorRanges : this.measureColorRanges,
+    measureDivisions : this.measureDivisions
   }
   // this.sheetTagName = this.sheetTitle;
   let draggedColumnsObj;
@@ -4424,6 +4430,9 @@ customizechangeChartPlugin() {
     this.bandingOddColor= data.bandingOddColor ?? '#f5f7fa'
     this.isRadarDistribution = data.isRadarDistribution ?? false; 
     this.isHorizontalBar = data.isHorizontalBar ?? false;
+    this.measureColorRanges = data.measureColorRanges ?? [];
+    this.isMeasureDistribution = data.isMeasureDistribution ?? false;
+    this.measureDivisions = data.measureDivisions ?? 2;
   }
 
   resetCustomizations(){
@@ -4522,6 +4531,9 @@ customizechangeChartPlugin() {
     this.bandingOddColor= '#f5f7fa'
     this.toggleTableSearch = true;
     this.toggleTablePagination = true;
+    this.measureColorRanges = [];
+    this.isMeasureDistribution = false;
+    this.measureDivisions = 2;
     // this.isHorizontalBar = false;
     // this.KPIDecimalPlaces = 0,
     // this.KPIDisplayUnits = 'none',
@@ -7694,6 +7706,35 @@ rows.forEach((row, rowIndex) => {
 });
 
 }
+
+isMeasureDistribution: boolean = false;
+measureDivisions: number = 2;
+measureColorRanges: { min: number, max: number, color: string, label: string }[] = [];
+
+onMeasureColorChange() {
+  this.measureColorRanges = [...this.measureColorRanges];
+}
+// Call this whenever measureDivisions or isMeasureDistribution changes
+updateMeasureColorRanges() {
+  if (!this.chartsRowData || this.chartsRowData.length === 0) return;
+  const min = Math.min(...this.chartsRowData);
+  const max = Math.max(...this.chartsRowData);
+  const step = Math.ceil((max - min + 1) / this.measureDivisions);
+  this.measureColorRanges = [];
+  for (let i = 0; i < this.measureDivisions; i++) {
+    const rangeMin = min + i * step;
+    const rangeMax = i === this.measureDivisions - 1 ? max : rangeMin + step - 1;
+    this.measureColorRanges.push({
+      min: rangeMin,
+      max: rangeMax,
+      color: this.selectedColorScheme[i % this.selectedColorScheme.length] || '#2392c1',
+      label: `${rangeMin} - ${rangeMax}`
+    });
+  }
+  console.log('Measure Color Ranges:', this.measureColorRanges);
+}
+
+
 qoqOpen = false
 toggleQOQDropdown() {
   this.qoqOpen = !this.qoqOpen;
