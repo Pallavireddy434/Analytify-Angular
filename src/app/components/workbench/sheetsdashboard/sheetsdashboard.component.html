@@ -263,14 +263,19 @@
                                              </div>
                                           </div>
                                           <div class=" mb-0  br-0 p-0 mt-2 ">
-                                            <div class=" dropdown" ngbDropdown>
+                                            <div class=" dropdown" ngbDropdown #dropdownRef="ngbDropdown">
                                               <a  href="javascript:void(0);" ngbDropdownToggle data-bs-toggle="dropdown" role="button"  aria-haspopup="true" aria-expanded="false" class="dropdown-toggle"> 
                                                 <button class="btn btn-primary w-100">
                                                   <i class="fa fa-image me-2"></i>Add Image
                                               </button>
                                               </a>
                                               <div class="dropdown-menu size-dropdown upload-image-position" ngbDropdownMenu>
-                                                  <p class="mb-0 bg-light text-center p-2">Upload Image</p>
+                                                <div class="mb-0 d-flex justify-content-between align-items-center ">
+                                                  <p class="mb-0 bg-light p-2">Upload Image</p>
+                                                  <button class="btn btn-sm" (click)="onClearClick(dropdownRef)" title="Close">
+                                                      <i class="fa fa-times"></i>
+                                                  </button>
+                                              </div>
                                                   <div class="form-group d-flex align-items-center flex-wrap justify-content-between mb-0 mt-3">
                                                     <label class="form-label mt-1 me-2">Insert Image File:</label>
                                                     <!-- <input
@@ -2229,7 +2234,8 @@
         <label class="form-label">Frequency <span class="text-red">*</span><i
             ngbTooltip="Periodical automatted time interval to refresh/sync dashboard."
             class="icon icon-info ms-1 cursor-pointer"></i></label>
-          <select [(ngModel)]="frequency" class="form-control cursor-pointer">
+          <select [(ngModel)]="frequency" class="form-select cursor-pointer">
+            <option value="0" disabled selected>Select Interval</option>
             <option value="-1"> Don't refresh </option>
             <option value="1"> 1 hour</option>
             <option value="2"> 2 hours</option>
@@ -2248,7 +2254,7 @@
                 ngbTooltip="last refreshed date for respective dashboard." class="icon icon-info ms-1 cursor-pointer"></i></label>
             <input type="text" readonly="true" [(ngModel)]="lastRefresh" />
             }
-            @if(nextRefresh){
+            @if(nextRefresh && frequency > 0){
             <label class="form-label">Next Refresh will happen in 
             <span class="fw-bold">{{nextRefresh}}</span> minutes.</label>
             }

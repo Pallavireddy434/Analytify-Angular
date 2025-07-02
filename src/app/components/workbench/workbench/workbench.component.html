@@ -1474,7 +1474,16 @@
                         </div>
                         <div class="form-group">
                           <label [ngClass]="{'error-label': hubspotScopeError}" class="col-form-label">Scopes <span class="text-danger ms-1">*</span></label>
-                          <ng-select [items]="hubspotScopes" bindLabel="" placeholder="Select Scopes" [(ngModel)]="selectedHubspotScopes" [multiple]="true" (change)="onHubspotScopeChange($event)"></ng-select>
+                          <ng-multiselect-dropdown
+                            [data]="hubspotScopes"
+                            [(ngModel)]="selectedHubspotScopes"
+                            [ngModelOptions]="{standalone: true}"
+                            [settings]="hubspotDropdownSettings"
+                            (onSelect)="onHubspotScopeChange()"
+                            (onDeSelect)="onHubspotScopeChange()"
+                            (onSelectAll)="onHubspotScopeChange()"
+                            (onDeSelectAll)="onHubspotScopeChange()">
+                          </ng-multiselect-dropdown>
                         </div>
                         <div class="modal-footer">
                           <button type="button" class="btn btn-secondary" (click)="gotoNewConnections()">Close</button>
