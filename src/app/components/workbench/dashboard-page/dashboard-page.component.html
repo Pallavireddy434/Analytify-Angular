@@ -82,7 +82,7 @@
                                   [faIconList]="'fa fa-sliders'" [isIcon]="true"></app-insights-button>
                                   <button class="btn btn-icon btn-sm btn-info-light btn-wave waves-effect waves-light" ngbTooltip="Set Schedular" (click)="viewSchedular(dashboard.dashboard_id,autorefresh)"><i class="fa fa-clock" ></i></button>
                                   <button class="btn btn-icon btn-sm btn-orange-light btn-wave waves-effect waves-light" ngbTooltip="Set Alerts" (click)="gotoConfigureEmailAlerts(dashboard.dashboard_id)"><i class="fa fa-bell" ></i></button>
-
+                                  <button class="btn btn-icon btn-sm btn-blue-light btn-wave waves-effect waves-light" ngbTooltip="Copy Dashboard" (click)="copyDashboard(dashboard.dashboard_id)"><i class="fa fa-copy" ></i></button>
                                 </div>
                             </td>
                         </tr>
@@ -138,8 +138,8 @@
                             (btnClickEvent)="viewPropertiesTab(dashboard.dashboard_name,dashboard.dashboard_id)"
                             [faIconList]="'fa fa-sliders'" [isIcon]="true"></app-insights-button>
                             <button class="btn btn-icon btn-sm btn-info-light btn-wave waves-effect waves-light me-2" ngbTooltip="Set Schedular" (click)="viewSchedular(dashboard.dashboard_id,autorefresh)"><i class="fa fa-clock" ></i></button>
-                            <button class="btn btn-icon btn-sm btn-orange-light btn-wave waves-effect waves-light" ngbTooltip="Set Alerts" (click)="gotoConfigureEmailAlerts(dashboard.dashboard_id)"><i class="fa fa-bell" ></i></button>
-
+                            <button class="btn btn-icon btn-sm btn-orange-light btn-wave waves-effect waves-light me-2" ngbTooltip="Set Alerts" (click)="gotoConfigureEmailAlerts(dashboard.dashboard_id)"><i class="fa fa-bell" ></i></button>
+                            <button class="btn btn-icon btn-sm btn-blue-light btn-wave waves-effect waves-light" ngbTooltip="Copy Dashboard" (click)="copyDashboard(dashboard.dashboard_id)"><i class="fa fa-copy" ></i></button>
                           </div>
                   </div>
                     </div>
@@ -246,7 +246,8 @@
       <label class="form-label">Frequency <span class="text-red">*</span><i
           ngbTooltip="Periodical automatted time interval to refresh/sync dashboard."
           class="icon icon-info ms-1 cursor-pointer"></i></label>
-        <select [(ngModel)]="frequency" class="form-control cursor-pointer">
+        <select [(ngModel)]="frequency" class="form-select cursor-pointer">
+          <option value="0" disabled selected>Select Interval</option>
           <option value="-1"> Don't refresh </option>
           <option value="1"> 1 hour</option>
           <option value="2"> 2 hours</option>
@@ -265,7 +266,7 @@
             ngbTooltip="last refreshed date for respective dashboard." class="icon icon-info ms-1 cursor-pointer"></i></label>
         <input type="text" readonly="true" [(ngModel)]="lastRefresh" />
           }
-          @if(nextRefresh){
+          @if(nextRefresh && frequency > 0){
             <label class="form-label">Next Refresh will happen in 
               <span class="fw-bold">{{nextRefresh}}</span> minutes.</label>
           }

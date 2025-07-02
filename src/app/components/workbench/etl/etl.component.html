@@ -2,7 +2,7 @@
     <div class="row ">
         <div class="col-md-12 mt-4">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header p-1">
                     <div class="d-flex justify-content-between  align-items-center m-2">
                         <div>
                             <h5 class="card-title mb-0">ETL Data Flow</h5>
@@ -11,29 +11,28 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="d-lg-flex d-block">
-                        <div class="col-2 p-1 border-end" [ngStyle]="{ 'display': isOpen ? 'block' : 'none' }">
+                        <div class="col-2 p-1 border-end mt-1" [ngStyle]="{ 'display': isOpen ? 'block' : 'none' }">
                             <div class="card mb-0 connections-layer-h">
                                 <ul ngbNav #nav="ngbNav" [(activeId)]="active" class="nav flex-column nav-pills" id="vertical-tab" role="tablist" aria-orientation="vertical">
                                     <li [ngbNavItem]="1">
-                                        <!-- <a ngbNavLink class="p-3 TabShadow">Data Flow</a> -->
-                                        <div ngbAccordion [closeOthers]="true" class="accordion border-0" id="accordionExample">
+                                        <div ngbAccordion [closeOthers]="true" class="accordion border-0 mb-2" id="accordionExample1">
                                             <div ngbAccordionItem [collapsed]="false" class="accordion-item">
                                                 <h2 ngbAccordionHeader class="accordion-header" id="headingOne">
                                                     <button ngbAccordionButton class="accordion-button py-3 px-3" type="button" data-bs-toggle="collapse"
                                                         data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                                        <i class="fa fa-plug ms-2 plug-icon"></i>Connections
+                                                        <i class="fa fa-plug ms-2 plug-icon"></i>Sources
                                                     </button>
                                                 </h2>
                                                 <div ngbAccordionCollapse id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
-                                                    data-bs-parent="#accordionExample">
+                                                    data-bs-parent="#accordionExample1">
                                                     <div class="accordion-body p-0" ngbAccordionBody>
                                                         <ng-template>
-                                                            <div class="data-cdk-tables px-3 mt-2">
-                                                                <div class="drag-drawflow" draggable="true" (dragstart)="onDragStart($event, 'source_data_object', connectionList)" data-node="Source Data Object">
-                                                                    <img src="./assets/images/etl/dataobject-etl.svg" alt="Source Data Object" class="drawflow-image"><span> Source Data Object</span>
+                                                            <div class="data-cdk-tables p-0">
+                                                                <div class="drag-drawflow" draggable="true" (dragstart)="onDragStart($event, 'source_data_object', connectionList, 'POSTGRESQL')" data-node="Source Data Object">
+                                                                    <img src="./assets/images/etl/PostgreSQL-etl.svg" alt="postgres" class="drawflow-image"><span> Source Data Object</span>
                                                                 </div>
-                                                                <div class="drag-drawflow" draggable="true" (dragstart)="onDragStart($event, 'target_data_object', connectionList)" data-node="data object">
-                                                                    <img src="./assets/images/etl/dataobject-etl.svg" alt="Target Data Object" class="drawflow-image"><span> Target Data Object</span>
+                                                                <div class="drag-drawflow" draggable="true" (dragstart)="onDragStart($event, 'source_data_object', connectionList, 'file')" data-node="Source Data Object">
+                                                                    <img src="./assets/images/etl/File-etl.svg" alt="file" class="drawflow-image"><span> File</span>
                                                                 </div>
                                                             </div>
                                                         </ng-template>
@@ -41,29 +40,54 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div ngbAccordion [closeOthers]="true" class="accordion border-0" id="accordionExample">
+                                        <div ngbAccordion [closeOthers]="true" class="accordion border-0 mb-2" id="accordionExample2">
                                             <div ngbAccordionItem [collapsed]="true" class="accordion-item">
-                                                <h2 ngbAccordionHeader class="accordion-header" id="headingOne">
+                                                <h2 ngbAccordionHeader class="accordion-header" id="headingTwo">
                                                     <button ngbAccordionButton class="accordion-button py-3 px-3" type="button" data-bs-toggle="collapse"
-                                                        data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                                        data-bs-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+                                                        <i class="fa fa-plug ms-2 plug-icon"></i>Targets
+                                                    </button>
+                                                </h2>
+                                                <div ngbAccordionCollapse id="collapseTwo" class="accordion-collapse collapse show" aria-labelledby="headingTwo"
+                                                    data-bs-parent="#accordionExample2">
+                                                    <div class="accordion-body p-0" ngbAccordionBody>
+                                                        <ng-template>
+                                                            <div class="data-cdk-tables p-0">
+                                                                <div class="drag-drawflow border-bottom" draggable="true" (dragstart)="onDragStart($event, 'target_data_object', connectionList, 'POSTGRESQL')" data-node="Target Data Object">
+                                                                    <img src="./assets/images/etl/PostgreSQL-etl.svg" alt="postgres" class="drawflow-image"><span> PostgresSQL</span>
+                                                                </div>
+                                                                <!-- <div class="drag-drawflow border-bottom" draggable="true" (dragstart)="onDragStart($event, 'target_data_object', connectionList, 'file')" data-node="Target Data Object">
+                                                                    <img src="./assets/images/etl/File-etl.svg" alt="file" class="drawflow-image"><span> File</span>
+                                                                </div> -->
+                                                            </div>
+                                                        </ng-template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div ngbAccordion [closeOthers]="true" class="accordion border-0" id="accordionExample3">
+                                            <div ngbAccordionItem [collapsed]="true" class="accordion-item">
+                                                <h2 ngbAccordionHeader class="accordion-header" id="headingThree">
+                                                    <button ngbAccordionButton class="accordion-button py-3 px-3" type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#collapseThree" aria-expanded="true" aria-controls="collapseThree">
                                                         <i class="fa fa-gears me-2"></i>Transforms
                                                     </button>
                                                 </h2>
-                                                <div ngbAccordionCollapse id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
-                                                    data-bs-parent="#accordionExample">
+                                                <div ngbAccordionCollapse id="collapseThree" class="accordion-collapse collapse show" aria-labelledby="headingThree"
+                                                    data-bs-parent="#accordionExample3">
                                                     <div class="accordion-body p-0" ngbAccordionBody>
                                                         <ng-template>
                                                             <div class="data-cdk-tables px-3 mt-2">
-                                                                <div class="drag-drawflow" draggable="true" (dragstart)="onDragStart($event, 'Expression', null)" data-node="Expression">
+                                                                <div class="drag-drawflow" draggable="true" (dragstart)="onDragStart($event, 'Expression', null, '')" data-node="Expression">
                                                                     <img src="./assets/images/etl/expression-etl.svg" alt="Expression" class="drawflow-image"><span> Expression</span>
                                                                 </div>
-                                                                <div class="drag-drawflow" draggable="true" (dragstart)="onDragStart($event, 'Joiner', null)" data-node="Joiner">
+                                                                <div class="drag-drawflow" draggable="true" (dragstart)="onDragStart($event, 'Joiner', null, '')" data-node="Joiner">
                                                                     <img src="./assets/images/etl/mjoiner-etl.svg" alt="Joiner" class="drawflow-image"><span> Joiner</span>
                                                                 </div>
-                                                                <div class="drag-drawflow" draggable="true" (dragstart)="onDragStart($event, 'Rollup', null)" data-node="Rollup">
+                                                                <div class="drag-drawflow" draggable="true" (dragstart)="onDragStart($event, 'Rollup', null, '')" data-node="Rollup">
                                                                     <img src="./assets/images/etl/rollup-etl.svg" alt="Rollup" class="drawflow-image"><span> Rollup</span>
                                                                 </div>
-                                                                <div class="drag-drawflow" draggable="true" (dragstart)="onDragStart($event, 'Filter', null)" data-node="Filter">
+                                                                <div class="drag-drawflow" draggable="true" (dragstart)="onDragStart($event, 'Filter', null, '')" data-node="Filter">
                                                                     <img src="./assets/images/etl/filter-etl.svg" alt="Filter" class="drawflow-image"><span> Filter</span>
                                                                 </div>
                                                             </div>
@@ -93,7 +117,7 @@
                             </div>
                            
                         </div>
-                        <div class="col-10 py-0">
+                        <div class="col-10 p-1 mt-1">
                             <!-- <div type="button" class="card mb-0 hide-show-btn btn-primary" (click)="isOpen = !isOpen">
                                 <i *ngIf="isOpen" class="fa fa-angle-left fs-18"></i>
                                 <i *ngIf="!isOpen" class="fa fa-angle-right fs-18"></i>
@@ -103,15 +127,18 @@
                                 <button *ngIf="!dataFlowId" type="button" class="btn btn-primary me-1 iconProperties" [disabled]="!etlName" (click)="saveOrUpdateEtlDataFlow()">Save</button>
                                 <button *ngIf="dataFlowId" type="button" class="btn btn-primary me-1 iconProperties" [disabled]="!etlName" (click)="saveOrUpdateEtlDataFlow()">update</button>
                                 <!-- <button type="button" class="btn btn-primary me-1 iconProperties" (click)="getDataFlowLogs()">Export</button> -->
-                                <button type="button" class="btn btn-primary me-1 iconProperties" [disabled]="!isRunEnable" (click)="runDataFlow()">Run</button>
+                                <span [ngbTooltip]="!isRunEnable ? 'Drag and connect the target data object to nodes to enable' : null" container="body" class="d-inline-block me-1">
+                                    <button type="button" class="btn btn-primary iconProperties" style="height: 100%;" [disabled]="!isRunEnable" (click)="runDataFlow()">Run</button>
+                                </span>
+
                                 <!-- <button type="button" class="btn btn-primary me-1 iconProperties" [disabled]="!isRefrshEnable" (click)="getDataFlowStatus(runId)">Refresh</button> -->
                             </div>
                             <div class="container-vertical">
-                                <div class="top-pane" [ngbNavOutlet]="nav"></div>
+                                <div class="top-pane border" [ngbNavOutlet]="nav"></div>
                                 <div *ngIf="isNodeSelected" class="card mb-0 border customsql-result-preview-h mt-3 resizable-bottom" [ngClass]="isCollapsed ? 'table-collapse':''" resizableTop>
                                     <div class="resize-handle"></div>
-                                    <div class="card-body p-0 border rounded-3 tab-menu-heading tab-menu-heading-boxed">
-                                        <div class="card-header bg-light d-flex align-items-center justify-content-between tabs-menu-boxed">
+                                    <div class="card-body p-0 rounded-3 tab-menu-heading tab-menu-heading-boxed">
+                                        <div class="card-header  d-flex align-items-center justify-content-between tabs-menu-boxed border-bottom p-1 mb-1 mt-1">
                                             <ul ngbNav #tableTypes="ngbNav" [(activeId)]="tableTypeTabId" class="nav panel-tabs fs-14 pb-1">
                                                 <li [ngbNavItem]="1"> 
                                                     <a ngbNavLink class="p-3 TabShadow"> {{isCanvasSelected ? etlName : selectedNode.data.nodeData.general.name}} </a>
@@ -127,14 +154,17 @@
                                                                             <div class="tab-pane tab-content-height" id="years" role="tabpanel" aria-labelledby="years-tab" tabindex="0">
                                                                                 <div class="col-xl-12 col-lg-12 col-md-12 row g-0">
                                                                                     <div class="form-group w-100">
-                                                                                        <label for="name" class="fw-bold">Name</label>
+                                                                                        <label for="name" class="fw-bold">Name </label>
+                                                                                        <div *ngIf="nameInput.invalid && nameInput.touched" class="text-danger small">
+                                                                                            Name can only contain letters, numbers, and underscores.
+                                                                                        </div>
                                                                                         <div class="d-flex">
                                                                                             <div class="col-4 p-0">
-                                                                                                <input type="text" id="name" name="name" [(ngModel)]="nodeName"
-                                                                                                    class="form-control shadow-sm" (blur)="updateNode('general')" />
+                                                                                                <input type="text" id="name" name="name" [(ngModel)]="nodeName"  pattern="^[a-zA-Z0-9_]+$"
+                                                                                                    class="form-control shadow-sm" #nameInput="ngModel" (blur)="updateNode('general', nameInput)" />
                                                                                             </div>
                                                                                             <span class="bg-primary d-flex align-items-center justify-content-center right-chevron-width"
-                                                                                                (click)="updateNode('general')"><i class="fa fa-chevron-right text-light fs-5"></i></span>
+                                                                                                (click)="updateNode('general', nameInput)"><i class="fa fa-chevron-right text-light fs-5"></i></span>
                                                                                         </div>
                                                                                     </div>
                                                                                     <!-- <div class="form-group w-100">
@@ -150,7 +180,7 @@
                                                                             </div>
                                                                         </ng-template>
                                                                     </li>
-                                                                    <li *ngIf="!['Expression','source_data_object'].includes(selectedNode.data.type) && !selectedNode.data.nodeData.properties.create"
+                                                                    <li *ngIf="!['Expression','source_data_object'].includes(selectedNode.data.type)"
                                                                         [ngbNavItem]="2" className="nav-link text-start" id="properties-tab"><a ngbNavLink>Properties</a>
                                                                         <ng-template ngbNavContent>
                                                                             <div class="tab-pane " id="quarters" role="tabpanel" aria-labelledby="quarters-tab" tabindex="0">
@@ -177,7 +207,7 @@
                                                                                     </div>
                                                                                     <div *ngIf="selectedNode.data.type === 'Joiner'">
                                                                                         <label class="label-font-weight" for="primaryObject">Primary Object</label><br>
-                                                                                        <ng-select class="ng-select-width" [items]="selectedNode.data.nodeData.properties.nodeNamesDropdown"
+                                                                                        <ng-select class="ng-select-width" style="z-index: 9999;" [items]="selectedNode.data.nodeData.properties.nodeNamesDropdown"
                                                                                             (change)="updateNode('properties')" placeholder="Select a primary Object" [searchable]="true"
                                                                                             [(ngModel)]="selectedNode.data.nodeData.properties.primaryObject" [dropdownPosition]="'bottom'">
                                                                                         </ng-select>
@@ -284,7 +314,7 @@
                                                                                         </table>
                                                                                     </div>
                                                                                     <div *ngIf="selectedNode.data.type === 'target_data_object'">
-                                                                                        <div *ngIf="!selectedNode.data.nodeData.properties.create">
+                                                                                        <div>
                                                                                             <input type="checkbox" id="truncate" name="truncate"
                                                                                                 [(ngModel)]="selectedNode.data.nodeData.properties.truncate"
                                                                                                 (change)="updateNode('properties')" />
@@ -631,7 +661,7 @@
                                                                                                     <td>
                                                                                                         <ng-select [items]="selectedNode.data.nodeData.columnsDropdown" bindLabel="label"
                                                                                                             groupBy="group"
-                                                                                                            (change)="updateNode(''); mapper.selectedDataType = mapper.selectedColumn.dataType"
+                                                                                                            (change)="mapper.selectedDataType = mapper.selectedColumn.dataType; updateNode('');"
                                                                                                             placeholder="Select a Column" [searchable]="true"
                                                                                                             [(ngModel)]="mapper.selectedColumn" [dropdownPosition]="'bottom'">
                                                                                                         </ng-select>
@@ -836,7 +866,7 @@
                                                 </button>
                                             </div> -->
                                         </div>
-                                        <div class="d-flex">
+                                        <div class="d-flex p-1">
                                             <div class="tab-content tab-content-width" id="vertical-tabContent">
                                                 <div [ngbNavOutlet]="tableTypes"></div>
                                             </div>
@@ -845,7 +875,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> 
                 </div>
                 <div class="card-footer p-3">
                     
@@ -858,44 +888,89 @@
 <ng-template #connectionList let-modal>
     <div class="modal-header">
         <h6 class="modal-title">Data Objects</h6>
-        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')">
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click'); objectType = 'select'; selectedConnection = null; selectedDataObject = null; fileSelectType = 'dataSource'; sourcePath = ''; selectedFile = ''">
         </button>
     </div>
     <div class="modal-body">
         <div class="panel panel-primary">
             <div class="tables-modal">
-                <label for="connection">Select connection <span class="text-danger">*</span></label>
-                <ng-select [items]="connectionOptions" bindLabel="display_name" placeholder="Select a connection" [searchable]="true" 
-                    [(ngModel)]="selectedConnection" (change)="getDataObjects()" name="connection" id="connection">
-                </ng-select>
-                <div *ngIf="nodeToAdd === 'target_data_object'" class="d-flex gap-3 align-items-center mb-2">
+                <div *ngIf="type === 'file'" class="d-flex gap-3 align-items-center mb-2">
+                    <label class="form-check-label">From : </label>
                     <div class="form-check">
-                      <input class="form-check-input" type="radio" name="objectType" id="selectObject" [(ngModel)]="objectType" [value]="'select'" (click)="selectedDataObject = null">
-                      <label class="form-check-label" for="selectObject">Select Object</label>
+                      <input class="form-check-input" type="radio" name="fileSelect" id="dataSource" [value]="'dataSource'" [(ngModel)]="fileSelectType" (click)="objectType = 'select'; selectedConnection = null; selectedDataObject = null; fileSelectType = 'dataSource'; sourcePath = ''; selectedFile = ''">
+                      <label class="form-check-label" for="dataSource">Data Source</label>
                     </div>
                     <div class="form-check">
-                      <input class="form-check-input" type="radio" name="objectType" id="createObject" [(ngModel)]="objectType" [value]="'create'" (click)="selectedDataObject = null">
-                      <label class="form-check-label" for="createObject">Create Object</label>
+                      <input class="form-check-input" type="radio" name="fileSelect" id="server" [value]="'server'" [(ngModel)]="fileSelectType" (click)="objectType = 'select'; selectedConnection = null; selectedDataObject = null; fileSelectType = 'server'; sourcePath = ''; selectedFile = ''">
+                      <label class="form-check-label" for="server">Server</label>
                     </div>
                 </div>
-                <div *ngIf="objectType === 'select'">
-                    <label for="dataObject" class="mt-1">Select Data Object <span class="text-danger">*</span></label>
-                    <ng-select [items]="dataObjectOptions" bindLabel="tables" placeholder="Select a Data Object" [searchable]="true" 
-                        [(ngModel)]="selectedDataObject" name="dataObject" id="dataObject" [disabled]="!selectedConnection">
-                    </ng-select>
-                </div>
-                <div *ngIf="objectType === 'create'">
-                    <label for="newObjectName" class="form-label mt-2">New Object Name <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="newObjectName" [(ngModel)]="selectedDataObject" name="newObjectName" [disabled]="!selectedConnection" placeholder="Data Object Name">
-                </div>
+                <ng-container *ngIf="type !== 'file'">
+                    <label for="connection">Select connection <span class="text-danger">*</span></label>
+                    <ng-select [items]="connectionOptions" bindLabel="display_name" placeholder="Select a connection"
+                        [searchable]="true" [(ngModel)]="selectedConnection" (change)="getDataObjects()" name="connection"
+                        id="connection">
+                    </ng-select><br>
+                    <div *ngIf="nodeToAdd === 'target_data_object'" class="d-flex gap-3 align-items-center mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="objectType" id="selectObject" [(ngModel)]="objectType"
+                                [value]="'select'" (click)="selectedDataObject = null">
+                            <label class="form-check-label" for="selectObject">Select Object</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="objectType" id="createObject" [(ngModel)]="objectType"
+                                [value]="'create'" (click)="selectedDataObject = null">
+                            <label class="form-check-label" for="createObject">Create Object</label>
+                        </div>
+                    </div>
+                    <div *ngIf="objectType === 'select'">
+                        <label for="dataObject" class="mt-1">Select Data Object <span class="text-danger">*</span></label>
+                        <ng-select [items]="dataObjectOptions" bindLabel="tables" placeholder="Select a Data Object" [searchable]="true"
+                            [(ngModel)]="selectedDataObject" name="dataObject" id="dataObject" [disabled]="!selectedConnection">
+                        </ng-select>
+                    </div>
+                    <div *ngIf="objectType === 'create'">
+                        <label for="newObjectName" class="form-label mt-2">New Object Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="newObjectName" [(ngModel)]="selectedDataObject" name="newObjectName"
+                            [disabled]="!selectedConnection" placeholder="Data Object Name">
+                    </div>
+                </ng-container>
+                <ng-container *ngIf="type === 'file' && fileSelectType === 'server'">
+                    <label for="connection">Select Path <span class="text-danger">*</span></label><br>
+                    <select class="form-select" [(ngModel)]="sourcePath" (change)="getFilesforServer()">
+                        <option value="" selected disabled>Select Path</option>
+                        <option value="Source_folder">Source</option>
+                        <option value="archive">Archive</option>
+                        <option value="target">Target</option>
+                    </select><br>
+
+                    <label for="connection">Select File <span class="text-danger">*</span></label><br>
+                    <select class="form-select" [(ngModel)]="selectedFile" (change)="getDataObjectsFromServer()">
+                        <option value="" selected disabled>Select a File</option>
+                        <option *ngFor="let file of Folders; track file;" [value]="file">{{file}}</option>
+                    </select>
+                </ng-container>
+                <ng-container *ngIf="type === 'file' && fileSelectType === 'dataSource'">
+                    <label for="connection">Select connection <span class="text-danger">*</span></label>
+                    <ng-select [items]="connectionOptions" bindLabel="display_name" placeholder="Select a connection"
+                        [searchable]="true" [(ngModel)]="selectedConnection" (change)="getDataObjectsforFile()" name="connection"
+                        id="connection">
+                    </ng-select><br>
+                </ng-container>
             </div>
         </div>
     </div>
     <div class="modal-footer">
         <div class="text-right">
             <button type="button" class="btn ripple btn-secondary me-2"
-                (click)="modal.close('Cross click'); objectType = 'select'; selectedConnection = null; selectedDataObject = null;">Cancel</button>
-            <button type="button" [disabled]="!selectedConnection || !selectedDataObject" class="btn ripple btn-primary" (click)="addNode(nodeToAdd, posX, posY); modal.dismiss('Save click')">Ok</button>
+                (click)="modal.close('Cross click'); objectType = 'select'; selectedConnection = null; selectedDataObject = null; fileSelectType = 'dataSource'; sourcePath = ''; selectedFile = ''">Cancel</button>
+            <button type="button" [disabled]="
+              (type !== 'file' && (!selectedConnection || !selectedDataObject)) ||
+              (type === 'file' && (
+                (fileSelectType === 'dataSource' && !selectedConnection) ||
+                (fileSelectType === 'server' && (!sourcePath || !selectedFile))
+              ))" 
+              class="btn ripple btn-primary" (click)="addNode(nodeToAdd, posX, posY); modal.dismiss('Save click'); modal.close('save click');">Ok</button>
         </div>
     </div>
 </ng-template>

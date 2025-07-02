@@ -127,7 +127,7 @@
                     <div class="input-group justify-content-between">
                     <h6 class="mb-0 p-1">Tables</h6>
 
-                    <div class="dashboard-option">
+                    <div [ngClass]="{ 'd-none': !databaseId }" class="dashboard-option">
                         <div class=" p-1" ngbDropdown [autoClose]="false" #level1="ngbDropdown">
                             <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button" ngbDropdownToggle
                                 aria-haspopup="true" aria-expanded="false" class="" ><i
@@ -135,7 +135,7 @@
                             </a>
                             <div class="dropdown-menu" ngbDropdownMenu>
                                 <div class="" ngbDropdown [autoClose]="false" #level2="ngbDropdown">
-                                <a class="dropdown-item btn-primary-light" ngbDropdownToggle href="javascript:void(0);" (click)="addCalculatedField();" > {{isEditCalculatedField ? "Edit Calculated Field" : "Add Calculated Field"}} </a>
+                                <a *ngIf="databaseId" class="dropdown-item btn-primary-light" ngbDropdownToggle href="javascript:void(0);" (click)="addCalculatedField();" > {{isEditCalculatedField ? "Edit Calculated Field" : "Add Calculated Field"}} </a>
                                 <div class="dropdown-menu Semantic-layer-card" ngbDropdownMenu>
                                     <!-- <div class="col-lg-12 col-md-10 col-sm-10 col-xl-10 p-0"> -->
                                         <div cdkDropList cdkDropListOrientation="horizontal" class="form-control calculated-parent-card" 
@@ -1907,7 +1907,7 @@
                                     <app-insights-button *ngIf="!retriveDataSheet_id" [buttonName]="'Save'" [classesList]="'btn btn-primary update-btn '" [isIcon]="false" [previledgeId]="17" [isBtn]="true"
                                     (btnClickEvent)="(table || kpi || pivotTable) ? sheetSave() : this.isSheetSaveOrUpdate = true; editor=false"></app-insights-button>
                                     <app-insights-button *ngIf="retriveDataSheet_id" [buttonName]="'Update'" [classesList]="'btn btn-primary update-btn '" [isIcon]="false" [previledgeId]="18" [isBtn]="true"
-                                    (btnClickEvent)="(table || kpi || pivotTable) ? sheetSave() : this.isSheetSaveOrUpdate = true; editor=false" [ngClass]="{'disabled': sheetTagName.length<1}"></app-insights-button>
+                                    (btnClickEvent)="isMailRefresh = true;(table || kpi || pivotTable) ? sheetSave() : this.isSheetSaveOrUpdate = true; editor=false;" [ngClass]="{'disabled': sheetTagName.length<1}"></app-insights-button>
                                 </div>
                                 <div [class.disabled]="draggedColumnsData.length == 0 && draggedRowsData.length == 0" class="me-1">
                                     <!-- <app-insights-button [classesList]="'viewQueryImg'" [previledgeId]="72" [isBtn]="true"
@@ -1917,7 +1917,7 @@
                                     <button class="viewQueryImg" container="body" ngbTooltip=" View Query" [ngClass]="{'disabled': sheetTagName.length < 1}" (click)="viewQuery(viewQueryModal)"> <img [src]="'./assets/images/icons/view-query.png'" alt="icon" /></button>
                                 </div>
                                 <button [class.disabled]="draggedColumnsData.length == 0 && draggedRowsData.length == 0" ngbTooltip="clear sheet" placement="bottom" triggers="hover"  type="button" class="btn btn-primary mt-0 me-1 IconProperties" (click)="clearSheetConfirmation();"><img src="./assets/images/icons/erase.png" alt="logo" class="w-4 h-4"></button>
-                                <button [disabled]="!retriveDataSheet_id" triggers="hover" ngbTooltip="Refresh" container="body" type="button" class="btn btn-primary mt-0 ps-2 pe-2" (click)="refreshSheetData()"><i class="fa fa-refresh w-4 h-4"></i></button>
+                                <button [disabled]="!retriveDataSheet_id" triggers="hover" ngbTooltip="Refresh" container="body" type="button" class="btn btn-primary mt-0 ps-2 pe-2" (click)="refreshSheetData();isMailRefresh=true"><i class="fa fa-refresh w-4 h-4"></i></button>
 
                                 <!-- More Options Button -->
                                 <div ngbDropdown class="ps-1">
@@ -2380,7 +2380,7 @@
                             
                         </div>
                     </div>
-                    <div  [ngStyle]="{'display': ((bar || pie || donut || map) && draggedColumns && draggedColumns?.length > 0 ? '' : 'none')}" class="row align-items-center">
+                    <div  [ngStyle]="{'display': ((bar || horizontalBar || pie || donut || map) && draggedColumns && draggedColumns?.length > 0 ? '' : 'none')}" class="row align-items-center">
                                                 <div class="col-lg-2 col-md-2 col-sm-2 col-xl-2 p-0" style="overflow: auto; white-space: nowrap;">
                                                    <div class="card-area d-flex gap-2">
                                                        <label for="inputName" class="form-control mb-0 border">Hierarchy</label>
@@ -2412,7 +2412,7 @@
                 </div>
             </div>
                     
-            <div class="card mb-0 border" [ngClass]="(bar || pie || donut || map || pivotTable) ? 'show-chart-card' : 'show-chart-card-no-heirarchy'">
+            <div class="card mb-0 border" [ngClass]="(bar || horizontalBar || pie || donut || map || pivotTable) ? 'show-chart-card' : 'show-chart-card-no-heirarchy'">
                 @if(!(table || kpi)){
                     <div class="input-group">
                 <!-- <div class="col-lg-3 col-md-3 p-1">
@@ -2422,7 +2422,7 @@
                         <option *ngIf="!(guage)" value="echart">EChart</option>
                     </select>
                 </div> -->
-                @if((pie || bar || donut || map) && draggedDrillDownColumns && draggedDrillDownColumns.length > 0){
+                @if((pie || bar || horizontalBar|| donut || map) && draggedDrillDownColumns && draggedDrillDownColumns.length > 0){
                                     <div class="col-lg-3 col-md-3 p-1">
                                         <button class="btn btn-primary p-1" (click)="goDrillDownBack()">
                                             <img src="./assets/images/Tiled view sheet icons/Drill-Down.png" alt="logo" class="w-5 h-5"> </button>
@@ -2505,7 +2505,7 @@
                                 @if(isApexCharts && !table && !kpi && !pivotTable){
               <!-- @if(bar && chartId){ -->
 
-                <app-insight-apex [chartsRowData]="chartsRowData" [chartsColumnData]="chartsColumnData" [dualAxisColumnData]="dualAxisColumnData" [isHorizontalBar]="isHorizontalBar"
+                <app-insight-apex [chartsRowData]="chartsRowData" [chartsColumnData]="chartsColumnData" [dualAxisColumnData]="dualAxisColumnData"
                 [dualAxisRowData]="dualAxisRowData" [tablePreviewRow]="tablePreviewRow" [chartType]="chartType" [xGridSwitch]="xGridSwitch"
                 [xLabelSwitch]="xLabelSwitch" [yLabelSwitch]="yLabelSwitch" [yGridSwitch]="yGridSwitch" [xLabelFontFamily]="xLabelFontFamily"
                 [xLabelFontSize]="xLabelFontSize" [xlabelFontWeight]="xlabelFontWeight" [backgroundColor]="backgroundColor" [color]="color"
@@ -2518,7 +2518,7 @@
                 [donutDecimalPlaces]="donutDecimalPlaces" [drillDownIndex]="drillDownIndex" [draggedDrillDownColumns]="draggedDrillDownColumns"
                 [drillDownObject]="drillDownObject" [sortType]="sortType" [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" [dataLabelsBarFontPosition]="dataLabelsBarFontPosition"
                 [dataLabelsLineFontPosition]="dataLabelsLineFontPosition" [selectedColorScheme]="selectedColorScheme"
-                (saveOrUpdateChart)="setChartOptions($event)" (setDrilldowns)="setDrilldowns($event)">
+                (saveOrUpdateChart)="setChartOptions($event)" (setDrilldowns)="setDrilldowns($event)"  [isMeasureDistribution]="isMeasureDistribution" [measureColorRanges]="measureColorRanges">
                 </app-insight-apex>
     
             } @else {
@@ -2528,21 +2528,36 @@
                     <div echarts [options]="eBarChartOptions" class="echart-charts"></div>
                 </div> -->
 
-                <app-insight-echart [isZoom]="isZoom" [isBold]="isBold" [chartType]="chartType" [dataLabelsFontPosition]="dataLabelsFontPosition" [dimensionAlignment] = "dimensionAlignment" [chartsRowData]="chartsRowData" [chartsColumnData]="chartsColumnData" [isHorizontalBar]="isHorizontalBar"
+                <app-insight-echart [isZoom]="isZoom" [isBold]="isBold" [chartType]="chartType" [dataLabelsFontPosition]="dataLabelsFontPosition" [dimensionAlignment] = "dimensionAlignment" [chartsRowData]="chartsRowData" [chartsColumnData]="chartsColumnData"
                 [backgroundColor]="backgroundColor" [xlabelAlignment]="xlabelAlignment" [xGridColor]="xGridColor" [xGridSwitch]="xGridSwitch" [xLabelColor]="xLabelColor"
                 [xLabelSwitch]="xLabelSwitch" [xLabelFontFamily]="xLabelFontFamily" [xLabelFontSize]="xLabelFontSize" [xlabelFontWeight]="xlabelFontWeight" [yLabelColor]="yLabelColor"
                 [yGridSwitch]="yGridSwitch" [yLabelSwitch]="yLabelSwitch" [yLabelFontFamily]="yLabelFontFamily" [yLabelFontSize]="yLabelFontSize" [ylabelFontWeight]="ylabelFontWeight"
                 [yGridColor]="yGridColor" [yGridSwitch]="yGridSwitch" [color]="color" [measureColor]="measureColor" [dimensionColor]="dimensionColor" [dataLabelsFontSize]="dataLabelsFontSize" 
                 [dataLabelsFontFamily]="dataLabelsFontFamily" [dataLabelsColor]="dataLabelsColor" [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix" [sortType]="sortType"
                 [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" [drillDownIndex]="drillDownIndex" [draggedDrillDownColumns]="draggedDrillDownColumns"[drillDownObject]="drillDownObject" [selectedColorScheme]="selectedColorScheme" [isDistributed]="isDistributed"
-                (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)"></app-insight-echart>
+                (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)"  [isMeasureDistribution]="isMeasureDistribution"
+                [measureColorRanges]="measureColorRanges"></app-insight-echart>
+            </div>          
+            } @else if(horizontalBar && chartId ){
+            <div class="card-body">
+                <app-insight-echart [isZoom]="isZoom" [isBold]="isBold" [chartType]="chartType" [dataLabelsFontPosition]="dataLabelsFontPosition" [dimensionAlignment] = "dimensionAlignment" [chartsRowData]="chartsRowData" [chartsColumnData]="chartsColumnData"
+                [backgroundColor]="backgroundColor" [xlabelAlignment]="xlabelAlignment" [xGridColor]="xGridColor" [xGridSwitch]="xGridSwitch" [xLabelColor]="xLabelColor"
+                [xLabelSwitch]="xLabelSwitch" [xLabelFontFamily]="xLabelFontFamily" [xLabelFontSize]="xLabelFontSize" [xlabelFontWeight]="xlabelFontWeight" [yLabelColor]="yLabelColor"
+                [yGridSwitch]="yGridSwitch" [yLabelSwitch]="yLabelSwitch" [yLabelFontFamily]="yLabelFontFamily" [yLabelFontSize]="yLabelFontSize" [ylabelFontWeight]="ylabelFontWeight"
+                [yGridColor]="yGridColor" [yGridSwitch]="yGridSwitch" [color]="color" [measureColor]="measureColor" [dimensionColor]="dimensionColor" [dataLabelsFontSize]="dataLabelsFontSize" 
+                [dataLabelsFontFamily]="dataLabelsFontFamily" [dataLabelsColor]="dataLabelsColor" [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix" [sortType]="sortType"
+                [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" [drillDownIndex]="drillDownIndex" [draggedDrillDownColumns]="draggedDrillDownColumns"[drillDownObject]="drillDownObject" [selectedColorScheme]="selectedColorScheme" [isDistributed]="isDistributed"
+                (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)" [isMeasureDistribution]="isMeasureDistribution"
+                [measureColorRanges]="measureColorRanges"></app-insight-echart>
             </div>          
             }
+
             @else if(funnel && chartId){         
                 <div class="card-body">
                     <app-insight-echart [isZoom]="isZoom" [isBold]="isBold" [dataLabelsFontPosition]="dataLabelsFontPosition" [chartType]="chartType"  [dimensionAlignment] = "dimensionAlignment" [chartsRowData]="chartsRowData" [chartsColumnData]="chartsColumnData" [dualAxisRowData]="dualAxisRowData" [dualAxisColumnData]="dualAxisColumnData"
                     [color]="color" [backgroundColor]="backgroundColor" [dataLabelsFontSize]="dataLabelsFontSize" [dataLabelsFontSize]="dataLabelsFontSize" [dataLabelsFontFamily]="dataLabelsFontFamily" [dataLabelsColor]="dataLabelsColor" [selectedColorScheme]="selectedColorScheme" [isDistributed]="isDistributed"
-                    [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix" [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" (saveOrUpdateChart)="setChartOptions($event)"></app-insight-echart>
+                    [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix" [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" (saveOrUpdateChart)="setChartOptions($event)" [isMeasureDistribution]="isMeasureDistribution"
+                    [measureColorRanges]="measureColorRanges"></app-insight-echart>
                 </div>
                 }
             @else if(stocked && chartId){         
@@ -2618,7 +2633,8 @@
                 [backgroundColor]="backgroundColor" [legendSwitch]="legendSwitch" [dataLabels]="dataLabels"  [dataLabelsFontFamily]="dataLabelsFontFamily" [selectedColorScheme]="selectedColorScheme"
                 [dataLabelsFontSize]="dataLabelsFontSize" [dataLabelsColor]="dataLabelsColor" [legendsAllignment]="legendsAllignment"  [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix"
                 [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" [drillDownIndex]="drillDownIndex" [draggedDrillDownColumns]="draggedDrillDownColumns"[drillDownObject]="drillDownObject"
-                (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)" [leftLegend]="leftLegend" [topLegend]="topLegend" [rightLegend]="rightLegend" [bottomLegend]="bottomLegend" [legendOrient]="legendOrient"></app-insight-echart>
+                (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)" [leftLegend]="leftLegend" [topLegend]="topLegend" [rightLegend]="rightLegend" [bottomLegend]="bottomLegend" [legendOrient]="legendOrient" [isMeasureDistribution]="isMeasureDistribution"
+                [measureColorRanges]="measureColorRanges"></app-insight-echart>
             </div>
             }
             @else if(donut && chartId){
@@ -2627,8 +2643,8 @@
                     [backgroundColor]="backgroundColor" [legendSwitch]="legendSwitch" [dataLabels]="dataLabels" [dataLabelsFontFamily]="dataLabelsFontFamily" [selectedColorScheme]="selectedColorScheme"
                     [dataLabelsFontSize]="dataLabelsFontSize" [dataLabelsColor]="dataLabelsColor" [legendsAllignment]="legendsAllignment"
                     [donutDecimalPlaces]="donutDecimalPlaces" [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" [drillDownIndex]="drillDownIndex" [draggedDrillDownColumns]="draggedDrillDownColumns"[drillDownObject]="drillDownObject"
-                    (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)" [leftLegend]="leftLegend" [topLegend]="topLegend" [rightLegend]="rightLegend" [bottomLegend]="bottomLegend" [legendOrient]="legendOrient"
-                    ></app-insight-echart>
+                    (setDrilldowns)="setDrilldowns($event)" (saveOrUpdateChart)="setChartOptions($event)" [leftLegend]="leftLegend" [topLegend]="topLegend" [rightLegend]="rightLegend" [bottomLegend]="bottomLegend" [legendOrient]="legendOrient" [isMeasureDistribution]="isMeasureDistribution"
+                    [measureColorRanges]="measureColorRanges" ></app-insight-echart>
                 </div>
                 }
             @else if(barLine && chartId){
@@ -2655,7 +2671,7 @@
             @else if(radar && chartId){
                 <div class="card-body">
                     <app-insight-echart  [chartType]="chartType" [color]="color"  [isBold]="isBold" [radarRowData]="radarRowData" [dataLabelsFontPosition]="dataLabelsFontPosition" [dimensionAlignment] = "dimensionAlignment" [dualAxisRowData]="dualAxisRowData" [dualAxisColumnData]="dualAxisColumnData"
-                    [backgroundColor]="backgroundColor" [legendSwitch]="legendSwitch" [xLabelColor]="xLabelColor" [dataLabels]="dataLabels" [dataLabelsFontFamily]="dataLabelsFontFamily" 
+                    [backgroundColor]="backgroundColor" [legendSwitch]="legendSwitch" [xLabelColor]="xLabelColor" [dataLabels]="dataLabels" [dataLabelsFontFamily]="dataLabelsFontFamily"  [isRadarDistribution]="isRadarDistribution" [selectedColorScheme]="selectedColorScheme"
                     [dataLabelsFontSize]="dataLabelsFontSize" [dataLabelsColor]="dataLabelsColor" [legendsAllignment]="legendsAllignment" [chartsRowData]="chartsRowData" [chartsColumnData]="chartsColumnData"
                     [displayUnits]="displayUnits" [decimalPlaces]="decimalPlaces" [prefix]="prefix" [suffix]="suffix" [isSheetSaveOrUpdate]="isSheetSaveOrUpdate" (saveOrUpdateChart)="setChartOptions($event)"></app-insight-echart>
                 </div>
@@ -3408,68 +3424,68 @@
                                                 <div class="card-body single-axis-card">
                                                     <div class="row">
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': draggedRows?.length<1 && draggedColumns?.length<1}">
-                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="Table" tooltipClass="tooltip-primary" (click)="chartDisplay(true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,1);tableDisplayPagination(false);"><img src="./assets/images/charts/Table-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': table}"></a>
+                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="Table" tooltipClass="tooltip-primary" (click)="chartDisplay(true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,1);tableDisplayPagination(false);"><img src="./assets/images/charts/Table-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': table}"></a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': draggedRows?.length<1 && draggedColumns?.length<1}">
-                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="Pivot Table" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,9);pivotTableDatatransform(false);"><img src="./assets/images/charts/pivot-chart.jpg" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': pivotTable}"></a>
+                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="Pivot Table" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,9);pivotTableDatatransform(false);"><img src="./assets/images/charts/pivot-chart.jpg" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': pivotTable}"></a>
                                                         </div>
                                                         <div class="card-title fs-12 mt-2 mb-1 border bg-light text-center" >Single Axis</div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': (draggedRows?.length>1 || draggedColumns?.length>1) || ( draggedRows?.length<1 || draggedColumns?.length<1)}">
-                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Bar" tooltipClass="tooltip-primary" (click)="chartDisplay(false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,6)"><img src="./assets/images/charts/Bar-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': bar}"></a>
+                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Bar" tooltipClass="tooltip-primary" (click)="chartDisplay(false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,6);"><img src="./assets/images/charts/Bar-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': bar || horizontalBar}"></a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': (draggedRows?.length>1 || draggedColumns?.length>1) || ( draggedRows?.length<1 || draggedColumns?.length<1)} ">
-                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Area" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,17)"><img src="./assets/images/charts/area-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': area}"></a>
+                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Area" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,17)"><img src="./assets/images/charts/area-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': area}"></a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': (draggedRows?.length>1 || draggedColumns?.length>1) || ( draggedRows?.length<1 || draggedColumns?.length<1)}">
-                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Line" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,13)"><img src="./assets/images/charts/Line-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': line}"></a>
+                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Line" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,13)"><img src="./assets/images/charts/Line-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': line}"></a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': (draggedRows?.length>1 || draggedColumns?.length>1) || ( draggedRows?.length<1 || draggedColumns?.length<1)}">
-                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Pie" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,24)"><img src="./assets/images/charts/pie-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon " [ngClass]="{'active': pie}"></a>
+                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Pie" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,24)"><img src="./assets/images/charts/pie-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon " [ngClass]="{'active': pie}"></a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled':  (draggedRows?.length>1 || draggedColumns?.length>1) || ( draggedRows?.length<1 || draggedColumns?.length<1)}">
-                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Donut" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,10)"><img src="./assets/images/charts/doughnut-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon " [ngClass]="{'active': donut}"></a>
+                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Donut" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,10)"><img src="./assets/images/charts/doughnut-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon " [ngClass]="{'active': donut}"></a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled':  (draggedRows?.length>1 || draggedColumns?.length>1) || draggedRows?.length<1 || draggedColumns?.length>0}">
-                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="Kpi" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,25)"><img src="./assets/images/charts/kpi-icon.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': kpi}"></a>
+                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="Kpi" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,25)"><img src="./assets/images/charts/kpi-icon.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': kpi}"></a>
                                                         </div>
                                                         <div *ngIf="isApexCharts" class="col-3 px-2 mt-2" [ngClass]="{'disabled':  (draggedRows?.length>1 || draggedColumns?.length>1) || draggedRows?.length<1 || draggedColumns?.length>0 || guagechartRowData > 1 }">
-                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="guage" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,28)"><img src="./assets/images/charts/gauge-icon-new.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': guage}"></a>
+                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="guage" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,28)"><img src="./assets/images/charts/gauge-icon-new.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': guage}"></a>
                                                         </div>
                                                         <div *ngIf="isEChatrts" class="col-3 px-2 mt-2" [ngClass]="{'disabled': !(dateList.includes(draggedColumnsData[0]?.[1]) && draggedRows?.length ===1 && draggedColumns?.length === 1) }">
-                                                            <a href="javascript:void(0);"  triggers="hover" [ngbTooltip]="draggedColumnsData[0]?.[2] === '' ? 'Calendar Chart' : 'change Date Extract to None'" tooltipClass="tooltip-primary" container="body" placement="top" (click)="(draggedColumnsData[0]?.[2] === '') ? chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,11) : null">
+                                                            <a href="javascript:void(0);"  triggers="hover" [ngbTooltip]="draggedColumnsData[0]?.[2] === '' ? 'Calendar Chart' : 'change Date Extract to None'" tooltipClass="tooltip-primary" container="body" placement="top" (click)="(draggedColumnsData[0]?.[2] === '') ? chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,11) : null">
                                                                 <img src="./assets/images/charts/calendar-chart.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': calendar, 'disabled': draggedColumnsData[0]?.[2] !== ''}">
                                                             </a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': (draggedRows?.length>1 || draggedColumns?.length>1) || ( draggedRows?.length<1 || draggedColumns?.length<1)}">
-                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="Funnel Chart" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,27)"><img src="./assets/images/charts/funnelChart-icon.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': funnel}"></a>
+                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="Funnel Chart" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,27)"><img src="./assets/images/charts/funnelChart-icon.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': funnel}"></a>
                                                         </div>
                                                         <div class="card-title fs-12 mt-2 mb-1 border bg-light text-center ">Dual Axis</div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': ( draggedRows?.length<1 || draggedColumns?.length<1)}">
-                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Side-Bar" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,7)"><img src="./assets/images/charts/bar-bar.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': sidebyside}"></a>
+                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Side-Bar" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,7)"><img src="./assets/images/charts/bar-bar.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': sidebyside}"></a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': ( draggedRows?.length<1 || draggedColumns?.length<1)}">
-                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Stacked-Bar" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,5)"><img src="./assets/images/charts/stocked_bar.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon " [ngClass]="{'active': stocked}"></a>
+                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Stacked-Bar" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,5)"><img src="./assets/images/charts/stocked_bar.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon " [ngClass]="{'active': stocked}"></a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': draggedRows?.length !== 2 || draggedColumns?.length<1}">
-                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Bar-Line" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,4)"><img src="./assets/images/charts/Bar-line.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': barLine}"></a>
+                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Bar-Line" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,4)"><img src="./assets/images/charts/Bar-line.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': barLine}"></a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': ( draggedRows?.length<1 || draggedColumns?.length<1)}">
-                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="HStacked" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,2)"><img src="./assets/images/charts/horizental-stacked.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': horizentalStocked}"></a>
+                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="HStacked" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,2)"><img src="./assets/images/charts/horizental-stacked.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': horizentalStocked}"></a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': ( draggedRows?.length<1 || draggedColumns?.length<1)}">
-                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="HGrouped" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,3)"><img src="./assets/images/charts/Bar-bar-horizental.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': grouped}"></a>
+                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="HGrouped" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,3)"><img src="./assets/images/charts/Bar-bar-horizental.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': grouped}"></a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': ( draggedRows?.length<1 || draggedColumns?.length<1)}">
-                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Multi-Line" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,8)"><img src="./assets/images/charts/multi-line-new.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': multiLine}"></a>
+                                                            <a href="javascript:void(0);" triggers="hover" ngbTooltip="Multi-Line" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,8)"><img src="./assets/images/charts/multi-line-new.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': multiLine}"></a>
                                                         </div>
                                                         <div *ngIf="isEChatrts" class="col-3 px-2 mt-2" [ngClass]="{'disabled': ( draggedRows?.length<1 || draggedColumns?.length<1)}">
-                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="Radar" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,12)"><img src="./assets/images/charts/spider.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': radar}"></a>
+                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="Radar" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,12)"><img src="./assets/images/charts/spider.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': radar}"></a>
                                                         </div>
                                                         <div class="col-3 px-2 mt-2" [ngClass]="{'disabled': ( draggedRows?.length<1 || draggedColumns?.length<1)}">
-                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="Heat Map" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,26)"><img src="./assets/images/charts/heatmap-new.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': heatMap}"></a>
+                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="Heat Map" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,26)"><img src="./assets/images/charts/heatmap-new.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': heatMap}"></a>
                                                         </div>
                                                         <div *ngIf="isEChatrts" class="col-3 px-2 mt-2" [ngClass]="{'disabled': ( draggedRows?.length<1 || draggedColumns?.length!=1)}">
-                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="World Map" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,29)"><img src="./assets/images/charts/world-map.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': map}"></a>
+                                                            <a href="javascript:void(0);"  triggers="hover" ngbTooltip="World Map" tooltipClass="tooltip-primary" (click)="chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,29)"><img src="./assets/images/charts/world-map.png" class="rounded-2 w-90 mrk-t border p-1 chart-icon" [ngClass]="{'active': map}"></a>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -4174,7 +4190,7 @@
                                                                               <i class="fe fe-chevron-down fs-18 text-body-secondary dropdown-toggle border rounded-2" ngbDropdownToggle data-bs-toggle="dropdown"></i>
                                                                               <ul class="dropdown-menu custom-dropdown" ngbDropdownMenu>
                                                                                   <div class="dropup" ngbDropdown >
-                                                                                    <div class=" p-1" *ngIf="horizentalStocked || grouped || funnel">
+                                                                                    <div class=" p-1" *ngIf="horizentalStocked || grouped || funnel || horizontalBar">
                                                                                         <div class="form-group mb-0 text-center" (click)="setDataLabelsFontPosition('top')">
                                                                                           <button class="btn btn-blue-light Automatic-btn">Automatic</button>                                                                                                 
                                                                                         </div>
@@ -4190,7 +4206,7 @@
                                                                                           </div>
                                                                                         </div>
                                                                                     </div>
-                                                                                    <div class=" p-1 mt-2 mb-2" *ngIf="!(horizentalStocked || grouped || funnel)">
+                                                                                    <div class=" p-1 mt-2 mb-2" *ngIf="!(horizentalStocked || grouped || funnel || horizontalBar)">
                                                                                         <div class="form-group mb-0 text-center" (click)="setDataLabelsFontPosition('top')">
                                                                                             <button class="btn btn-blue-light Automatic-btn">Automatic</button>
                                                                                         </div>
@@ -4391,7 +4407,7 @@
                                                          <div class=""> 
                                                             <label class="mb-0">Search </label>
                                                         </div>
-                                                        <div *ngIf="toggleTableSearch" class="toggle toggle-sm on mb-0" (click)="toggleTableSearch=!toggleTableSearch">
+                                                        <div *ngIf="toggleTableSearch" class="toggle toggle-sm on mb-0" (click)="toggleTableSearch=!toggleTableSearch;toggleTableSearchBarOff()">
                                                             <span></span>
                                                         </div>
                                                         <div *ngIf="!toggleTableSearch" class="toggle toggle-sm off mb-0" (click)="toggleTableSearch=!toggleTableSearch">
@@ -4613,7 +4629,7 @@
                                                                      ></ngx-colors>
                                                                 </div>
 
-                                                                <div *ngIf="!((table && chartId) || (pie && chartId)||donut||kpi||barLine||sidebyside||stocked||horizentalStocked||grouped||multiLine||heatMap || calendar) && ((!isDistributed && (bar || funnel)) || area || line || radar)" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
+                                                                <div *ngIf="!((table && chartId) || (pie && chartId)||donut||kpi||barLine||sidebyside||stocked||horizentalStocked||grouped||multiLine||heatMap || calendar) && ((!isDistributed && !isMeasureDistribution && (bar || horizontalBar || funnel)) || area || line || (radar && !isRadarDistribution))" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
                                                                     <div class=""> 
                                                                         <p>Chart</p>
                                                                     </div>
@@ -4629,7 +4645,18 @@
                                                                     (ngModelChange)="marksColor2($event)"
                                                                     [format]="'hex'"></ngx-colors>
                                                                 </div>
-
+                                                                <div *ngIf="radar && chartColorSwitch" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
+                                                                    <div class=""> 
+                                                                        <p>Color Distribution</p>
+                                                                    </div>
+                                                                    <div *ngIf="isRadarDistribution" class="toggle toggle-sm on mb-0" (click)="isRadarDistribution = !isRadarDistribution;">
+                                                                        <span></span>
+                                                                    </div>
+                                                                    <div *ngIf="!isRadarDistribution" class="toggle toggle-sm off mb-0" (click)="isRadarDistribution = !isRadarDistribution;">
+                                                                        <span></span>
+                                                                    </div>
+                                                                 
+                                                                </div>
                                                                 <!-- <div 
                                                                 class="dropdown" 
                                                                 *ngIf="pie || donut || sidebyside || stocked || horizentalStocked || grouped || multiLine || heatMap || calendar || (funnel && isDistributed)"> -->
@@ -4661,8 +4688,7 @@
                                                                     </div>
                                                                   </div>
                                                                 </div>
-                                                              </div> -->
-
+                                                              </div> -->                                                         
                                                                 <div *ngIf="barLine" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
                                                                     <div class=""> 
                                                                         <p >bar</p>
@@ -4763,12 +4789,12 @@
                                                                     [format] = "'hex'"
                                                                      ></ngx-colors>
                                                                 </div>
-                                                                <div *ngIf="funnel || bar" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
+                                                                <div *ngIf="funnel || bar || horizontalBar" class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
                                                                     <label>Distribution</label>
-                                                                    <div *ngIf="isDistributed" class="toggle toggle-sm on mb-0" (click)="toggleSwitch('distributed')">
+                                                                    <div *ngIf="isDistributed" class="toggle toggle-sm on mb-0" (click)="toggleSwitch('distributed'); (isMeasureDistribution = false)">
                                                                         <span></span>
                                                                     </div>
-                                                                    <div *ngIf="!isDistributed" class="toggle toggle-sm off mb-0" (click)="toggleSwitch('distributed')">
+                                                                    <div *ngIf="!isDistributed" class="toggle toggle-sm off mb-0" (click)="toggleSwitch('distributed'); (isMeasureDistribution = false)">
                                                                         <span></span>
                                                                     </div>
                                                                 </div>
@@ -4783,7 +4809,7 @@
                                                                     <ngx-colors *ngIf="funnelColorSwitch" [(ngModel)]="color" ngx-colors-trigger [format]="'hex'">
                                                                     </ngx-colors>
                                                                 </div> -->
-                                                                <div *ngIf="pie || donut || sidebyside || stocked || horizentalStocked || grouped || multiLine || heatMap || ((funnel || bar) && isDistributed)" class="p-2">
+                                                                <div *ngIf="(pie && !isMeasureDistribution) || (donut && !isMeasureDistribution) || sidebyside || stocked || horizentalStocked || grouped || multiLine || heatMap || ((funnel || bar || horizontalBar) && isDistributed || (radar && isRadarDistribution ))" class="p-2">
                                                                     <div class="d-flex justify-content-between p-1 border rounded-3">
                                                                         <div class="colors-card">
                                                                             <ul class="d-flex flex-wrap">
@@ -4848,7 +4874,7 @@
                                                                                                             <i class="fa fa-plus px-1"></i> 
                                                                                                         </div>
                                                                                                     </div>
-                                                                                                    <input type="color" #colorInput id="body" name="body" class="w-100" value="#FFFFFF" (input)="newColorScheme[selectedBox] = colorInput.value"/>
+                                                                                                    <input type="color" #colorInput id="body" name="body" class="w-100 color-palette-bar" value="#FFFFFF" (input)="newColorScheme[selectedBox] = colorInput.value"/>
                                                                                                 </div>
                                                                                                 <!-- <div class="py-1">
                                                                                                     <input type="color" #colorInput  id="body" name="body" class="w-100" [(ngModel)]="selectedColor" (ngModelChange)="setColorToBox()"/>
@@ -4864,6 +4890,31 @@
                                                                             </div>
                                                                         </div>
                                                                     </div>
+                                                                </div>
+
+
+
+                                                                  <div *ngIf="pie || donut || ((bar || horizontalBar || funnel) && !isDistributed)" class="d-flex flex-column gap-2 mt-2">
+                                                                <div class="d-flex align-items-center justify-content-between">
+                                                                    <label class="mb-0">Measure Distribution</label>
+                                                                    <div *ngIf="isMeasureDistribution" class="toggle toggle-sm on mb-0" (click)="isMeasureDistribution = !isMeasureDistribution; (isDistributed = isMeasureDistribution ? false : true); updateMeasureColorRanges()">
+                                                                        <span></span>
+                                                                    </div>
+                                                                    <div *ngIf="!isMeasureDistribution" class="toggle toggle-sm off mb-0" (click)="isMeasureDistribution = !isMeasureDistribution; (isDistributed = isMeasureDistribution ? false : true); updateMeasureColorRanges()">
+                                                                        <span></span>
+                                                                    </div>
+                                                                    <input type="number" min="2" max="10" [(ngModel)]="measureDivisions" [disabled]="!isMeasureDistribution"
+                                                                    (change)="updateMeasureColorRanges()" class="form-control ms-2" style="width: 60px;"/>
+                                                                    <span class="ms-1">Div</span>
+                                                                </div>
+                                                                <div *ngIf="isMeasureDistribution" class="mt-2">
+                                                                    <div style="max-height: 50px; overflow-y: auto;">
+                                                                    <div *ngFor="let range of measureColorRanges; let i = index" class="d-flex align-items-center mb-1">
+                                                                    <input type="text" class="form-control me-2" style="width: 110px;" (change)="updateMeasureColorRanges()" [value]="range.label" readonly>
+                                                                    <input type="color" [(ngModel)]="range.color" (change)="onMeasureColorChange()" style="width: 32px; height: 32px; border: none;">
+                                                                    </div>
+                                                                    </div>
+                                                                </div>
                                                                 </div>
                                                             </ng-template>
                                                           </div>
@@ -4990,7 +5041,7 @@
                                                         <!-- <ngx-slider [(ngModel)]="kpiFontSize" [options]="sliderOptions"></ngx-slider> -->
                                                     </div>
                                                    
-                                                    <div *ngIf="((pie && chartId) || donut || bar || map)  && draggedColumns && draggedColumns?.length == 1 && (dateList.includes(draggedColumns[0]['data_type']) || isLocationFeild)" ngbAccordionItem  class="accordion-item mb-2 border rounded-2">
+                                                    <div *ngIf="((pie && chartId) || donut || bar || horizontalBar || map)  && draggedColumns && draggedColumns?.length == 1 && (dateList.includes(draggedColumns[0]['data_type']) || isLocationFeild)" ngbAccordionItem  class="accordion-item mb-2 border rounded-2">
                                                         <h6 ngbAccordionHeader class="accordion-header" id="heading">
                                                           <button
                                                             ngbAccordionButton
@@ -5041,7 +5092,19 @@
                                                                 </div>
                                                                                                                 
                                                             </ng-template>
+                                                           
                                                           </div>
+                                                        </div>
+                                                    </div>
+                                                     <div *ngIf="bar || horizontalBar" class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2 p-2 border rounded-2">
+                                                        <div class=""> 
+                                                            <label class="mb-0">Horizontal </label>
+                                                        </div>
+                                                        <div *ngIf="isHorizontalBar" class="toggle toggle-sm on mb-0" (click)="isHorizontalBar=!isHorizontalBar;chartDisplay(false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,6)">
+                                                            <span></span>
+                                                        </div>
+                                                        <div *ngIf="!isHorizontalBar" class="toggle toggle-sm off mb-0" (click)="isHorizontalBar=!isHorizontalBar;chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,14)">
+                                                        <span></span>
                                                         </div>
                                                     </div>
                                                     <div *ngIf="guage" class="d-flex align-items-center justify-content-between mb-0 flex-wrap gap-2 p-2">
@@ -5053,17 +5116,7 @@
                                                             <input type="number" class="form-control fs-14" [(ngModel)]="maxValueGuage" id="maxValue"  />
                                                         </div>
                                                     </div>
-                                                    <div *ngIf="bar" class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2 p-2 border rounded-2">
-                                                        <div class=""> 
-                                                            <label class="mb-0">Horizantal </label>
-                                                        </div>
-                                                        <div *ngIf="isHorizontalBar" class="toggle toggle-sm on mb-0" (click)="isHorizontalBar=!isHorizontalBar">
-                                                            <span></span>
-                                                        </div>
-                                                        <div *ngIf="!isHorizontalBar" class="toggle toggle-sm off mb-0" (click)="isHorizontalBar=!isHorizontalBar">
-                                                        <span></span>
-                                                        </div>
-                                                    </div>                                                    <!-- <div *ngIf="bar || funnel && isApexCharts" class="d-flex align-items-center justify-content-between mb-0 flex-wrap gap-2 p-3">
+                                                    <!-- <div *ngIf="bar || funnel && isApexCharts" class="d-flex align-items-center justify-content-between mb-0 flex-wrap gap-2 p-3">
                                                         <label for="sorting">Sort by: </label>
                                                         <select id="sorting" [(ngModel)]="sortType">
                                                             <option value="0" selected disabled>select</option>

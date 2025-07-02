@@ -69,13 +69,13 @@ ngOnInit(){
 //   this.modalService.open(OpenmdoModal);
 // }
 addRolesDivOpen(){
-// this.addRoleDiv = true;
-this.router.navigate(['/analytify/roles/add-role'])
+this.addRoleDiv = true;
+// this.router.navigate(['/analytify/roles/add-role'])
 }
 updateRolesDivOpen(id:any){
-  const encodedRoleId = btoa(id.toString());
-  // this.addRoleDiv = true;
-  this.router.navigate(['/analytify/dashboard/role-edit/'+encodedRoleId]);
+  // const encodedRoleId = btoa(id.toString());
+  this.addRoleDiv = true;
+  // this.router.navigate(['/analytify/dashboard/role-edit/'+encodedRoleId]);
   // this.updateRole = true;
   }
 
@@ -244,7 +244,8 @@ if(this.roleTitle === ''){
     next:(data)=>{
       console.log(data);
       this.toasterservice.success(data.message,'success',{ positionClass: 'toast-top-right'});
-      this.router.navigate(['/analytify/roles/roles-list'])
+      // this.router.navigate(['/analytify/roles/roles-list'])
+      this.viewSavedRoles();
      },
     error:(error)=>{
       console.log(error);
@@ -343,6 +344,7 @@ editRoles(){
       //   width: '400px',
       // })
       this.toasterservice.success(data.message,'success',{ positionClass: 'toast-top-right'});
+      this.viewSavedRoles();
      },
     error:(error)=>{
       this.modalService.dismissAll();
@@ -357,6 +359,7 @@ editRoles(){
   }) 
 }
 viewSavedRoles(){
-  this.router.navigate(['/analytify/roles/roles-list'])
+  // this.router.navigate(['/analytify/roles/roles-list'])
+  this.addRoleDiv = false;
 }
 }

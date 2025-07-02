@@ -161,6 +161,8 @@ export class DatabaseComponent {
   crossDbId= '';
   crossDbFilteredTablesT1: any[] = [];
   originalCrossDbTablesT1: any;
+  crossDbConnections: any[] = [];
+  isCrossDb = false;
   dragTablestoSemanticLayer = false;
   deleteTablesFromSemanticLayer = false;
   canSearchTablesInSemanticLayer = false;
@@ -275,6 +277,27 @@ export class DatabaseComponent {
       }).then((result) => {
         if (result.isConfirmed) {
           this.templateDashboardService.buildSampleSalesforceDashboard(this.container, this.databaseId);
+        }
+      });
+    }
+    if(currentUrl.includes('/analytify/database-connection/hubspot/')){
+      this.fromDatabasId = true;
+      this.databaseId = +atob(route.snapshot.params['id']);
+          Swal.fire({
+        position: "center",
+        // icon: "question",
+        iconHtml: '<img src="./assets/images/copilot.gif">',
+        title: "Create smart dashboard from your data with just one click?",
+        showConfirmButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'No',
+        customClass: {
+          icon: 'no-icon-bg',
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.templateDashboardService.buildSampleHubspotDashboard(this.container, this.databaseId);
         }
       });
     }
@@ -434,6 +457,8 @@ getSchemaTablesFromConnectedDb(){
   const IdToPass = this.databaseId
   this.schematableList =[];
   this.workbechService.getSchemaTablesFromConnectedDb(IdToPass,obj).subscribe({next: (data) => {
+    this.crossDbConnections = data;
+    this.isCrossDb = data[0]?.is_cross_db;
     if(data[0].cross_db_id){
       this.crossDbId = data[0].cross_db_id;
       console.log(this.crossDbId.length)
@@ -512,18 +537,73 @@ drop(event: CdkDragDrop<string[]>) {4
         element[attr] = copy[attr];
       }
     }
-   // this.draggedtables.splice(event.currentIndex, 0, element);
-   //this.draggedtables.push(element);
-   console.log('element',element)
-    this.pushToDraggedTables(element)
-    console.log('darggedtable',this.draggedtables)
+   const finalizeDrop = () => {
+     this.pushToDraggedTables(element);
+     console.log('darggedtable', this.draggedtables);
+     if (parseInt(this.qurtySetId) !== 0) {
+       this.joiningTables();
+     } else if (parseInt(this.qurtySetId) === 0) {
+       this.joiningTablesWithoutQuerySetId();
+     }
+   };
+
+   if (!element.columns || element.columns.length === 0) {
+     const dumpObj = { hierarchy_id: this.databaseId, tables: [element.table] };
+     this.workbechService.dataDumping(dumpObj).subscribe({
+       next: () => {
+         this.refreshSchemaForTable(element, finalizeDrop);
+       },
+       error: () => finalizeDrop()
+     });
+   } else {
+     finalizeDrop();
    }
-   if(parseInt(this.qurtySetId) !== 0){
-    this.joiningTables();
-   }
-   else if(parseInt(this.qurtySetId) === 0){
-     this.joiningTablesWithoutQuerySetId()
-   }
+  }
+}
+
+refreshSchemaForTable(table: any, callback: () => void) {
+  const obj: any = {
+    search: this.searchTables,
+    querySetId: this.qurtySetId || this.custumQuerySetid,
+    hierarchy_ids: [this.databaseId]
+  };
+  if (obj.search == '' || obj.search == null) {
+    delete obj.search;
+  }
+  if (obj.querySetId === '0' || obj.querySetId === 0) {
+    delete obj.querySetId;
+  }
+  const idToPass = this.databaseId;
+  this.workbechService.getSchemaTablesFromConnectedDb(idToPass, obj).subscribe({
+    next: (data) => {
+      this.schematableList = [];
+      this.crossDbConnections = data;
+      this.isCrossDb = data[0]?.is_cross_db;
+      if (data[0].cross_db_id) {
+        this.crossDbId = data[0].cross_db_id;
+        this.crossDbFilteredTablesT1 = data[0].data?.schemas[0].tables;
+        this.filteredTablesT2 = data[1].data?.schemas[0].tables;
+        this.originalCrossDbTablesT1 = data[0].data?.schemas[0].tables;
+      }
+      data.forEach((dataTest: any) => {
+        if (dataTest?.data?.schemas && dataTest?.data?.schemas.length > 0) {
+          this.schematableList.push(dataTest?.data?.schemas[0]);
+        }
+      });
+      this.databaseName = data[0]?.display_name;
+      for (const schemaObj of this.schematableList) {
+        if (schemaObj.schema === table.schema) {
+          const tbl = schemaObj.tables.find((t: any) => t.table === table.table);
+          if (tbl) {
+            table.columns = tbl.columns;
+            break;
+          }
+        }
+      }
+      callback();
+    },
+    error: () => callback()
+  });
 }
 
 pushToDraggedTables(newTable:any): void {
@@ -1997,5 +2077,37 @@ clearRelationCondns(){
   this.selectedCndn ='Operator';
   this.selectedClmnT1=null
   this.selectedClmnT2=null;
+}
+
+openDeleteCrossDbModal(modal: any){
+  this.modalService.open(modal, {
+    centered: true,
+    windowClass: 'animate__animated animate__zoomIn',
+  });
+}
+
+deleteConnectedDb(db:any){
+  const obj = {
+    cross_db_id: db.cross_db_id,
+    delete_db_id: db.hierarchy_id
+  };
+  this.workbechService.crossDbDeletion(obj).subscribe({
+    next: (data: any) => {
+      this.crossDbConnections = this.crossDbConnections.filter((item: any) => item.hierarchy_id !== db.hierarchy_id);
+      this.isCrossDb = this.crossDbConnections.length > 1;
+      if(this.crossDbConnections.length){
+        this.databaseName = this.crossDbConnections[0].display_name;
+      }
+      if(this.crossDbConnections.length <= 1){
+        this.modalService.dismissAll('close');
+      }
+      this.databaseId = data.id;
+      this.getSchemaTablesFromConnectedDb();
+      this.toasterService.success('Database Deleted Successfully','success',{ positionClass: 'toast-top-right'});
+    },
+    error: (data:any) => {
+      this.toasterService.error('Unable to delete database.'+ data?.error?.message,'error',{ positionClass: 'toast-top-right'});
+    }
+  });
 }
 }

@@ -121,6 +121,13 @@ export const admin: Routes = [
           import('./database/database.component').then((m) => m.DatabaseComponent)
       },
       {
+        path: 'database-connection/hubspot/:id',
+        canActivate: [authGuard],
+        canDeactivate: [canDeactivateGuard],
+        loadComponent: () =>
+          import('./database/database.component').then((m) => m.DatabaseComponent)
+      },
+      {
         path: 'database-connection/tables/:id1/:id2',
         canActivate: [authGuard],
         canDeactivate: [canDeactivateGuard],
@@ -252,6 +259,12 @@ export const admin: Routes = [
           import('./dashboard-page/dashboard-page.component').then((m) => m.DashboardPageComponent)
       },
       {
+        path: 'dashboard/transfer',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./dashboard-transfer/dashboard-transfer.component').then(m => m.DashboardTransferComponent)
+      },
+      {
         path: 'sheets-dashboard',
         canActivate: [authGuard],
         loadComponent: () =>
@@ -334,7 +347,19 @@ export const admin: Routes = [
           import('./configure/configure.component').then((m) => m.ConfigureComponent),
       },
        {
-        path: 'configure-page/email/:id',
+        path: 'configure-page/email/dashboard/:id',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./configure/configure.component').then((m) => m.ConfigureComponent),
+      },
+       {
+        path: 'configure-page/email/sheet/:id',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./configure/configure.component').then((m) => m.ConfigureComponent),
+      },
+      {
+        path: 'configure-page/email/datasource/:id',
         canActivate: [authGuard],
         loadComponent: () =>
           import('./configure/configure.component').then((m) => m.ConfigureComponent),
@@ -408,14 +433,14 @@ export const admin: Routes = [
       },
 
       {
-        path: 'etlList/etl',
+        path: 'etlList/dataFlow',
         canActivate: [authGuard],
         loadComponent: () =>
           import('./etl/etl.component').then((m) => m.ETLComponent),
       },
 
       {
-        path: 'etlList/etl/:id1',
+        path: 'etlList/dataFlow/:id1',
         canActivate: [authGuard],
         loadComponent: () =>
           import('./etl/etl.component').then((m) => m.ETLComponent),
@@ -429,10 +454,24 @@ export const admin: Routes = [
       },
 
       {
+        path: 'etlList/jobFlow/:id1',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./etl-job-flow/etl-job-flow.component').then((m) => m.EtlJobFlowComponent),
+      },
+
+      {
         path: 'etlList',
         canActivate: [authGuard],
         loadComponent: () =>
           import('./etl-list/etl-list.component').then((m) => m.EtlListComponent),
+      },
+
+      {
+        path: 'etlList/monitor',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./etl-monitor/etl-monitor.component').then((m) => m.EtlMonitorComponent),
       },
     ]
   }

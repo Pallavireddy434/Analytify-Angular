@@ -213,7 +213,8 @@ toggleClass1 = "off-line";
       }
   }
   closeAddUserForm(){
-    this.router.navigate(['/analytify/users/users-list'])
+    // this.router.navigate(['/analytify/users/users-list'])
+    this.addUserDivForm = false;
   }
 
   setRoles() {
@@ -281,11 +282,13 @@ getAddedRolesList(){
   }) 
 }
 addUserRoute(){
-  this.router.navigate(['/analytify/users/add-user'])
-  
+  // this.router.navigate(['/analytify/users/add-user'])
+  this.addUserDivForm = true;
+  this.addUserDiv();
 }
 viewUsers(){
-  this.router.navigate(['/analytify/users/users-list'])
+  // this.router.navigate(['/analytify/users/users-list'])
+  this.addUserDivForm = false;
 }
 addUser(){
   if (!this.addUserForm.value.is_active) {
@@ -383,8 +386,10 @@ deleteUser(id:any){
     }})
 }
 editUserRoute(id:any){
-  const userId = btoa(id.toString());
-  this.router.navigate(['/analytify/users/edit-user/'+userId])
+  // const userId = btoa(id.toString());
+  // this.router.navigate(['/analytify/users/edit-user/'+userId])
+  this.addUserDivForm = true;
+  this.getUserIdDetails(id);
 }
 
 getUserIdDetails(id:any){
@@ -455,7 +460,7 @@ editUserApiCall(){
       console.log(data);
       this.addUserDivForm = false;
       this.toasterservice.success(data.message,'success',{ positionClass: 'toast-top-right'});
-      this.router.navigate(['/analytify/users/users-list'])    
+      // this.router.navigate(['/analytify/users/users-list'])    
      },
     error:(error)=>{
       console.log(error);

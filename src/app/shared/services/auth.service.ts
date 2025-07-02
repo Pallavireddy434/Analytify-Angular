@@ -166,6 +166,11 @@ validateOtp(otp:any){
 forgotPassword(data:any){
   return this.http.post<any>(`${environment.apiUrl}/reset_password/`,data);
 }
+hubspotCallBack(data:any){
+  const currentUser = localStorage.getItem( 'currentUser' );
+  this.accessToken = JSON.parse( currentUser! )['Token'];
+  return this.http.post<any>(`${environment.apiUrl}/hubspot_callback/`+this.accessToken,data);
+}
 resetPassword(token:any,data:any){
   return this.http.put<any>(`${environment.apiUrl}/reset_password/confirm`+'/'+token,data);
 }

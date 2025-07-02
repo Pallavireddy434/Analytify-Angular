@@ -4,7 +4,7 @@
 .hide-show-btn { width: fit-content; cursor: pointer; position: relative; right: 13px; top: 230px; z-index: 9; padding: 5px 9px; border-radius: 15px; }
 .plus-icon{ font-size: 16px;}
 .plug-icon { margin-right: 12px !important; }
-.connections-layer-h {  height: 100%;  overflow: auto; }
+.connections-layer-h {  height: 100%;  overflow: auto; border: 0px !important; box-shadow: none;}
 .cursor-move {cursor: move;}
 .table-width {width: auto;}
 .image-width {width: 5%;}
@@ -50,11 +50,11 @@ ul.DropDownWidth.show {width: calc(100% + 66px);}
   overflow: auto;
 }
 .resizable-bottom {
-  min-height: 75px;
+  min-height: 48px;
   height: 349px; /* starting height */
   max-height: 90%; /* or calculate dynamically in TS if needed */
   position: relative;
-  background: #f0f0f0;
+  // background: #f0f0f0;
 }
 .Result-preview-table-sticky{ position: sticky;top: -1px; background-color: var(--primary-color); z-index: 1000;}
 .tables-modal{ height: 300px; overflow: auto; scrollbar-width: none; -ms-overflow-style: none; }
@@ -64,12 +64,12 @@ ul.DropDownWidth.show {width: calc(100% + 66px);}
 
 a.TabShadow.nav-link.active {
     color: var(--primary-color);
-    box-shadow: 0px -5px 5px 1px rgb(0 0 0 / 8%);
+    box-shadow: 0px -5px 5px 1px rgb(170 167 167 / 12%);
   }
 
 
-.drag-drawflow { line-height: 50px; border-bottom: 1px solid var(--primary-color); padding-left: 20px; cursor: pointer; user-select: none; }
-.drag-drawflow:hover { background-color: rgba(35, 146, 193, 0.1); transform: translateX(5px); }
+.drag-drawflow { line-height: 50px;  padding-left: 20px; cursor: pointer; user-select: none; }
+.drag-drawflow:hover { background-color: #e9f4f9; }
 #drawflow { position: relative; height: calc(100vh - 80px); -ms-overflow-style: none; scrollbar-width: none;}
 #drawflow::-webkit-scrollbar { display: none; }
 .drawflow-width-half { width: calc(100vw - 420px); }
@@ -88,10 +88,12 @@ a.TabShadow.nav-link.active {
 .iconProperties { padding: 4px 4px; width: 60px; }
 textarea { width: 330px; overflow: auto; resize: none; border: 1px solid #d8d8d8;}
 ::ng-deep .drawflow .drawflow-node .node-status { font-size: 10px; text-align: center; border-radius: 4px; }
-::ng-deep .drawflow .drawflow-node .node-status-running { background-color: blue; color: white; }
-::ng-deep .drawflow .drawflow-node .node-status-success { background-color: green; color: white; }
-::ng-deep .drawflow .drawflow-node .node-status-failed { background-color: red; color: white; }
-::ng-deep .drawflow .drawflow-node .node-status-upstream_failed { background-color: rgb(255, 157, 0); color: white; }
+::ng-deep .drawflow .drawflow-node .node-status-queued { background-color: #5BC0DE; color: white; }
+::ng-deep .drawflow .drawflow-node .node-status-running { background-color: #F0AD4E; color: white; }
+::ng-deep .drawflow .drawflow-node .node-status-success { background-color: #5CB85C; color: white; }
+::ng-deep .drawflow .drawflow-node .node-status-failed { background-color: #D9534F; color: white; }
+::ng-deep .drawflow .drawflow-node .node-status-upstream_failed { background-color: #999999; color: white; font-size: 9px !important; }
+::ng-deep .drawflow .drawflow-node .node-status-removed { background-color: #4E5D6C; color: white; }
 .selected-row {background-color: var(--primary-color) !important;}
 .selected-row-data {color: #fff !important;}
 
@@ -120,7 +122,7 @@ textarea { width: 330px; overflow: auto; resize: none; border: 1px solid #d8d8d8
   }
 
   .table-collapse {
-    height: 75px !important;
+    height: 48px !important;
     overflow: hidden !important;
   }
   
@@ -133,13 +135,13 @@ textarea { width: 330px; overflow: auto; resize: none; border: 1px solid #d8d8d8
   
   .top-pane {
     flex-grow: 1;
-    min-height: 75px;
+    min-height: 48px;
     overflow: auto;
   }
   
   .resizable-bottom {
     position: relative;
-    min-height: 75px;
+    min-height: 48px;
     height: 200px;
     flex-shrink: 0;
     overflow: auto;
@@ -147,7 +149,7 @@ textarea { width: 330px; overflow: auto; resize: none; border: 1px solid #d8d8d8
   
   .resize-handle {
     height: 6px;
-    background: #ccc;
+    // background: #ccc;
     cursor: row-resize;
     position: absolute;
     top: 0;

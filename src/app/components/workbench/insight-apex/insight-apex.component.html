@@ -14,7 +14,24 @@
             </apx-chart>
         </div>
     </div>
-} @else if(chartType === 'area'){
+}  @else if(chartType === 'horizontalBar'){
+    <div class="card-body">
+        <div id="horizontal-bar-chart" class="chartfit">
+            <apx-chart #horizontalBarChart 
+            [series]="chartOptions.series"
+            [chart]="chartOptions.chart"
+            [xaxis]="chartOptions.xaxis"
+            [yaxis]="chartOptions.yaxis" 
+            [grid]="chartOptions.grid"
+            [plotOptions]="chartOptions.plotOptions"
+            [dataLabels]="chartOptions.dataLabels"
+            [legend]="chartOptions.legend"
+            [colors]="chartOptions.colors">
+            </apx-chart>
+        </div>
+    </div>
+}
+   @else if(chartType === 'area'){
     <div class="card-body">
         <div id="area-chart">
             <apx-chart #areaChart

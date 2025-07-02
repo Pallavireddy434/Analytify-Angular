@@ -45,7 +45,7 @@ export class DashboardPageComponent implements OnInit{
   port:any;
   host:any; 
   @ViewChild('propertiesModal') propertiesModal : any;
-  frequency! : number;
+  frequency : number = 0;
   refreshNow: boolean = false;
   lastRefresh: any;
   nextRefresh: any;
@@ -169,6 +169,21 @@ viewDashboard(serverId:any,querysetId:any,dashboardId:any){
 }
 dashboardRoute(){
 this.router.navigate(['/analytify/sheetsdashboard']);
+}
+
+copyDashboard(dashboardId:any){
+  const payload = { dashboard_id: dashboardId };
+  this.workbechService.copyDashboard(payload).subscribe({
+    next:(data)=>{
+      const newDashboardId = data.dashboard_id;
+      this.loaderService.show();
+      const encodedDashboardId = btoa(newDashboardId.toString());
+          this.router.navigate(['/analytify/home/sheetsdashboard/',encodedDashboardId],{state: {dbCopy: true}})
+    },
+    error:()=>{
+      this.toasterservice.error('Dashboard copy failed. Please try again.','error',{ positionClass: 'toast-top-right'});
+    }
+  });
 }
 
 
@@ -409,7 +424,11 @@ autoFrequencyRefresh(){
   }
   this.workbechService.autoRefreshFrequency(object).subscribe({
     next:(data)=>{
-      this.toasterservice.success('Dashboard refresh scheduled','success',{ positionClass: 'toast-center-center'})
+      if(this.frequency > 0){
+      this.toasterservice.success('Refresh interval updated successfully.','success',{ positionClass: 'toast-top-right'})
+      } else {
+        this.toasterservice.success('Refresh interval cancelled/removed successfully.','success',{ positionClass: 'toast-top-right'})
+      }
       },
     error:(error)=>{
       console.log(error)
@@ -442,7 +461,7 @@ viewSchedular(dashboardId:any,modal: any){
 gotoConfigureEmailAlerts(id:any){
     const encodedDatabaseId = btoa(id.toString());
 
-this.router.navigate(['/analytify/configure-page/email/'+encodedDatabaseId])
+this.router.navigate(['/analytify/configure-page/email/dashboard/'+encodedDatabaseId])
 }
 
 

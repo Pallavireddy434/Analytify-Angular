@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { of, throwError } from 'rxjs';
+import { map, switchMap, catchError, tap } from 'rxjs/operators';
 @Injectable({
   providedIn: 'root'
 })
@@ -89,6 +91,11 @@ export class WorkbenchService {
     this.accessToken = JSON.parse( currentUser! )['Token'];
     return this.http.post<any>(`${environment.apiUrl}/shopify_authentication/`+this.accessToken,obj);
   }
+  hubspotConnection(obj:any){
+    const currentUser = localStorage.getItem( 'currentUser' );
+    this.accessToken = JSON.parse( currentUser! )['Token'];
+    return this.http.post<any>(`${environment.apiUrl}/hubspot_authentication/`+this.accessToken,obj);
+  }
   connectWiseConnectionUpdate(obj:any){
     const currentUser = localStorage.getItem( 'currentUser' );
     this.accessToken = JSON.parse( currentUser! )['Token'];
@@ -104,6 +111,18 @@ export class WorkbenchService {
     this.accessToken = JSON.parse( currentUser! )['Token'];
     return this.http.put<any>(`${environment.apiUrl}/halops/`+this.accessToken,obj);
   }
+  createTally(config: any) {
+    const currentUser = localStorage.getItem( 'currentUser' );
+    this.accessToken = JSON.parse( currentUser! )['Token'];
+    return this.http.post<any>(`${environment.apiUrl}/tally_authentication/`+this.accessToken, config);
+  }
+
+  updateTally(config: any) {
+    const currentUser = localStorage.getItem( 'currentUser' );
+    this.accessToken = JSON.parse( currentUser! )['Token'];
+    return this.http.put<any>(`${environment.apiUrl}/tally_authentication/`+this.accessToken, config);
+  }
+
   ninjaRMMConnectionUpdate(obj:any){
     const currentUser = localStorage.getItem( 'currentUser' );
     this.accessToken = JSON.parse( currentUser! )['Token'];
@@ -251,6 +270,12 @@ export class WorkbenchService {
     this.accessToken = JSON.parse( currentUser! )['Token'];
     return this.http.post<any>(`${environment.apiUrl}/tables_test_joining/`+this.accessToken,obj);
   }
+
+  dataDumping(obj:any){
+    const currentUser = localStorage.getItem( 'currentUser' );
+    this.accessToken = JSON.parse( currentUser! )['Token'];
+    return this.http.post<any>(`${environment.apiUrl}/data_dumping/`+this.accessToken,obj);
+  }
   getTableJoiningData(obj:any){
     const currentUser = localStorage.getItem( 'currentUser' );
     this.accessToken = JSON.parse( currentUser! )['Token'];
@@ -276,6 +301,12 @@ export class WorkbenchService {
     const currentUser = localStorage.getItem( 'currentUser' );
     this.accessToken = JSON.parse( currentUser! )['Token'];
     return this.http.post<any>(`${environment.apiUrl}/database_delete_stmt/`+this.accessToken,obj);
+  }
+
+  crossDbDeletion(obj:any){
+    const currentUser = localStorage.getItem( 'currentUser' );
+    this.accessToken = JSON.parse( currentUser! )['Token'];
+    return this.http.post<any>(`${environment.apiUrl}/crossdb_deletion/`+this.accessToken,obj);
   }
   sheetSave(obj:any){
     const currentUser = localStorage.getItem( 'currentUser' );
@@ -526,6 +557,11 @@ selectedDatafromFilter(obj:any){
   const currentUser = localStorage.getItem( 'currentUser' );
   this.accessToken = JSON.parse( currentUser! )['Token'];
   return this.http.post<any>(`${environment.apiUrl}/dashboard_filter_save/`+this.accessToken,obj);  
+}
+copyDashboard(obj:any){
+  const currentUser = localStorage.getItem( 'currentUser' );
+  this.accessToken = JSON.parse( currentUser! )['Token'];
+  return this.http.post<any>(`${environment.apiUrl}/dashboard_copy/`+this.accessToken,obj);
 }
 updatesDashboardFilters(obj:any){
   const currentUser = localStorage.getItem( 'currentUser' );
@@ -975,13 +1011,31 @@ deleteUser(id:any){
       this.accessToken = JSON.parse( currentUser! )['Token'];
       return this.http.get<any>(`${environment.apiUrl}/quickbooks_dashboard/`+id+'/'+this.accessToken);
     }
-
+    buildSampleImmybotDashboard(id : number){
+      const currentUser = localStorage.getItem( 'currentUser' );
+      this.accessToken = JSON.parse( currentUser! )['Token'];
+      return this.http.get<any>(`${environment.apiUrl}/immybot_dashbaord/`+id+'/'+this.accessToken);
+    }
+    buildSampleNinjaRMMDashboard(id: number) {
+      const currentUser = localStorage.getItem('currentUser');
+      this.accessToken = JSON.parse(currentUser!)['Token'];
+      return this.http.get<any>(`${environment.apiUrl}/ninja_dashbaord/` + id + '/' + this.accessToken);
+    }
     buildSampleSalesforceDashbaord(id : number){
       const currentUser = localStorage.getItem( 'currentUser' );
       this.accessToken = JSON.parse( currentUser! )['Token'];
       return this.http.get<any>(`${environment.apiUrl}/salesforce_dashbaord/`+id+'/'+this.accessToken);
     }
-
+    buildSampleTallyDashboard(id: number) {
+      const currentUser = localStorage.getItem('currentUser');
+      this.accessToken = JSON.parse(currentUser!)['Token'];
+      return this.http.get<any>(`${environment.apiUrl}/tally_dashbaord/` + id + '/' + this.accessToken);
+    }
+    buildSampleHubspotDashboard(id: number) {
+      const currentUser = localStorage.getItem('currentUser');
+      this.accessToken = JSON.parse(currentUser!)['Token'];
+      return this.http.get<any>(`${environment.apiUrl}/hubspot_dashbaord/` + id + '/' + this.accessToken);
+    }
     fetchSDKData(){
       const currentUser = localStorage.getItem( 'currentUser' );
       this.accessToken = JSON.parse( currentUser! )['Token'];
@@ -1004,6 +1058,18 @@ deleteUser(id:any){
       const currentUser = localStorage.getItem( 'currentUser' );
       this.accessToken = JSON.parse( currentUser! )['Token'];
       return this.http.post<any>(`${environment.apiUrl}/sheet_token/`+this.accessToken,object);
+    }
+
+    exportDashboard(object:any){
+      const currentUser = localStorage.getItem( 'currentUser' );
+      this.accessToken = JSON.parse( currentUser! )['Token'];
+      return this.http.post<any>(`${environment.apiUrl}/export_dashboard/`+this.accessToken,object);
+    }
+
+    importDashboard(object:any){
+      const currentUser = localStorage.getItem( 'currentUser' );
+      this.accessToken = JSON.parse( currentUser! )['Token'];
+      return this.http.post<any>(`${environment.apiUrl}/import_dashboard/`+this.accessToken,object);
     }
 
     getSheetSdkData(object:any){
@@ -1052,22 +1118,22 @@ deleteUser(id:any){
       return this.http.put<any>(`${environment.apiUrl}/etl_update/`+this.accessToken,object);
     }
 
-    getEtlDataFlow(id : any){
+    getEtlDataFlow(id : any, type : any){
       const currentUser = localStorage.getItem( 'currentUser' );
       this.accessToken = JSON.parse( currentUser! )['Token'];
-      return this.http.get<any>(`${environment.apiUrl}/etl_data/`+this.accessToken+'/'+id);
+      return this.http.get<any>(`${environment.apiUrl}/etl_data/`+this.accessToken+'/'+id+`?flow=${type}`);
     }
 
-    getEtlDataFlowList(page:any, pageSize:any, search:any){
+    getEtlDataFlowList(page:any, pageSize:any, search:any, type:any){
       const currentUser = localStorage.getItem( 'currentUser' );
       this.accessToken = JSON.parse( currentUser! )['Token'];
-      return this.http.get<any>(`${environment.apiUrl}/dags_list/`+this.accessToken+`?page=${page}&page_size=${pageSize}`+(search ? `&search=${search}` : ``));
+      return this.http.get<any>(`${environment.apiUrl}/dags_list/`+this.accessToken+`?page=${page}&page_size=${pageSize}`+(search ? `&search=${search}` : ``)+`&flow=${type}`);
     }
 
     deleteDataFlow(id : any){
       const currentUser = localStorage.getItem( 'currentUser' );
       this.accessToken = JSON.parse( currentUser! )['Token'];
-      return this.http.get<any>(`${environment.apiUrl}/dag_delete/`+this.accessToken+'/'+id);
+      return this.http.delete<any>(`${environment.apiUrl}/dag_delete/`+this.accessToken+'/'+id);
     }
 
     runEtl(dagId : any){
@@ -1087,16 +1153,41 @@ deleteUser(id:any){
       this.accessToken = JSON.parse( currentUser! )['Token'];
       return this.http.post<any>(`${environment.apiUrl}/Dataflow_Task_status/`+this.accessToken,object);
     }
-    getConnectionsForEtl(){
+    getConnectionsForEtl(type:any){
       const currentUser = localStorage.getItem( 'currentUser' );
       this.accessToken = JSON.parse( currentUser! )['Token'];
-      return this.http.get<any>(`${environment.apiUrl}/etl_source_objects/`+this.accessToken);
+      return this.http.get<any>(`${environment.apiUrl}/etl_source_objects/`+this.accessToken+`?connection_type=${type}`);
+    }
+    getDataObjectsForFile(id:any){
+      const currentUser = localStorage.getItem( 'currentUser' );
+      this.accessToken = JSON.parse( currentUser! )['Token'];
+      return this.http.get<any>(`${environment.apiUrl}/get_file_detials/`+this.accessToken+'/'+id);
+    }
+    getFilesForServer(from:any){
+      const currentUser = localStorage.getItem( 'currentUser' );
+      this.accessToken = JSON.parse( currentUser! )['Token'];
+      return this.http.get<any>(`${environment.apiUrl}/list-files/`+this.accessToken+`?path=${from}`);
+    }
+    getDataObjectsFromServer(object:any){
+      const currentUser = localStorage.getItem( 'currentUser' );
+      this.accessToken = JSON.parse( currentUser! )['Token'];
+      return this.http.post<any>(`${environment.apiUrl}/server_files/`+this.accessToken, object);
     }
 
     getMailAletsDashboardData(id:any){
        const currentUser = localStorage.getItem( 'currentUser' );
       this.accessToken = JSON.parse( currentUser! )['Token'];
       return this.http.get<any>(`${environment.apiUrl}/mail_alerts/`+this.accessToken+'/'+id+'/');
+    }
+    getMailAlertsSheetsData(id:any){
+      const currentUser = localStorage.getItem( 'currentUser' );
+      this.accessToken = JSON.parse( currentUser! )['Token'];
+      return this.http.get<any>(`${environment.apiUrl}/mail_alerts/`+this.accessToken+'/'+'?sheet_id='+id);
+    }
+    getMailAlertsDatasourceData(id:any){
+      const currentUser = localStorage.getItem( 'currentUser' );
+      this.accessToken = JSON.parse( currentUser! )['Token'];
+      return this.http.get<any>(`${environment.apiUrl}/mail_alerts/`+this.accessToken+'/'+'?datasource_id='+id);
     }
     updateEmailAlerts(obj:any){
        const currentUser = localStorage.getItem( 'currentUser' );
@@ -1107,5 +1198,47 @@ deleteUser(id:any){
        const currentUser = localStorage.getItem( 'currentUser' );
       this.accessToken = JSON.parse( currentUser! )['Token'];
       return this.http.post<any>(`${environment.apiUrl}/mail_alerts/`+ this.accessToken,obj);
+    }
+    analyzeAndDownloadDashboard(obj:any){
+      return this.http.post<any>(`${environment.apiUrl}/analyze-dashboard/`,obj);
+    }
+    sheetUpdateRefreshMail(obj:any){
+      const currentUser = localStorage.getItem( 'currentUser' );
+      this.accessToken = JSON.parse( currentUser! )['Token'];
+      return this.http.post<any>(`${environment.apiUrl}/send_mail/`+this.accessToken, obj);
+    }
+    // Airflow API
+    airflowToken: string | null = 'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImlzcyI6W10sImF1ZCI6ImFwYWNoZS1haXJmbG93IiwibmJmIjoxNzQ5MDQyOTI5LCJleHAiOjE3NDkxMjkzMjksImlhdCI6MTc0OTA0MjkyOX0.OPipRIhG-me15qyyGXRlt2xLuNWKOr2RexHtU7xc8kyXqP3dHfcNAq2t6Zf6sNiKbnb437AyKsagA9rgbKK6wg';
+
+    private getHeaders(): HttpHeaders {
+      const headers = new HttpHeaders({
+        'Accept': 'application/json',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Authorization': `Bearer ${this.airflowToken}`,
+        'Connection': 'keep-alive',
+        'Referer': 'http://3.101.147.3:8080', // or current airflow UI URL
+        'User-Agent': navigator.userAgent
+      });
+      return headers;
+    }
+
+    getDags() {
+      return this.http.get(`${environment.airflowApiUrl}/dags`, {
+        headers: this.getHeaders(),
+      });
+    }
+
+    getDagRuns(dagId: string) {
+      return this.http.get(`${environment.airflowApiUrl}/dags/${dagId}/dagRuns`, {
+        headers: this.getHeaders(),
+      });
+    }
+
+    getTaskInstances(dagId: string, runId: string) {
+      return this.http.get(
+        `${environment.airflowApiUrl}/dags/${dagId}/dagRuns/${runId}/taskInstances`,
+        { headers: this.getHeaders() }
+      );
     }
 }

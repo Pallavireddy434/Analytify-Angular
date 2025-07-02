@@ -27,13 +27,15 @@ import { InsightEchartComponent } from '../insight-echart/insight-echart.compone
 import _ from 'lodash';
 
 import { TemplateDashboardService } from '../../../services/template-dashboard.service';
+import { NgMultiSelectDropDownModule } from 'ng-multiselect-dropdown';
+import { IDropdownSettings } from 'ng-multiselect-dropdown';
 import { NgSelectModule } from '@ng-select/ng-select';
 
 
 @Component({
   selector: 'app-workbench',
   standalone: true,
-  imports: [RouterModule,NgbModule,SharedModule,FormsModule,CdkDropListGroup, CdkDropList, CdkDrag,GalleryModule,LightboxModule,ToastrModule,CommonModule,NgxPaginationModule,InsightsButtonComponent,InsightEchartComponent,NgSelectModule],
+  imports: [RouterModule,NgbModule,SharedModule,FormsModule,CdkDropListGroup, CdkDropList, CdkDrag,GalleryModule,LightboxModule,ToastrModule,CommonModule,NgxPaginationModule,InsightsButtonComponent,InsightEchartComponent,NgMultiSelectDropDownModule,NgSelectModule],
   templateUrl: './workbench.component.html',
   styleUrl: './workbench.component.scss'
 })
@@ -56,12 +58,14 @@ export class WorkbenchComponent implements OnInit{
   openMySqlForm = false;
   openConnectWiseForm = false;
   openHaloPSAForm = false;
+  openHubspotForm = false;
   openShopifyForm =false;
   openGoogleAnalyticsForm = false;
   openOracleForm = false;
   openMicrosoftSqlServerForm = false;
   openSnowflakeServerForm = false;
   openMongoDbForm = false;
+  openTallyForm = false;
   sqlLiteForm = false;
   openTablesUI = false;
   ibmDb2Form = false;
@@ -111,6 +115,84 @@ export class WorkbenchComponent implements OnInit{
   ninjaRMMScopes = ['monitoring', 'management', 'control'];
   selectedNinjaRMMScopes: string[] = [];
   ninjaRMMScopeError: boolean = false;
+  hubspotClientId!: string;
+  hubspotClientSecret!: string;
+  hubspotRedirectURL!: string;
+  hubspotScopes: string[] = [
+    "cms.domains.read",
+    "cms.functions.read",
+    "cms.knowledge_base.articles.read",
+    "cms.knowledge_base.settings.read",
+    "cms.membership.access_groups.read",
+    "cms.performance.read",
+    "communication_preferences.read",
+    "communication_preferences.statuses.batch.read",
+    "conversations.custom_channels.read",
+    "conversations.read",
+    "crm.dealsplits.read_write",
+    "crm.lists.read",
+    "crm.objects.appointments.read",
+    "crm.objects.carts.read",
+    "crm.objects.commercepayments.read",
+    "crm.objects.companies.read",
+    "crm.objects.contacts.read",
+    "crm.objects.courses.read",
+    "crm.objects.custom.read",
+    "crm.objects.deals.read",
+    "crm.objects.feedback_submissions.read",
+    "crm.objects.owners.read",
+    "crm.objects.quotes.read",
+    "crm.schemas.courses.read",
+    "crm.objects.marketing_events.read",
+    "crm.schemas.contacts.read",
+    "crm.schemas.companies.read",
+    "crm.schemas.deals.read",
+    "crm.objects.goals.read",
+    "crm.objects.invoices.read",
+    "crm.objects.leads.read",
+    "crm.objects.line_items.read",
+    "crm.objects.listings.read",
+    "crm.objects.orders.read",
+    "crm.objects.partner-clients.read",
+    "crm.objects.products.read",
+    "crm.objects.services.read",
+    "crm.objects.subscriptions.read",
+    "crm.objects.users.read",
+    "crm.pipelines.orders.read",
+    "crm.schemas.custom.read",
+    "crm.schemas.appointments.read",
+    "crm.schemas.carts.read",
+    "crm.schemas.commercepayments.read",
+    "crm.schemas.invoices.read",
+    "crm.schemas.line_items.read",
+    "crm.schemas.listings.read",
+    "crm.schemas.orders.read",
+    "crm.schemas.quotes.read",
+    "crm.schemas.services.read",
+    "crm.schemas.subscriptions.read",
+    "ctas.read",
+    "marketing.campaigns.read",
+    "marketing.campaigns.revenue.read",
+    "settings.users.read",
+    "settings.users.teams.read",
+    "content",
+    "hubdb",
+    "tickets",
+    "crm.import",
+    "account-info.security.read",
+  "settings.currencies.read"
+  ];
+  hubspotDropdownSettings: IDropdownSettings = {
+    enableCheckAll: true,
+    allowSearchFilter: true,
+    itemsShowLimit: 10,
+    closeDropDownOnSelection: false
+  };
+  selectedHubspotScopes: string[] = [];
+  hubspotClientIdError = false;
+  hubspotClientSecretError = false;
+  hubspotRedirectURLError = false;
+  hubspotScopeError = false;
   openImmybot: boolean = false;
   clientIDImmyBotError: boolean = false;
   clientIdImmybot! : string ;
@@ -122,7 +204,7 @@ export class WorkbenchComponent implements OnInit{
   subDomainError: boolean = false;
 
   constructor(private modalService: NgbModal, private workbechService:WorkbenchService,private router:Router,private toasterservice:ToastrService,private route:ActivatedRoute,
-    private viewTemplateService:ViewTemplateDrivenService,@Inject(DOCUMENT) private document: Document,private loaderService:LoaderService,private cd:ChangeDetectorRef,private templateDashboardService: TemplateDashboardService,private toasterService:ToastrService){ 
+    private viewTemplateService:ViewTemplateDrivenService,@Inject(DOCUMENT) private document: Document,private loaderService:LoaderService,private cd:ChangeDetectorRef,private templateDashboardService: TemplateDashboardService,private toasterService:ToastrService){
     localStorage.setItem('QuerySetId', '0');
     localStorage.setItem('customQuerySetId', '0');
 
@@ -213,11 +295,17 @@ export class WorkbenchComponent implements OnInit{
     else if(this.databaseSwitchType === 'HALOPS'){
     this.connectHaloPSA();
     }
+    else if(this.databaseSwitchType === 'TALLY'){
+    this.connectTally();
+    }
     else if(this.databaseSwitchType === 'IMMYBOT'){
     this.connectImmybot();
     }
     else if(this.databaseSwitchType === 'NINJA'){
     this.connectNinjaRMM();
+    }
+    else if(this.databaseSwitchType === 'HUBSPOT'){
+    this.connectHubspot();
     }
   }
   routeNewDatabase(){
@@ -269,6 +357,7 @@ export class WorkbenchComponent implements OnInit{
     path='';
     shopifyToken = '';
     shopifyName = '';
+    tallyToken = '';
 
     googleAnalytics: {
       type: string;
@@ -532,6 +621,9 @@ export class WorkbenchComponent implements OnInit{
     this.ninjaRMMClientid = '';
     this.ninjaRMMClientSecret = '';
     this.selectedNinjaRMMScopes = [];
+    this.hubspotClientId = '';
+    this.hubspotClientSecret = '';
+    this.selectedHubspotScopes = [];
     
   } 
   googleSheetsData = [] as any;
@@ -779,6 +871,28 @@ export class WorkbenchComponent implements OnInit{
       )
 
     }
+
+    tallyUpdate(){
+      const obj = {
+        "token_key": this.tallyToken,
+        "display_name": this.displayName,
+        "hierarchy_id": this.databaseId
+      }
+
+      this.workbechService.updateTally(obj).subscribe({next: (res)=>{
+            this.modalService.dismissAll('close');
+            if(res){
+              this.toasterservice.success('Updated Successfully','success',{ positionClass: 'toast-top-right'});
+            }
+            this.getDbConnectionList();
+          },
+          error: (error) => {
+            this.toasterservice.error(error.error.message,'error',{ positionClass: 'toast-center-center'})
+          }
+        }
+      )
+
+    }
     googleAnalyticsUpdate(){
       const g = this.googleAnalytics;
      const obj = { type: g.type,
@@ -945,6 +1059,12 @@ export class WorkbenchComponent implements OnInit{
       this.viewNewDbs = false;
       this.emptyVariables();
     }
+    connectTally(){
+      this.openTallyForm = true;
+      this.databaseconnectionsList= false;
+      this.viewNewDbs = false;
+      this.emptyVariables();
+    }
     connectGoogleAnalytics(){
       this.openGoogleAnalyticsForm = true;
       this.databaseconnectionsList= false;
@@ -955,6 +1075,12 @@ export class WorkbenchComponent implements OnInit{
       this.openShopifyForm = true;
       this.databaseconnectionsList= false;
       this.viewNewDbs = false;
+    }
+    connectHubspot(){
+      this.openHubspotForm = true;
+      this.databaseconnectionsList = false;
+      this.viewNewDbs = false;
+      this.emptyVariables();
     }
     companyIdError(){
       if(this.companyId){
@@ -1063,6 +1189,13 @@ export class WorkbenchComponent implements OnInit{
         this.shopifyApiTokenError = true;
       }
     }
+    tallyTokenInputError(){
+      if(this.tallyToken){
+        this.tallyTokenError = false;
+      }else{
+        this.tallyTokenError = true;
+      }
+    }
     shopfyNameError(){
       if(this.shopifyName){
         this.shopifyNameError = false;
@@ -1070,6 +1203,23 @@ export class WorkbenchComponent implements OnInit{
         this.shopifyNameError = true;
       }
     }
+
+    hubspotClientIdInput(){
+      this.hubspotClientIdError = !this.hubspotClientId;
+    }
+
+  hubspotClientSecretInput(){
+    this.hubspotClientSecretError = !this.hubspotClientSecret;
+  }
+
+  hubspotRedirectURLInput(){
+    this.hubspotRedirectURLError = !this.hubspotRedirectURL;
+  }
+
+  onHubspotScopeChange(): void {
+    this.hubspotScopeError = this.selectedHubspotScopes.length <= 0;
+  }
+  
     shopifySignIn(){
       const obj={
         "api_token":this.shopifyToken,
@@ -1127,8 +1277,27 @@ export class WorkbenchComponent implements OnInit{
               }else if(this.datasourceSwitchUI){
                   this.switchDatabase();
               }else{
+            // --- Smart Dashboard Prompt for NinjaRMM ---
+            Swal.fire({
+              position: "center",
+              iconHtml: '<img src="./assets/images/copilot.gif">',
+              title: "Create smart dashboard from your data with just one click?",
+              showConfirmButton: true,
+              showCancelButton: true,
+              confirmButtonText: 'Yes',
+              cancelButtonText: 'Skip',
+              customClass: {
+                icon: 'no-icon-bg',
+              }
+            }).then((result) => {
+              if (result.isConfirmed) {
+                this.templateDashboardService.buildSampleNinjaRMMDashboard(this.container, this.databaseId);
+              } else {
                 this.router.navigate(['/analytify/database-connection/tables/'+encodedId]);
               }
+            });
+            // --- End Smart Dashboard Prompt ---
+          }
             }
           },
           error: (error) => {
@@ -1164,8 +1333,27 @@ export class WorkbenchComponent implements OnInit{
               }else if(this.datasourceSwitchUI){
                   this.switchDatabase();
               } else {
+            // --- Smart Dashboard Prompt for Immybot ---
+            Swal.fire({
+              position: "center",
+              iconHtml: '<img src="./assets/images/copilot.gif">',
+              title: "Create smart dashboard from your data with just one click?",
+              showConfirmButton: true,
+              showCancelButton: true,
+              confirmButtonText: 'Yes',
+              cancelButtonText: 'Skip',
+              customClass: {
+                icon: 'no-icon-bg',
+              }
+            }).then((result) => {
+              if (result.isConfirmed) {
+                this.templateDashboardService.buildSampleImmybotDashboard(this.container, this.databaseId);
+              } else {
                 this.router.navigate(['/analytify/database-connection/tables/'+encodedId]);
               }
+            });
+            // --- End Smart Dashboard Prompt ---
+          }
             }
           },
           error: (error) => {
@@ -1280,6 +1468,70 @@ export class WorkbenchComponent implements OnInit{
           }
         }
       )
+    }
+
+    tallySignIn(){
+      const obj = {
+        "token_key": this.tallyToken,
+        "display_name": this.displayName
+      }
+      this.workbechService.createTally(obj).subscribe({next: (res)=>{
+        if(res){
+          this.toasterservice.success('Connected','success',{ positionClass: 'toast-top-right'});
+          this.databaseId = res?.hierarchy_id;
+          this.modalService.dismissAll();
+          if(!this.datasourceSwitchUI){
+          this.openTallyForm = false;
+          }
+          const encodedId = btoa(this.databaseId.toString());
+          if(this.iscrossDbSelect){
+            this.selectedHirchyIdCrsDb = this.databaseId
+            this.connectCrossDbs();
+          }else if(this.datasourceSwitchUI){
+            this.switchDatabase();
+          }else{
+    Swal.fire({
+          position: "center",
+          iconHtml: '<img src="./assets/images/copilot.gif">',
+          title: "Create smart dashboard from your data with just one click?",
+          showConfirmButton: true,
+          showCancelButton: true,
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Skip',
+          customClass: {
+            icon: 'no-icon-bg',
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.templateDashboardService.buildSampleTallyDashboard(this.container, this.databaseId);
+          } else {
+            this.router.navigate(['/analytify/database-connection/tables/'+encodedId]);
+          }
+        });          }
+        }
+      }, error: (error)=>{
+        this.toasterservice.error(error.error.message,'error',{ positionClass: 'toast-center-center'})
+      }});
+    }
+
+    hubspotSignIn(){
+      const obj = {
+        "client_id": this.hubspotClientId,
+        "client_secret": this.hubspotClientSecret,
+        "redirect_uri": this.hubspotRedirectURL,
+        "display_name": this.displayName,
+        "scopes": this.selectedHubspotScopes
+      }
+      this.workbechService.hubspotConnection(obj).subscribe({next:(data)=>{
+          if(data){
+            localStorage.setItem('hubspotHierarchyId', data.hierarchy_id);
+            this.modalService.dismissAll();
+            this.document.location.href = data.authorisation_url;
+          }
+        },
+        error:(error)=>{
+          this.toasterservice.error(error.error.message,'error',{ positionClass: 'toast-center-center'})
+        }});
     }
 
     mySqlSignIn(){
@@ -1959,6 +2211,9 @@ connectGoogleSheets(){
       this.displayName = editData.display_name;
       this.shopifyName = editData.shop_name;
       this.shopifyToken = editData.api_token;
+    } else if (this.databaseType == "tally") {
+      this.displayName = editData.display_name;
+      this.tallyToken = editData.token_key;
     }else if (this.databaseType === 'google_analytics') {
       this.googleAnalytics = {
         type: 'service_account',
@@ -2106,6 +2361,8 @@ connectGoogleSheets(){
   this.openConnectWiseForm = false;
   this.openHaloPSAForm = false;
   this.openShopifyForm = false;
+  this.openTallyForm = false;
+  this.openHubspotForm = false;
   this.openGoogleAnalyticsForm = false;
   this.openGoogleAnalyticsForm = false;
   this.postGreServerName = '';
@@ -2123,9 +2380,16 @@ connectGoogleSheets(){
   this.siteURL = '';
   this.companyId = '';
   this.siteURLPSA = '';
+  this.tallyToken = '';
+  this.tallyTokenError = false;
   this.ninjaRMMClientid = '';
   this.ninjaRMMClientSecret = '';
   this.selectedNinjaRMMScopes = [];
+  this.hubspotClientId = '';
+  this.hubspotClientSecret = '';
+  this.selectedHubspotScopes = [];
+  this.hubspotRedirectURL = '';
+  this.hubspotRedirectURLError = false;
   }
 
   serverError:boolean = false;
@@ -2146,6 +2410,7 @@ connectGoogleSheets(){
 
   shopifyApiTokenError:boolean = false;
   shopifyNameError:boolean = false;
+  tallyTokenError:boolean = false;
 
   serverConditionError(){
     if(this.schemaList && this.schemaList.length > 0){
@@ -2505,5 +2770,9 @@ connectGoogleSheets(){
   gotoDashboardWithoutSwitch(){
     const encodedDashboardId = btoa(this.dashbaordIdToSwitch.toString());
     this.router.navigate(['/analytify/home/sheetsdashboard/',encodedDashboardId])
+  }
+  gotoConfigureEmailAlerts(id:any){
+    const encodedId = btoa(id.toString());
+    this.router.navigate(['/analytify/configure-page/email/datasource/' + encodedId]);
   }
 }

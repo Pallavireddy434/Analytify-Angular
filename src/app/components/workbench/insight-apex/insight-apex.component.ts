@@ -6,6 +6,8 @@ import { NgxEchartsModule } from 'ngx-echarts';
 import { SharedModule } from '../../../shared/sharedmodule';
 import _ from 'lodash';
 import { fontWeight } from 'html2canvas/dist/types/css/property-descriptors/font-weight';
+import { offset } from '@popperjs/core';
+import { text } from 'd3';
 
 interface Dimension {
   name: string;
@@ -72,11 +74,13 @@ export class InsightApexComponent {
   @Input() dataLabelsLineFontPosition:any;
   @Input() selectedColorScheme:any;
   @Input() SDKChartOptions: any;
-  @Input() isHorizontalBar:any;
+  @Input() measureColorRanges: any;
+  @Input() isMeasureDistribution: any;
   @Output() setDrilldowns = new EventEmitter<object>();
   @Output() saveOrUpdateChart = new EventEmitter<object>();
   
   @ViewChild('barChart') barCharts!: ChartComponent;
+  @ViewChild('horizontalBarChart') horizontalBarCharts!: ChartComponent;
   @ViewChild('areaChart') areaCharts!: ChartComponent;
   @ViewChild('lineChart') lineCharts!: ChartComponent;
   @ViewChild('sidebyside') sideBySideCharts!: ChartComponent;
@@ -108,17 +112,14 @@ export class InsightApexComponent {
     } else {
       this.generateChart();
     }
-     if(changes['isHorizontalBar']){
-      this.updateBarchart();
-    }
     if(changes['chartsColumnData']  || changes['dualAxisColumnData'] ){
       // if(changes['chartsColumnData'].currentValue.length>0 || changes['dualAxisColumnData'].currentValue.length>0){
-        this.updateCategories();
+        // this.updateCategories();
       // }
     }
     if(changes['chartsRowData'] || changes['dualAxisRowData'] ){
       // if(changes['chartsRowData'].currentValue.length>0 || changes['dualAxisRowData'].currentValue.length>0){
-        this.updateSeries();
+        // this.updateSeries();
       // }
     }
     if(changes['xLabelFontFamily']){
@@ -187,7 +188,7 @@ export class InsightApexComponent {
     if(this.chartType == 'donut' && changes['label']){
       this.labelsShowOrHide();
     }
-    if(['bar','funnel'].includes(this.chartType) && changes['isDistributed']){
+    if(['bar','funnel','horizontalBar'].includes(this.chartType) && changes['isDistributed']){
       this.colorDistribution();
     }
     if(['donut','pie'].includes(this.chartType) && changes['legendsAllignment']){
@@ -199,7 +200,7 @@ export class InsightApexComponent {
     if(changes['backgroundColor']){
       this.setBackgroundColor();
     }
-    if(changes['barColor'] || changes['lineColor'] || changes['color'] || changes['selectedColorScheme']){
+    if(changes['barColor'] || changes['lineColor'] || changes['color'] || changes['selectedColorScheme'] ){
       this.setChartColor();
     }
     if(changes['gridColor']){
@@ -214,6 +215,11 @@ export class InsightApexComponent {
     // if(['funnel','bar'].includes(this.chartType) && changes['sortType'] && changes['sortType']?.currentValue !== 0){
     //   this.sortSeries(this.sortType);
     // }
+    if (changes['isMeasureDistribution'] || changes['measureColorRanges']) {
+      if (['bar', 'pie', 'donut', 'funnel', 'horizontalBar'].includes(this.chartType)) {
+        this.setMeasureRangeColors();
+      }
+    }
     if(this.isSheetSaveOrUpdate){
       let object = {
         chartOptions : this.chartOptions
@@ -230,6 +236,9 @@ export class InsightApexComponent {
     if (this.chartType === 'bar') {
       this.chartOptions.series[0].data = this.chartsRowData;
       this.barCharts?.updateOptions({ series: this.chartOptions.series });
+    }else if(this.chartType === 'horizontalBar') {
+      this.chartOptions.series[0].data = this.chartsRowData;
+      this.horizontalBarCharts?.updateOptions({ series: this.chartOptions.series });
     } else if (this.chartType === 'area') {
       this.chartOptions.series[0].data = this.chartsRowData;
       this.areaCharts?.updateOptions({ series: this.chartOptions.series });
@@ -326,12 +335,6 @@ export class InsightApexComponent {
       this.sideBySideCharts.updateOptions(this.chartOptions);
     }
   }
-updateBarchart(){
-   if (this.chartType === 'bar') {
-      this.chartOptions.plotOptions.bar.horizontal = this.isHorizontalBar;
-      this.barCharts?.updateOptions({ plotOptions: this.chartOptions.plotOptions});
-    }
-}
   ngOnDestroy(): void {
     if(this.barCharts){
       this.barCharts.destroy();
@@ -367,6 +370,8 @@ updateBarchart(){
   generateChart(){
     if(this.chartType === 'bar'){
       this.barChart();
+    } else if(this.chartType === 'horizontalBar'){
+      this.horizontalBarChart();
     } else if(this.chartType === 'area'){
       this.areaChart();
     } else if(this.chartType === 'line'){
@@ -527,8 +532,7 @@ updateBarchart(){
       },
       plotOptions: {
         bar: {
-          horizontal: true,
-          distributed : this.isDistributed,
+          distributed : this.isMeasureDistribution ? true : this.isDistributed,
           dataLabels: {
             position:this.dataLabelsFontPosition,
           },
@@ -548,9 +552,134 @@ updateBarchart(){
       legend: {
         show: false,
       },
-      colors: this.isDistributed ? this.selectedColorScheme : [this.color]
+      colors: this.isMeasureDistribution ? this.setColorsOnRanges(this.chartsRowData) : (this.isDistributed ? this.selectedColorScheme : [this.color])
     };
   }
+horizontalBarChart() {
+  const self = this;
+  this.chartOptions = {
+    series: [{
+      name: "",
+      data: this.chartsRowData 
+    }],
+    annotations: {
+      points: [{
+        x: 'zoom',
+        seriesIndex: 0,
+        label: {
+          borderColor: '#775DD0',
+          offsetY: 0,
+          style: {
+            color: '#fff',
+            background: '#775DD0',
+          },
+          text: 'zoom',
+        }
+      }]
+    },
+    chart: {
+      toolbar: {
+        show: true,
+        offsetX: 0,
+        offsetY: 0,
+        tools: {
+          download: true,
+          selection: true,
+          zoom: true,
+          zoomin: true,
+          zoomout: true,
+          pan: true,
+          reset: true || '<img src="./assets/images/icons/home-icon.png" width="20">',
+        },
+        autoSelected: 'zoom' 
+      },
+      type: 'bar',
+      height: 320,
+      background: this.backgroundColor,
+      events: {
+        dataPointSelection: function (event: any, chartContext: any, config: any) {
+          const selectedXValue = self.chartsColumnData[config.dataPointIndex];
+          console.log('X-axis value:', selectedXValue);
+          if (self.drillDownIndex < self.draggedDrillDownColumns.length - 1) {
+            let nestedKey = self.draggedDrillDownColumns[self.drillDownIndex];
+            self.drillDownIndex++;
+            let obj = { [nestedKey]: selectedXValue };
+            self.drillDownObject.push(obj);
+            let dObject = {
+              drillDownIndex: self.drillDownIndex,
+              draggedDrillDownColumns: self.draggedDrillDownColumns,
+              drillDownObject: self.drillDownObject
+            }
+            self.setDrilldowns.emit(dObject);
+          }
+        }
+      }
+    },
+   yaxis: {
+  labels: {
+    show: this.yLabelSwitch,
+    offsetX: 15,
+    offsetY: (this.measureAlignment === 'center' ? 0 : (this.measureAlignment === 'top' ? -10 : 10)),
+    style: {
+      colors: [],
+      fontSize: this.yLabelFontSize,
+      fontFamily: this.yLabelFontFamily,
+      fontWeight: this.ylabelFontWeight,
+    },
+  },
+},
+xaxis: {
+  categories: this.chartsColumnData.map((category: any) => category === null ? 'null' : category),
+  labels: {
+    formatter: this.formatNumber.bind(this),
+    style: {
+      fontSize: this.xLabelFontSize,
+      fontFamily: this.xLabelFontFamily,
+      fontWeight: this.xlabelFontWeight,
+    }
+  },
+},
+    grid: {
+      show: true,
+      borderColor: this.gridColor,
+      xaxis: {
+        lines: {
+          show: this.xGridSwitch
+        }
+      },
+      yaxis: {
+        lines: {
+          show: this.yGridSwitch
+        }
+      },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: true,  // 🔁 Make it horizontal
+        distributed: this.isMeasureDistribution ? true : this.isDistributed,
+        dataLabels: {
+          position: this.dataLabelsFontPosition,
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: this.formatNumber.bind(this),
+      textAnchor: 'start',
+      style: {
+        fontSize: this.dataLabelsFontSize,
+        fontFamily: this.dataLabelsFontFamily,
+        fontWeight: this.isBold ? 700 : 400,
+        colors: [this.dataLabelsColor],
+      },
+    },
+    legend: {
+      show: false,
+    },
+    colors: this.isMeasureDistribution ? this.setColorsOnRanges(this.chartsRowData ) : (this.isDistributed ? this.selectedColorScheme : [this.color])
+  };
+}
+
   areaChart() {
     this.chartOptions = {
       series: [
@@ -798,7 +927,7 @@ updateBarchart(){
           }
         }
       },
-       colors:this.selectedColorScheme,
+      colors:this.isMeasureDistribution ? this.setColorsOnRanges(this.chartsRowData ) : this.selectedColorScheme,
       labels: this.chartsColumnData.map((category: any) => category === null ? 'null' : category),
       legend: {
         show: this.legendSwitch,
@@ -1575,7 +1704,7 @@ updateBarchart(){
           }
         }
       },
-      colors: this.selectedColorScheme,
+      colors:this.isMeasureDistribution ? this.setColorsOnRanges(this.chartsRowData ) : this.selectedColorScheme,
       labels: this.chartsColumnData.map((category: any) => category === null ? 'null' : category),
       // responsive: [
       //   {
@@ -1725,7 +1854,7 @@ updateBarchart(){
           horizontal: true,
           barHeight: "80%",
           isFunnel: true,
-          distributed : this.isDistributed,
+          distributed : this.isMeasureDistribution ? true : this.isDistributed,
           dataLabels: {
             position:  this.dataLabelsFontPosition,
           }
@@ -1753,7 +1882,7 @@ updateBarchart(){
       legend: {
         show: false
       },
-      colors: this.isDistributed ? this.selectedColorScheme : [this.color]
+      colors: this.isMeasureDistribution ? this.setColorsOnRanges(this.chartsRowData ) : (this.isDistributed ? this.selectedColorScheme : [this.color])
     };
   }
   guageChart() {
@@ -2489,7 +2618,8 @@ updateBarchart(){
         this.chartOptions.dataLabels.offsetY = (this.dataLabelsFontPosition === 'top') ? -10 : ((this.dataLabelsFontPosition === 'center') ? 0 : 10);
       }
       object = {dataLabels : this.chartOptions.dataLabels};
-    } else{
+    }
+     else{
       if(this.chartOptions?.plotOptions?.bar?.dataLabels?.position){
         this.chartOptions.plotOptions.bar.dataLabels.position = this.dataLabelsFontPosition;
       }
@@ -2812,7 +2942,7 @@ updateBarchart(){
       }
       object = { series: this.chartOptions.series };
     }
-    else if(['bar','funnel'].includes(this.chartType)){
+    else if(['bar','funnel','horizontalBar'].includes(this.chartType)){
       if(this.chartOptions?.colors){
         this.chartOptions.colors = this.isDistributed ? this.selectedColorScheme : [this.color];
       }
@@ -2836,8 +2966,9 @@ updateBarchart(){
 
     if (this.chartType === 'bar') {
       this.barCharts?.updateOptions(object);
-    }
-    else if (this.chartType === 'area') {
+    }else if (this.chartType === 'horizontalBar') {
+      this.horizontalBarCharts?.updateOptions(object);
+    }else if (this.chartType === 'area') {
       this.areaCharts?.updateOptions(object);
     }
     else if (this.chartType === 'line') {
@@ -3099,6 +3230,60 @@ updateBarchart(){
   //     this.barCharts?.updateOptions({ series: this.chartOptions.series, xaxis: this.chartOptions.xaxis });
   //   }
   // }
+
+  setColorsOnRanges(data: any): string[] {
+    let colors = data.map((value:any) => {
+      const matchedRange = this.measureColorRanges.find((range:any) =>
+        value >= range.min && value <= range.max
+      );
+      return matchedRange ? matchedRange.color : '#2392c1';
+    });
+    return colors;
+  }
+
+  setMeasureRangeColors() {
+    if (this.isMeasureDistribution) {
+      let object = {};
+      if (this.chartType === 'bar') {
+        if (this.chartOptions?.colors && this.chartOptions?.series[0]?.data) {
+          this.chartOptions.colors = this.setColorsOnRanges(this.chartOptions.series[0].data);
+        }
+        this.chartOptions.plotOptions.bar.distributed = true;
+        object = { colors: this.chartOptions.colors, plotOptions: this.chartOptions.plotOptions };
+        this.barCharts?.updateOptions(object);
+      }
+      else if (this.chartType === 'horizontalBar') {
+        if (this.chartOptions?.colors && this.chartOptions?.series[0]?.data) {
+        this.chartOptions.colors = this.setColorsOnRanges(this.chartOptions.series[0].data);
+        }
+        this.chartOptions.plotOptions.bar.distributed = true;
+        object = { colors: this.chartOptions.colors, plotOptions: this.chartOptions.plotOptions };
+        this.horizontalBarCharts?.updateOptions(object);
+      }
+      else if (this.chartType === 'funnel') {
+        if (this.chartOptions?.colors && this.chartOptions?.series[0]?.data) {
+        this.chartOptions.colors = this.setColorsOnRanges(this.chartOptions.series[0].data);
+        }
+        this.chartOptions.plotOptions.bar.distributed = true;
+        object = { colors: this.chartOptions.colors, plotOptions: this.chartOptions.plotOptions };
+        this.funnelCharts?.updateOptions(object);
+      }
+      else if (this.chartType === 'pie') {
+        if (this.chartOptions?.colors && this.chartOptions?.series) {
+        this.chartOptions.colors = this.setColorsOnRanges(this.chartOptions.series);
+        }
+        object = { colors: this.chartOptions.colors};
+        this.pieCharts?.updateOptions(object);
+      }
+      else if (this.chartType === 'donut') {
+        if (this.chartOptions?.colors && this.chartOptions?.series) {
+        this.chartOptions.colors = this.setColorsOnRanges(this.chartOptions.series);
+        }
+        object = { colors: this.chartOptions.colors};
+        this.donutCharts?.updateOptions(object);
+      }
+    }
+  }
 }
 // }
 

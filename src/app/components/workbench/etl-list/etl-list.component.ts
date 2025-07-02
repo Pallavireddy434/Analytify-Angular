@@ -24,7 +24,9 @@ export class EtlListComponent {
   totalItems: any;
   search: string = '';
   dataFlowList: any[] = [];
-  listType: string = 'dataFlow';
+  listType: string = 'Saved Data Flow';
+  jobFlowList: any[] = [];
+  monitorsList: any[] = [];
 
   constructor(private toasterService: ToastrService, private workbechService: WorkbenchService, private loaderService: LoaderService, private router: Router,private route: ActivatedRoute) {
   }
@@ -35,7 +37,7 @@ export class EtlListComponent {
   }
 
   getDataFlowList(){
-    this.workbechService.getEtlDataFlowList(this.page, this.pageSize, this.search).subscribe({
+    this.workbechService.getEtlDataFlowList(this.page, this.pageSize, this.search, 'dataflow').subscribe({
       next: (data: any) => {
         console.log(data);
         this.dataFlowList = data.data;
@@ -55,11 +57,48 @@ export class EtlListComponent {
     });
   }
 
-  deleteDataFlow(dataFlow:any){
+  getJobFlowList() {
+    // this.jobFlowList = [
+    //   {job_flow_name: 'test_23', created_at: '2025-05-15T06:42:53.218831Z', updated_at: '2025-05-20T06:42:53.218831Z'}
+    // ];
+    // this.pageSize = 10;
+    // this.page = 1;
+    // this.totalItems = 1;
+
+     this.workbechService.getEtlDataFlowList(this.page, this.pageSize, this.search, 'jobflow').subscribe({
+      next: (data: any) => {
+        console.log(data);
+        this.jobFlowList = data.data;
+        this.totalItems = data?.total_records;
+        this.pageSize = data?.page_size;
+        this.page = data?.page_number;
+        if(this.dataFlowList.length === 0){
+          this.pageSize = 10;
+          this.page = 1;
+          this.totalItems = 0;
+        }
+      },
+      error: (error: any) => {
+        this.toasterService.error(error.error.message, 'error', { positionClass: 'toast-top-right' });
+        console.log(error);
+      }
+    });
+  }
+
+  getMonitorList() {
+    this.monitorsList = [
+      {name: 'test_12', schedule: '2025-05-30T06:42:53.218831Z', latest_run: '2025-05-28T06:42:53.218831Z', next_run: '2025-05-29T06:42:53.218831Z'}
+    ];
+    this.pageSize = 10;
+    this.page = 1;
+    this.totalItems = 1;
+  }
+
+  deleteFlow(flow:any){
     Swal.fire({
       position: "center",
       icon: "question",
-      title: `Delete "${dataFlow.data_flow_name}" Data Flow?`,
+      title: `Delete ${flow.data_flow_name} ${this.listType === 'Saved Data Flow' ? 'DataFlow': 'JobFlow'} ?`,
       text: "This action cannot be undone. Are you sure you want to proceed?",
       showConfirmButton: true,
       showCancelButton: true,
@@ -67,11 +106,15 @@ export class EtlListComponent {
       cancelButtonText: 'No',
     }).then((result) => {
       if (result.isConfirmed) {
-        this.workbechService.deleteDataFlow(dataFlow.id).subscribe({
+        this.workbechService.deleteDataFlow(flow.id).subscribe({
           next: (response) => {
             console.log(response);
-            this.getDataFlowList();
-            this.toasterService.info(response.message, 'info', { positionClass: 'toast-top-right' });
+            if(this.listType === 'Saved Data Flow'){
+              this.getDataFlowList();
+            } else if(this.listType === 'Saved Job Flow'){
+              this.getJobFlowList();
+            }
+            this.toasterService.success(response.message, 'success', { positionClass: 'toast-top-right' });
           },
           error: (error) => {
             console.log(error);
@@ -83,16 +126,25 @@ export class EtlListComponent {
   }
 
   goToDataFlow(){
-    this.router.navigate(['/analytify/etlList/etl']);
+    this.router.navigate(['/analytify/etlList/dataFlow']);
   }
 
   editDataFlow(id:any){
     const encodedId = btoa(id.toString());
-    this.router.navigate(['/analytify/etlList/etl/'+encodedId]);
+    this.router.navigate(['/analytify/etlList/dataFlow/'+encodedId]);
   }
 
   goToJobFlow(){
     this.router.navigate(['/analytify/etlList/jobFlow']);
+  }
+
+  editJobFlow(id:any){
+    const encodedId = btoa(id.toString());
+    this.router.navigate(['/analytify/etlList/jobFlow/'+encodedId]);
+  }
+
+  goToMonitor(){
+    this.router.navigate(['/analytify/etlList/monitor']);
   }
 
   onPageSizeChange() {
@@ -104,10 +156,12 @@ export class EtlListComponent {
     this.getDataFlowList();
   }
   getEtlList(){
-    if(this.listType === 'dataFlow'){
+    if(this.listType === 'Saved Data Flow'){
       this.getDataFlowList();
-    } else{
-      this.getDataFlowList();
+    } else if(this.listType === 'Saved Job Flow'){
+      this.getJobFlowList();
+    } else if(this.listType === 'Monitor List'){
+      this.getMonitorList();
     }
   }
 }

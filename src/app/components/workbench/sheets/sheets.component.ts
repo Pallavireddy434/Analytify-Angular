@@ -45,7 +45,7 @@ import { fontWeight } from 'html2canvas/dist/types/css/property-descriptors/font
 import { COLOR_PALETTE } from '../../../shared/models/color-palette.model';
 import { fontFamily } from 'html2canvas/dist/types/css/property-descriptors/font-family';
 import { lastValueFrom, Subscription, timer } from 'rxjs';
-import { evaluate, i, parse } from 'mathjs';
+import { evaluate, i, parse, re } from 'mathjs';
 import { InsightApexComponent } from '../insight-apex/insight-apex.component';
 import { InsightEchartComponent } from '../insight-echart/insight-echart.component';
 import { SharedService } from '../../../shared/services/shared.service';
@@ -62,6 +62,7 @@ import { TestPipe } from '../../../test.pipe';
 import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
 import { CustomSheetsComponent } from '../custom-sheets/custom-sheets.component';
+import { error } from 'jquery';
 
 declare type HorizontalAlign = 'left' | 'center' | 'right';
 declare type VerticalAlign = 'top' | 'center' | 'bottom';
@@ -251,7 +252,6 @@ export class SheetsComponent{
   createdBy : any;
   calculatedFieldFunction : string = '';
   nestedCalculatedFieldData : string = '';
-  isHorizontalBar:boolean=false;
   toggleTableSearch:boolean=true;
   toggleTablePagination:boolean=true;
   radar: boolean = false;
@@ -384,11 +384,12 @@ export class SheetsComponent{
   next: number = 3;
   isAnchor: boolean = false;
   anchorDate: any;
-
+  isHorizontalBar: boolean = false;
   locationDrillDownSwitch: boolean = false;
   locationHeirarchyFieldList: string[] = ['country', 'state', 'city'];
   locationHeirarchyList: string[] = ['country', 'state', 'city'];
   isLocationFeild: boolean = false;
+  isRadarDistribution: boolean = false;
   @ViewChild('pivotTableContainer', { static: false }) pivotContainer!: ElementRef;
   @ViewChild('virtualScrollContainer', { static: false }) container!: ElementRef;
   @ViewChild(CdkVirtualScrollViewport) viewport!: CdkVirtualScrollViewport;
@@ -771,6 +772,8 @@ try {
             this.pivotColumnData = responce?.data?.col;
             this.pivotRowData = responce?.data?.row;
             this.pivotMeasureData = responce?.data?.pivot_measure;
+            if(isSyncData){
+            }
             if (this.chartsRowData.length > 0) {
               // this.enableDisableCharts();
               // this.chartsOptionsSet();
@@ -793,6 +796,7 @@ try {
               this.table = true;
               this.pivotTable = false;
               this.bar = false;
+              this.horizontalBar = false;
               this.area = false;
               this.line = false;
               this.pie = false;
@@ -812,10 +816,11 @@ try {
               this.calendar = false;
               this.map=false;
               // this.tableDisplayPagination();
-            } else if(((this.pie || this.bar || this.area || this.line || this.donut || this.funnel || this.calendar) && (this.draggedColumns.length > 1 || this.draggedRows.length > 1))) {
+            } else if(((this.pie || this.bar || this.horizontalBar || this.area || this.line || this.donut || this.funnel || this.calendar) && (this.draggedColumns.length > 1 || this.draggedRows.length > 1))) {
               this.table = false;
               this.pivotTable = false;
               this.bar = false;
+              this.horizontalBar = false;
               this.area = false;
               this.line = false;
               this.pie = false;
@@ -879,6 +884,14 @@ try {
         this.page = 1;
         this.tableDisplayPagination(false);
       }
+      toggleTableSearchBarOff(){
+        if(this.tableChartSearch.length > 0){
+        this.tableChartSearch = '';
+        this.pageNo = 1;
+        this.page = 1;
+        this.tableDisplayPagination(false);
+        }else return;
+      }
       tableDisplayPagination(isSyncData : boolean) {
         if (this.draggedRows.length > 0 || this.draggedColumns.length > 0) {
           const obj = {
@@ -928,6 +941,7 @@ try {
                 if(this.page === 1 && this.pageNo === 1){
                   this.displayedColumns = this.tableColumnsDisplay;
                   this.tableDataStore = this.tableDataDisplay;
+                  console.log(this.displayedColumns, this.tableDataStore);
                 }
                 if(isSyncData){
                   this.sheetSave();
@@ -1051,14 +1065,14 @@ try {
           });
           this.tablePreviewRow.forEach((res: any) => {
             let obj = {
-              name: res.col,
+              name: res.col ?? res.column,
               data: res.result_data
             }
             this.dualAxisRowData.push(obj);
           });
           this.tablePreviewRow.forEach((res: any) => {
             let obj = {
-              name: res.col,
+              name: res.col ?? res.column,
               value: res.result_data
             }
             this.radarRowData.push(obj);
@@ -1131,6 +1145,9 @@ try {
       chartsOptionsSet(){
         if (this.bar) {
           this.chartType = 'bar';
+        }
+        if(this.horizontalBar){
+          this.chartType = 'horizontalBar'
         }
         else if(this.pivotTable){
           this.chartType = 'pivotTable'
@@ -1574,6 +1591,7 @@ try {
   table = true;
   pivotTable = false;
   bar = false;
+  horizontalBar = false;
   sidebyside = false;
   area = false;
   line = false;
@@ -1590,10 +1608,11 @@ try {
   guage = false;
   calendar = false;
   chartDisplay(table:boolean,bar:boolean,area:boolean,line:boolean,pie:boolean,sidebysideBar:boolean,stocked:boolean,barLine:boolean,
-    horizentalStocked:boolean,grouped:boolean,multiLine:boolean,donut:boolean,radar:boolean,kpi:any,heatMap:any,funnel:any,guage:boolean,map:boolean,calendar:boolean,pivotTable:boolean,chartId:any){
+    horizentalStocked:boolean,grouped:boolean,multiLine:boolean,donut:boolean,radar:boolean,kpi:any,heatMap:any,funnel:any,guage:boolean,map:boolean,calendar:boolean,pivotTable:boolean,horizontalBar:boolean,chartId:any){
     this.table = table;
     this.pivotTable = pivotTable;
     this.bar=bar;
+    this.horizontalBar = horizontalBar
     this.area=area;
     this.line=line;
     this.pie=pie;
@@ -1612,7 +1631,13 @@ try {
     this.guage = guage;
     this.map = map;
     this.calendar = calendar;
-    if(!(this.bar|| this.pie || this.donut)){
+    if(this.bar){
+      this.isHorizontalBar = false;
+    }
+    if(this.bar || this.horizontalBar || this.pie || this.donut || this.funnel){
+    this.updateMeasureColorRanges();
+    }
+    if(!(this.bar|| this.horizontalBar || this.pie || this.donut)){
       this.draggedDrillDownColumns = [];
       this.drillDownObject = [];
       this.drillDownIndex = 0;
@@ -1622,7 +1647,9 @@ try {
       this.draggedMeasureValues=[]
       this.draggedMeasureValuesData=[]
     }
+    if(!this.horizontalBar){
     this.resetCustomizations();
+    }
     this.chartsOptionsSet(); 
     this.hasUnSavedChanges=true;
   }
@@ -2035,6 +2062,7 @@ try {
     this.dimetionMeasure = [];
     this.dualAxisColumnData = [];
     this.dualAxisRowData = [];
+    this.radarRowData = [];
     this.sheetfilter_querysets_id = null;
       this.saveTableData = [] ;
       this.savedisplayedColumns = [];
@@ -2077,6 +2105,7 @@ try {
       this.table = true;
       this.pivotTable = false;
       this.bar = false;
+      this.horizontalBar = false;
       this.pie = false;
       this.line = false;
       this.area = false;
@@ -2173,7 +2202,8 @@ try {
   donutOptions : any = undefined;
   eMapChartOptions : any;
 
-sheetSave(){
+  isMailRefresh=false;
+sheetSave(isDashboardTransfer?: boolean){
   let savedChartOptions ;
   let kpiData;
   let kpiColor;
@@ -2198,6 +2228,19 @@ sheetSave(){
     //  bandColor2 = this.color2;
     }
   if(this.bar && this.chartId == 6){
+    this.saveBar = this.chartsRowData;
+    this.barXaxis = this.chartsColumnData.map((category : any)  => category === null ? 'null' : category);
+    if (this.originalData) {
+      this.saveBar = this.originalData.data;
+      this.barXaxis = this.originalData.categories;
+      tablePreviewRow = _.cloneDeep(this.tablePreviewRow);
+      tablePreviewRow[0].result_data = this.originalData.data;
+      tablePreviewCol = _.cloneDeep(this.tablePreviewColumn);
+      tablePreviewCol[0].result_data = this.originalData.categories;
+      delete this.originalData;
+    }
+  }
+   if(this.horizontalBar && this.chartId == 14){
     this.saveBar = this.chartsRowData;
     this.barXaxis = this.chartsColumnData.map((category : any)  => category === null ? 'null' : category);
     if (this.originalData) {
@@ -2394,9 +2437,13 @@ sheetSave(){
     pivotColumnTotals : this.pivotColumnTotals,
     bandingOddColor :this.bandingOddColor,
     bandingEvenColor:this.bandingEvenColor,
-    isHorizontalBar:this.isHorizontalBar,
     toggleTableSearch:this.toggleTableSearch,
-    toggleTablePagination:this.toggleTablePagination
+    toggleTablePagination:this.toggleTablePagination,
+    isRadarDistribution:this.isRadarDistribution,
+    isHorizontalBar  : this.isHorizontalBar,
+    isMeasureDistribution : this.isMeasureDistribution,
+    measureColorRanges : this.measureColorRanges,
+    measureDivisions : this.measureDivisions
   }
   // this.sheetTagName = this.sheetTitle;
   let draggedColumnsObj;
@@ -2409,7 +2456,7 @@ sheetSave(){
   } else {
     draggedColumnsObj = this.draggedColumnsData
   }
-const obj={
+let obj={
   "chart_id": this.chartId,
   "queryset_id":this.qrySetId,
   "server_id": this.databaseId,
@@ -2512,23 +2559,24 @@ const obj={
     "suffix" : this.suffix
   }
 }
-}
+} as any
 console.log(this.retriveDataSheet_id)
 if(this.retriveDataSheet_id){
+  if(this.isMailRefresh){
+    obj.is_mail_refresh = true;
+    if(this.isSyncForEmail){
+    obj.action_type = 'sheet_refresh';
+    }else{
+      obj.action_type = 'sheet_update';
+    }
+  }
   console.log("Sheet Update")
   this.workbechService.sheetUpdate(obj,this.retriveDataSheet_id).subscribe({next: (responce:any) => {
-   this.tabs[this.SheetIndex].sheet_name = this.sheetTitle;
-    if(responce){
-      // Swal.fire({
-      //   icon: 'success',
-      //   text: responce.message,
-      //   width: '200px',
-      // })
-      this.toasterService.success(responce.message,'success',{ positionClass: 'toast-top-right'});
-
-    //   this.getSheetNames();
-    //  this.sheetRetrive();
+    if(this.tabs[this.SheetIndex]){
+      this.tabs[this.SheetIndex].sheet_name = this.sheetTitle;
     }
+    if(responce && !isDashboardTransfer){
+      this.toasterService.success(responce.message,'success',{ positionClass: 'toast-top-right'});
       let obj : object= {
         "sheet_id":this.retriveDataSheet_id
       }
@@ -2537,7 +2585,8 @@ if(this.retriveDataSheet_id){
         console.log(responce);
       }
     })
-  
+  }
+  this.isSyncForEmail = false
   },
   error: (error) => {
     console.log(error);
@@ -2546,6 +2595,7 @@ if(this.retriveDataSheet_id){
       text: error.error.message,
       width: '200px',
     })
+    this.isSyncForEmail = false
   }
 }
 )
@@ -2625,6 +2675,712 @@ mergeFilters(filtersData: any[], filtersList: any[]): any[] {
   });
 }
 
+setSheetData(responce :any, isDuplicate : boolean,duplicateFilterData?:any,isDashboardTransfer? :boolean){
+  if(isDuplicate){
+    this.retriveDataSheet_id = '';
+  } else {
+    if (isDashboardTransfer) {
+      this.qrySetId = responce?.queryset_id;
+      this.databaseId = responce?.hierarchy_id;
+      this.chartOptionsSet = responce.sheet_data.savedChartOptions;
+    }
+    this.retriveDataSheet_id = responce?.sheet_id;
+    this.sheetName = responce?.sheet_name;
+    this.sheetTitle = responce?.sheet_name;
+    this.is_sheet_Embed = responce?.is_embedded;
+    this.sheetfilter_querysets_id = responce?.sheetfilter_querysets_id || responce?.sheet_filter_quereyset_ids;
+    if(!responce.sheet_tag_name){
+      this.sheetTagName = responce?.sheet_name;
+    }
+    else{
+      this.sheetTagName = responce?.sheet_tag_name;
+    }
+  }
+  this.chartId = responce?.chart_id;
+  this.sheetChartId = responce?.chart_id;
+  this.sheetCustomQuery = responce?.custom_query;
+  this.sheetResponce = responce?.sheet_data;
+  this.draggedColumns=this.sheetResponce?.columns;
+  if(this.draggedColumns){
+    this.checkDateFormatForYOY();
+  }
+  if(!this.filterQuerySetId){
+    this.filterQuerySetId = responce?.datasource_queryset_id;
+  }
+  this.draggedRows = this.sheetResponce?.rows;
+  if(this.draggedRows){
+    this.checkAggregationForYOY();
+  }
+  this.draggedMeasureValues = this.sheetResponce?.pivotMeasure || []; 
+  this.mulColData = responce?.col_data;
+  this.mulRowData = responce?.row_data;
+  this.pivotMeasureValues = responce?.pivot_measure
+
+  this.pivotMeasureData = this.sheetResponce?.pivotMeasure_Data;
+  this.pivotColumnData = this.sheetResponce?.col;
+  this.pivotRowData = this.sheetResponce?.row;
+
+  this.tablePaginationRows=responce?.row_data;
+  this.tablePaginationColumn=responce?.col_data;
+if (isDuplicate && duplicateFilterData) {
+let filterData = responce?.filters_data;
+this.dimetionMeasure = this.mergeFilters(filterData, duplicateFilterData);
+} else {
+this.dimetionMeasure = responce?.filters_data;
+}
+  this.createdBy = responce?.created_by;
+  this.color1 = responce?.sheet_data?.results?.color1;
+  this.color2 = responce?.sheet_data?.results?.color2;
+  this.tablePaginationCustomQuery = responce?.custom_query;
+  this.donutDecimalPlaces = this.sheetResponce?.results.decimalplaces;
+  if(this.sheetResponce?.numberFormat?.decimalPlaces){ 
+    this.decimalPlaces = this.sheetResponce?.numberFormat?.decimalPlaces;
+  }
+  if(this.sheetResponce?.numberFormat?.displayUnits){
+    this.displayUnits = this.sheetResponce?.numberFormat?.displayUnits;
+  }
+  if(this.sheetResponce?.numberFormat?.prefix){
+    this.prefix = this.sheetResponce?.numberFormat?.prefix;
+  }
+  if(this.sheetResponce?.numberFormat?.suffix){
+    this.suffix = this.sheetResponce?.numberFormat?.suffix;
+  }
+  // this.GridColor = responce.sheet_data.savedChartOptions.chart.background;
+  // this.apexbBgColor = responce.sheet_data.savedChartOptions.grid.borderColor;
+  if(isDuplicate && duplicateFilterData){
+    duplicateFilterData.forEach((filter: any)=>{
+      this.filterId.push(filter.id);
+    });
+  } else {
+  responce?.filters_data.forEach((filter: any)=>{
+    this.filterId.push(filter.filter_id);
+  });
+}
+this.isTopFilter = !this.dimetionMeasure.some((column: any) => column.top_bottom && column.top_bottom.length>0);
+  this.isEChatrts = this.sheetResponce?.isEChart;
+  this.isApexCharts = this.sheetResponce?.isApexChart;
+  this.dateDrillDownSwitch = this.sheetResponce?.isDrillDownData;
+  this.locationDrillDownSwitch = this.sheetResponce?.customizeOptions?.locationDrillDownSwitch;
+  this.isLocationFeild = this.sheetResponce?.customizeOptions?.isLocationField;
+  this.draggedDrillDownColumns = this.sheetResponce?.drillDownHierarchy ? this.sheetResponce.drillDownHierarchy : [];
+  this.heirarchyColumnData = this.sheetResponce?.heirarchyColumnData ? this.sheetResponce?.heirarchyColumnData : [];
+  this.selectedSortColumnData = this.sheetResponce?.selectedSortColumnData ? this.sheetResponce?.selectedSortColumnData : null;
+  if(this.isEChatrts){
+    this.selectedChartPlugin = 'echart';
+  } else {
+    this.isApexCharts = true;
+    this.selectedChartPlugin = 'apex';
+  }
+  this.sheetTagTitle = this.sanitizer.bypassSecurityTrustHtml(this.sheetTagName);
+  // this.displayUnits = 'none';
+  
+  if(this.sheetResponce.columns_data){
+    this.draggedColumnsData = this.sheetResponce?.columns_data;
+  }
+  else{
+    this.draggedColumns.forEach((res:any) => {
+      this.draggedColumnsData.push([res.column,res.data_type,"",""])
+    });
+  }
+  if(this.sheetResponce.rows_data){
+    this.draggedRowsData = this.sheetResponce?.rows_data;
+  }
+  else{
+    this.draggedRows.forEach((res:any) => {
+      this.draggedRowsData.push([res.column,res.data_type,"",res.alias ? res.alias : ""])
+    });
+  }
+  if(this.sheetResponce.pivotMeasure){
+    this.draggedMeasureValues = this.sheetResponce?.pivotMeasure;
+    this.draggedMeasureValuesData = this.sheetResponce?.pivotMeasureValuesData
+  }
+  else if(this.draggedMeasureValues){
+    this.draggedMeasureValues.forEach((res:any) => {
+      this.draggedMeasureValuesData.push([res.column,res.data_type,"",res.alias ? res.alias : ""])
+    });
+  }
+  // this.table = false;
+  this.chartsDataSet(responce);
+  if(responce.chart_id == 1){
+    // this.tableData = this.sheetResponce.results.tableData;
+    // this.displayedColumns = this.sheetResponce?.results.tableColumns;
+    this.bandingSwitch = this.sheetResponce?.results.banding;
+    this.color1 = this.sheetResponce?.results?.color1;
+    this.color2 = this.sheetResponce?.results?.color2;
+    this.table = true;
+    this.pivotTable = false;
+    this.bar = false;
+    this.horizontalBar = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.map = false
+    this.funnel = false;
+    this.guage = false;
+    this.calendar = false;
+    this.itemsPerPage = this.sheetResponce?.results?.items_per_page;
+    if (isDashboardTransfer) {
+      let rowCountData: any;
+      if (this.tablePreviewColumn[0]?.result_data?.length) {
+        rowCountData = this.tablePreviewColumn[0]?.result_data?.length;
+      } else {
+        rowCountData = this.tablePreviewRow[0]?.result_data?.length;
+      }
+      this.tableColumnsDisplay = this.tablePreviewColumn.map((col: any) => col.column).concat(this.tablePreviewRow.map((row: any) => row.column));
+
+      for (let i = 0; i < rowCountData; i++) {
+        const tableRow: TableRow = {};
+        this.tablePreviewColumn?.forEach((col: any) => {
+          tableRow[col.column] = col.result_data[i];
+        });
+        this.tablePreviewRow?.forEach((rowData: any) => {
+          tableRow[rowData.column] = rowData.result_data[i];
+        });
+        this.tableDataDisplay.push(tableRow);
+      }
+      this.displayedColumns = this.tableColumnsDisplay;
+      this.tableDataStore = this.tableDataDisplay.slice(0, this.itemsPerPage);
+    } else {
+      this.tableDisplayPagination(false);
+    }
+  }
+  if(responce.chart_id == 9){
+    // this.tableData = this.sheetResponce.results.tableData;
+    this.displayedColumns = this.sheetResponce?.results.tableColumns;
+    this.table = false;
+    this.pivotTable = true;
+    this.bar = false;
+    this.horizontalBar = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.map = false
+    this.funnel = false;
+    this.guage = false;
+    this.calendar = false;
+    this.pivotTableDatatransform(false);
+  }
+  if(responce.chart_id == 25){
+    this.tablePreviewRow = this.sheetResponce?.results?.kpiData;
+    this.KPINumber = this.sheetResponce?.results?.kpiNumber;
+    this.kpiFontSize = this.sheetResponce?.results?.kpiFontSize;
+    this.kpiColor = this.sheetResponce?.results?.kpicolor;
+    if(this.sheetResponce?.results?.kpiPrefix) {
+      this.KPIPrefix = this.sheetResponce.results.kpiPrefix;
+    }
+    if(this.sheetResponce?.results?.kpiSuffix) {
+      this.KPISuffix = this.sheetResponce.results.kpiSuffix;
+    }
+    this.KPIDisplayUnits = this.sheetResponce?.results?.kpiDecimalUnit,
+    this.KPIDecimalPlaces = this.sheetResponce?.results?.kpiDecimalPlaces,
+    this.table = false;
+    this.pivotTable = false;
+    this.bar = false;
+    this.horizontalBar = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = true;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+  }
+  if(responce.chart_id == 29){
+    this.http.get('./assets/maps/world.json').subscribe((geoJson: any) => {
+      echarts.registerMap('world', geoJson);  // Register the map data
+    });
+    this.table = false;
+    this.pivotTable = false;
+    this.bar = false;
+    this.horizontalBar = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = true;
+    this.calendar = false;
+    this.chartType = 'map';
+  }
+ if(responce.chart_id == 6){
+  // this.chartsRowData = this.sheetResponce.results.barYaxis;
+  // this.chartsColumnData = this.sheetResponce.results.barXaxis;
+  this.chartType = 'bar';
+//  this.barChart();
+  this.bar = true;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+  if(responce.chart_id == 14){
+  // this.chartsRowData = this.sheetResponce.results.barYaxis;
+  // this.chartsColumnData = this.sheetResponce.results.barXaxis;
+  this.chartType = 'horizontalBar';
+//  this.barChart();
+  this.bar = false;
+  this.horizontalBar = true;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 24){
+  this.chartType = 'pie';
+  // this.pieChart();
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = true;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.map = false;
+    this.guage = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 13){
+  this.chartType = 'line';
+  // this.lineChart();
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = true;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 17){
+  this.chartType = 'area';
+  // this.areaChart();
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = true;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 7){
+  this.chartType = 'sidebyside';
+  // this.sidebysideBar();
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = true;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 5){
+  this.chartType = 'stocked';
+  // this.stockedBar();
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = true;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.map = false;
+    this.guage = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 4){
+  this.chartType = 'barline';
+  // this.barLineChart();
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = true;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.map = false;
+    this.guage = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 12){
+  this.chartType = 'radar';
+  // this.dualAxisColumnData = this.sheetResponce.results.barLineXaxis;
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = true;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 2){
+  this.chartType = 'hstocked';
+  // this.horizentalStockedBar();
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = true;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.map = false;
+    this.guage = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 3){
+  this.chartType = 'hgrouped';
+  // this.hGrouped();
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = true;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 8){
+  this.chartType = 'multiline';
+  // this.multiLineChart();
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = true;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 10){
+  this.chartType = 'donut';
+  // this.donutChart();
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = true;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 26){
+  this.chartType = 'heatmap';
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = true;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 27){
+  this.chartType = 'funnel';
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = true;
+    this.guage = false;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 28){
+  this.chartType = 'guage';
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = true;
+    this.map = false;
+    this.calendar = false;
+ }
+ if(responce.chart_id == 11){
+  this.chartType = 'calendar';
+  this.bar = false;
+  this.horizontalBar = false;
+  this.table = false;
+  this.pivotTable = false;
+    this.pie = false;
+    this.line = false;
+    this.area = false;
+    this.sidebyside = false;
+    this.stocked = false;
+    this.barLine = false;
+    this.horizentalStocked = false;
+    this.grouped = false;
+    this.multiLine = false;
+    this.donut = false;
+    this.radar = false;
+    this.kpi = false;
+    this.heatMap = false;
+    this.funnel = false;
+    this.guage = false;
+    this.map = false;
+    this.calendar = true;
+ }
+ if(this.sheetResponce.customizeOptions){
+ this.setCustomizeOptions(this.sheetResponce.customizeOptions);
+ }
+ this.getDimensionAndMeasures();
+ this.changeSelectedColumn();
+  // setTimeout(()=>{
+  //   // this.updateNumberFormat();
+  // }, 1000);
+  if(isDashboardTransfer){
+    this.sheetSave(isDashboardTransfer);
+  }
+
+}
+
 sheetRetrive(isDuplicate : boolean,duplicateFilterData?:any){
   this.getChartData();
   console.log(this.tabs);
@@ -2634,636 +3390,13 @@ sheetRetrive(isDuplicate : boolean,duplicateFilterData?:any){
 }
 
 this.workbechService.sheetGet(obj,this.retriveDataSheet_id).subscribe({next: (responce:any) => {
-        if(isDuplicate){
-          this.retriveDataSheet_id = '';
-        } else {
-          this.retriveDataSheet_id = responce?.sheet_id;
-          this.sheetName = responce?.sheet_name;
-          this.sheetTitle = responce?.sheet_name;
-          this.is_sheet_Embed = responce?.is_embedded;
-          this.sheetfilter_querysets_id = responce?.sheetfilter_querysets_id || responce?.sheet_filter_quereyset_ids;
-          if(!responce.sheet_tag_name){
-            this.sheetTagName = responce?.sheet_name;
-          }
-          else{
-            this.sheetTagName = responce?.sheet_tag_name;
-          }
-        }
-        this.chartId = responce?.chart_id;
-        this.sheetChartId = responce?.chart_id;
-        this.sheetCustomQuery = responce?.custom_query;
-        this.sheetResponce = responce?.sheet_data;
-        this.draggedColumns=this.sheetResponce?.columns;
-        if(this.draggedColumns){
-          this.checkDateFormatForYOY();
-        }
-        if(!this.filterQuerySetId){
-          this.filterQuerySetId = responce?.datasource_queryset_id;
-        }
-        this.draggedRows = this.sheetResponce?.rows;
-        if(this.draggedRows){
-          this.checkAggregationForYOY();
-        }
-        this.draggedMeasureValues = this.sheetResponce?.pivotMeasure || []; 
-        this.mulColData = responce?.col_data;
-        this.mulRowData = responce?.row_data;
-        this.pivotMeasureValues = responce?.pivot_measure
-
-        this.pivotMeasureData = this.sheetResponce?.pivotMeasure_Data;
-        this.pivotColumnData = this.sheetResponce?.col;
-        this.pivotRowData = this.sheetResponce?.row;
-
-        this.tablePaginationRows=responce?.row_data;
-        this.tablePaginationColumn=responce?.col_data;
-  if (isDuplicate && duplicateFilterData) {
-    let filterData = responce?.filters_data;
-    this.dimetionMeasure = this.mergeFilters(filterData, duplicateFilterData);
-  } else {
-    this.dimetionMeasure = responce?.filters_data;
-  }
-        this.createdBy = responce?.created_by;
-        this.color1 = responce?.sheet_data?.results?.color1;
-        this.color2 = responce?.sheet_data?.results?.color2;
-        this.tablePaginationCustomQuery = responce?.custom_query;
-        this.donutDecimalPlaces = this.sheetResponce?.results.decimalplaces;
-        if(this.sheetResponce?.numberFormat?.decimalPlaces){ 
-          this.decimalPlaces = this.sheetResponce?.numberFormat?.decimalPlaces;
-        }
-        if(this.sheetResponce?.numberFormat?.displayUnits){
-          this.displayUnits = this.sheetResponce?.numberFormat?.displayUnits;
-        }
-        if(this.sheetResponce?.numberFormat?.prefix){
-          this.prefix = this.sheetResponce?.numberFormat?.prefix;
-        }
-        if(this.sheetResponce?.numberFormat?.suffix){
-          this.suffix = this.sheetResponce?.numberFormat?.suffix;
-        }
-        // this.GridColor = responce.sheet_data.savedChartOptions.chart.background;
-        // this.apexbBgColor = responce.sheet_data.savedChartOptions.grid.borderColor;
-        if(isDuplicate && duplicateFilterData){
-          duplicateFilterData.forEach((filter: any)=>{
-            this.filterId.push(filter.id);
-          });
-        } else {
-        responce?.filters_data.forEach((filter: any)=>{
-          this.filterId.push(filter.filter_id);
-        });
-      }
-      this.isTopFilter = !this.dimetionMeasure.some((column: any) => column.top_bottom && column.top_bottom.length>0);
-        this.isEChatrts = this.sheetResponce?.isEChart;
-        this.isApexCharts = this.sheetResponce?.isApexChart;
-        this.dateDrillDownSwitch = this.sheetResponce?.isDrillDownData;
-        this.locationDrillDownSwitch = this.sheetResponce?.customizeOptions?.locationDrillDownSwitch;
-        this.isLocationFeild = this.sheetResponce?.customizeOptions?.isLocationField;
-        this.draggedDrillDownColumns = this.sheetResponce?.drillDownHierarchy ? this.sheetResponce.drillDownHierarchy : [];
-        this.heirarchyColumnData = this.sheetResponce?.heirarchyColumnData ? this.sheetResponce?.heirarchyColumnData : [];
-        this.selectedSortColumnData = this.sheetResponce?.selectedSortColumnData ? this.sheetResponce?.selectedSortColumnData : null;
-        if(this.isEChatrts){
-          this.selectedChartPlugin = 'echart';
-        } else {
-          this.isApexCharts = true;
-          this.selectedChartPlugin = 'apex';
-        }
-        this.sheetTagTitle = this.sanitizer.bypassSecurityTrustHtml(this.sheetTagName);
-        // this.displayUnits = 'none';
-        
-        if(this.sheetResponce.columns_data){
-          this.draggedColumnsData = this.sheetResponce?.columns_data;
-        }
-        else{
-          this.draggedColumns.forEach((res:any) => {
-            this.draggedColumnsData.push([res.column,res.data_type,"",""])
-          });
-        }
-        if(this.sheetResponce.rows_data){
-          this.draggedRowsData = this.sheetResponce?.rows_data;
-        }
-        else{
-          this.draggedRows.forEach((res:any) => {
-            this.draggedRowsData.push([res.column,res.data_type,"",res.alias ? res.alias : ""])
-          });
-        }
-        if(this.sheetResponce.pivotMeasure){
-          this.draggedMeasureValues = this.sheetResponce?.pivotMeasure;
-          this.draggedMeasureValuesData = this.sheetResponce?.pivotMeasureValuesData
-        }
-        else if(this.draggedMeasureValues){
-          this.draggedMeasureValues.forEach((res:any) => {
-            this.draggedMeasureValuesData.push([res.column,res.data_type,"",res.alias ? res.alias : ""])
-          });
-        }
-        // this.table = false;
-        this.chartsDataSet(responce);
-        if(responce.chart_id == 1){
-          // this.tableData = this.sheetResponce.results.tableData;
-          // this.displayedColumns = this.sheetResponce?.results.tableColumns;
-          this.bandingSwitch = this.sheetResponce?.results.banding;
-          this.color1 = this.sheetResponce?.results?.color1;
-          this.color2 = this.sheetResponce?.results?.color2;
-          this.table = true;
-          this.pivotTable = false;
-          this.bar = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.map = false
-          this.funnel = false;
-          this.guage = false;
-          this.calendar = false;
-          this.itemsPerPage = this.sheetResponce?.results?.items_per_page;
-          this.tableDisplayPagination(false);
-        }
-        if(responce.chart_id == 9){
-          // this.tableData = this.sheetResponce.results.tableData;
-          this.displayedColumns = this.sheetResponce?.results.tableColumns;
-          this.table = false;
-          this.pivotTable = true;
-          this.bar = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.map = false
-          this.funnel = false;
-          this.guage = false;
-          this.calendar = false;
-          this.pivotTableDatatransform(false);
-        }
-        if(responce.chart_id == 25){
-          this.tablePreviewRow = this.sheetResponce?.results?.kpiData;
-          this.KPINumber = this.sheetResponce?.results?.kpiNumber;
-          this.kpiFontSize = this.sheetResponce?.results?.kpiFontSize;
-          this.kpiColor = this.sheetResponce?.results?.kpicolor;
-          if(this.sheetResponce?.results?.kpiPrefix) {
-            this.KPIPrefix = this.sheetResponce.results.kpiPrefix;
-          }
-          if(this.sheetResponce?.results?.kpiSuffix) {
-            this.KPISuffix = this.sheetResponce.results.kpiSuffix;
-          }
-          this.KPIDisplayUnits = this.sheetResponce?.results?.kpiDecimalUnit,
-          this.KPIDecimalPlaces = this.sheetResponce?.results?.kpiDecimalPlaces,
-          this.table = false;
-          this.pivotTable = false;
-          this.bar = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = true;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-        }
-        if(responce.chart_id == 29){
-          this.http.get('./assets/maps/world.json').subscribe((geoJson: any) => {
-            echarts.registerMap('world', geoJson);  // Register the map data
-          });
-          this.table = false;
-          this.pivotTable = false;
-          this.bar = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = true;
-          this.calendar = false;
-          this.chartType = 'map';
-        }
-       if(responce.chart_id == 6){
-        // this.chartsRowData = this.sheetResponce.results.barYaxis;
-        // this.chartsColumnData = this.sheetResponce.results.barXaxis;
-        this.chartType = 'bar';
-      //  this.barChart();
-        this.bar = true;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 24){
-        this.chartType = 'pie';
-        // this.pieChart();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = true;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.map = false;
-          this.guage = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 13){
-        this.chartType = 'line';
-        // this.lineChart();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = true;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 17){
-        this.chartType = 'area';
-        // this.areaChart();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = true;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 7){
-        this.chartType = 'sidebyside';
-        // this.sidebysideBar();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = true;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 5){
-        this.chartType = 'stocked';
-        // this.stockedBar();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = true;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.map = false;
-          this.guage = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 4){
-        this.chartType = 'barline';
-        // this.barLineChart();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = true;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.map = false;
-          this.guage = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 12){
-        this.chartType = 'radar';
-        // this.dualAxisColumnData = this.sheetResponce.results.barLineXaxis;
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = true;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 2){
-        this.chartType = 'hstocked';
-        // this.horizentalStockedBar();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = true;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.map = false;
-          this.guage = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 3){
-        this.chartType = 'hgrouped';
-        // this.hGrouped();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = true;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 8){
-        this.chartType = 'multiline';
-        // this.multiLineChart();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = true;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 10){
-        this.chartType = 'donut';
-        // this.donutChart();
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = true;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 26){
-        this.chartType = 'heatmap';
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = true;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 27){
-        this.chartType = 'funnel';
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = true;
-          this.guage = false;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 28){
-        this.chartType = 'guage';
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = true;
-          this.map = false;
-          this.calendar = false;
-       }
-       if(responce.chart_id == 11){
-        this.chartType = 'calendar';
-        this.bar = false;
-        this.table = false;
-        this.pivotTable = false;
-          this.pie = false;
-          this.line = false;
-          this.area = false;
-          this.sidebyside = false;
-          this.stocked = false;
-          this.barLine = false;
-          this.horizentalStocked = false;
-          this.grouped = false;
-          this.multiLine = false;
-          this.donut = false;
-          this.radar = false;
-          this.kpi = false;
-          this.heatMap = false;
-          this.funnel = false;
-          this.guage = false;
-          this.map = false;
-          this.calendar = true;
-       }
-       if(this.sheetResponce.customizeOptions){
-       this.setCustomizeOptions(this.sheetResponce.customizeOptions);
-       }
-       this.getDimensionAndMeasures();
-       this.changeSelectedColumn();
-        // setTimeout(()=>{
-        //   // this.updateNumberFormat();
-        // }, 1000);
-      },
-      error: (error) => {
-        console.log(error);
-        this.getChartData();
-      }
-    }
+  this.setSheetData(responce,isDuplicate,duplicateFilterData,false);
+},
+error: (error) => {
+  console.log(error);
+  this.getChartData();
+}
+}
   )
   }
   filterName:any
@@ -4132,15 +4265,18 @@ fetchChartData(chartData: any){
           this.sheetTitle = chartData.chart_title;
           this.sheetTagName = chartData.chart_title;
           if (chartData.chart_type.toLowerCase().includes("bar")){
-            this.chartDisplay(false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,6);
-          }else if (chartData.chart_type.toLowerCase().includes("pie")){
-            this.chartDisplay(false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,24);
+            this.chartDisplay(false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,6);
+          }else if(chartData.chart_type.toLowerCase().includes("horizontalBar")){
+            this.chartDisplay(false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,2);
+          }
+          else if (chartData.chart_type.toLowerCase().includes("pie")){
+            this.chartDisplay(false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,24);
           }else if (chartData.chart_type.toLowerCase().includes("line")){
-            this.chartDisplay(false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,13);
+            this.chartDisplay(false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,13);
           }else if (chartData.chart_type.toLowerCase().includes("area")){
-            this.chartDisplay(false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,17);
+            this.chartDisplay(false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,17);
           }else if (chartData.chart_type.toLowerCase().includes("donut")){
-            this.chartDisplay(false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,10);
+            this.chartDisplay(false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,10);
           }
           this.dataExtraction(false);
 
@@ -4289,9 +4425,14 @@ customizechangeChartPlugin() {
     this.pivotColumnTotals = data.pivotColumnTotals ?? true,
     this.bandingEvenColor= data.bandingEvenColor ?? '#ffffff' 
     this.bandingOddColor= data.bandingOddColor ?? '#f5f7fa',
-    this.isHorizontalBar = data.isHorizontalBar ?? false,
     this.toggleTableSearch = data.toggleTableSearch ?? true,
     this.toggleTablePagination = data.toggleTablePagination ?? true
+    this.bandingOddColor= data.bandingOddColor ?? '#f5f7fa'
+    this.isRadarDistribution = data.isRadarDistribution ?? false; 
+    this.isHorizontalBar = data.isHorizontalBar ?? false;
+    this.measureColorRanges = data.measureColorRanges ?? [];
+    this.isMeasureDistribution = data.isMeasureDistribution ?? false;
+    this.measureDivisions = data.measureDivisions ?? 2;
   }
 
   resetCustomizations(){
@@ -4388,9 +4529,12 @@ customizechangeChartPlugin() {
     this.pivotRowTotals = true;
     this.bandingEvenColor= '#ffffff' 
     this.bandingOddColor= '#f5f7fa'
-    this.isHorizontalBar = false,
     this.toggleTableSearch = true;
     this.toggleTablePagination = true;
+    this.measureColorRanges = [];
+    this.isMeasureDistribution = false;
+    this.measureDivisions = 2;
+    // this.isHorizontalBar = false;
     // this.KPIDecimalPlaces = 0,
     // this.KPIDisplayUnits = 'none',
     // this.KPIPrefix = '',
@@ -4870,6 +5014,11 @@ customizechangeChartPlugin() {
 
   setOriginalData(){
         if(this.bar){//bar
+          if(!this.originalData){
+            this.originalData = {categories: this.chartsColumnData , data:this.chartsRowData };
+          }
+        }
+        if(this.horizontalBar){//bar
           if(!this.originalData){
             this.originalData = {categories: this.chartsColumnData , data:this.chartsRowData };
           }
@@ -6494,6 +6643,7 @@ customizechangeChartPlugin() {
       this.table = true;
       this.pivotTable = false;
       this.bar = false;
+      this.horizontalBar = false;
       this.area = false;
       this.line = false;
       this.pie = false;
@@ -7255,9 +7405,11 @@ getCaretCoordinates(textarea: HTMLTextAreaElement, position: number) {
 
   return { top, left };
 }
+isSyncForEmail = false;
   refreshSheetData(){
     this.columnsData();
     this.dataExtraction(true);
+    this.isSyncForEmail = true;
   }
   downloadAsCSV() {
     if (!this.retriveDataSheet_id) return;
@@ -7554,6 +7706,35 @@ rows.forEach((row, rowIndex) => {
 });
 
 }
+
+isMeasureDistribution: boolean = false;
+measureDivisions: number = 2;
+measureColorRanges: { min: number, max: number, color: string, label: string }[] = [];
+
+onMeasureColorChange() {
+  this.measureColorRanges = [...this.measureColorRanges];
+}
+// Call this whenever measureDivisions or isMeasureDistribution changes
+updateMeasureColorRanges() {
+  if (!this.chartsRowData || this.chartsRowData.length === 0) return;
+  const min = Math.min(...this.chartsRowData);
+  const max = Math.max(...this.chartsRowData);
+  const step = Math.ceil((max - min + 1) / this.measureDivisions);
+  this.measureColorRanges = [];
+  for (let i = 0; i < this.measureDivisions; i++) {
+    const rangeMin = min + i * step;
+    const rangeMax = i === this.measureDivisions - 1 ? max : rangeMin + step - 1;
+    this.measureColorRanges.push({
+      min: rangeMin,
+      max: rangeMax,
+      color: this.selectedColorScheme[i % this.selectedColorScheme.length] || '#2392c1',
+      label: `${rangeMin} - ${rangeMax}`
+    });
+  }
+  console.log('Measure Color Ranges:', this.measureColorRanges);
+}
+
+
 qoqOpen = false
 toggleQOQDropdown() {
   this.qoqOpen = !this.qoqOpen;
